@@ -1,0 +1,9 @@
+#ifndef __BLOCKCHAIN-SEC-LIB_H
+#define __BLOCKCHAIN-SEC-LIB_H
+
+
+
+
+
+
+#endif //__BLOCKCHAIN-SEC-LIB_H
