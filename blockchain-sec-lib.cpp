@@ -21,32 +21,7 @@ class blockchain-sec::Blockchain-Sec-Lib {
 
 		}
 
-		std::string eth_call(std::string abi_data) {
-			std::string json_request = "{""jsonrpc"":""2.0"","
-										"""method"":""eth_call"","
-										"""params"":[{"
-											"""to"":""" + this->eth_sec_contract_addr + ""","
-											"""gasPrice"":0,"
-											"""data"":""" + abi_data +
-										"""}],""id"":1}";
-			cout << "eth_call()\n";
-			return this->eth_ipc_request(json_request);
-		}
 
-		std::string eth_sendTransaction(std::string abi_data) {
-			std::string json_request = "{""jsonrpc"":""2.0"","
-										"""method"":""eth_sendTransaction"""
-										",""params"":[{"
-											"""from"":""" + this->eth_my_addr + ""","
-											"""to"":""" + this->eth_sec_contract_addr + ""","
-											"""gas"":0,"
-											"""gasPrice"":""" + ETH_DEFAULT_GAS + ""","
-											"""data"":""" + abi_data +
-										"""}],"
-										"""id"":1}";
-			cout << "eth_sendTransaction()\n";
-			return this->eth_ipc_request(json_request);
-		}
 
 	private:
 		std::string ipc_path;
@@ -75,6 +50,32 @@ class blockchain-sec::Blockchain-Sec-Lib {
 			return json;
 		}
 
+		std::string eth_call(std::string abi_data) {
+			std::string json_request = "{""jsonrpc"":""2.0"","
+										"""method"":""eth_call"","
+										"""params"":[{"
+											"""to"":""" + this->eth_sec_contract_addr + ""","
+											"""gasPrice"":0,"
+											"""data"":""" + abi_data +
+										"""}],""id"":1}";
+			cout << "eth_call()\n";
+			return this->eth_ipc_request(json_request);
+		}
+
+		std::string eth_sendTransaction(std::string abi_data) {
+			std::string json_request = "{""jsonrpc"":""2.0"","
+										"""method"":""eth_sendTransaction"""
+										",""params"":[{"
+											"""from"":""" + this->eth_my_addr + ""","
+											"""to"":""" + this->eth_sec_contract_addr + ""","
+											"""gas"":0,"
+											"""gasPrice"":""" + ETH_DEFAULT_GAS + ""","
+											"""data"":""" + abi_data +
+										"""}],"
+										"""id"":1}";
+			cout << "eth_sendTransaction()\n";
+			return this->eth_ipc_request(json_request);
+		}
 
 }
 
