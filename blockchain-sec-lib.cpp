@@ -1,6 +1,6 @@
 #include "gason.h"
 
-#define IPC_READ_BUFFER_LENGTH		64
+#define PIPE_BUFFER_LENGTH		64
 #define ETH_DEFAULT_GAS				"0x7A120"
 
 using namespace std;
@@ -21,16 +21,36 @@ class blockchain-sec::Blockchain-Sec-Lib {
 
 		}
 
-
-
 	private:
 		std::string ipc_path;
 		std::string eth_my_addr;
 		std::string eth_sec_contract_addr;
 
+		std::string ethabi(std::string args) {
+			std::string result;
+			std::array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
+
+			cout << "ethabi()\n";
+			FILE *ethabi_pipe = popen("ethabi '" + args.c_str(), "r");
+			if (ethabi_pipe == NULL) {
+				// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
+				cerr << "ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?\n";
+				return ""; //TODO
+			}
+			while (fgets(pipe_buffer.data(), PIPE_BUFFER_LENGTH, ethabi_pipe) != NULL) {
+				result += pipe_buffer.data();
+			}
+			if (pclose(ethabi_pipe) < 0) {
+				cerr << "ethabi(): Failed to pclose() pipe to ethabi binary!";
+				return result; //TODO: We may still have valid data to return, despite the error
+			}
+			cout << "ethabi(): Call successful!\n";
+			return result;
+		}
+
 		std::string eth_ipc_request(std::string json_request) {
 			std::string json;
-			std::array<char, IPC_READ_BUFFER_LENGTH> ipc_buffer;
+			std::array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
 
 			cout << "eth_ipc_request()\n";
 			FILE *ipc = popen("echo '" + json_request.c_str() + "' | nc -U '" + this->ipc_path.c_str() + "'", "r");
@@ -39,7 +59,7 @@ class blockchain-sec::Blockchain-Sec-Lib {
 				cerr << "eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?\n";
 				return ""; //TODO
 			}
-			while (fgets(ipc_buffer.data(), IPC_READ_BUFFER_LENGTH, ipc) != NULL) {
+			while (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) != NULL) {
 				json += ipc_buffer.data();
 			}
 			if (pclose(ipc) < 0) {
