@@ -26,7 +26,7 @@ std::string BlockchainSecLib::ethabi(std::string args) {
 	std::array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
 
 	cout << "ethabi()\n";
-	FILE *ethabi_pipe = popen(("ethabi '" + args).c_str(), "r");
+	FILE *ethabi_pipe = popen(("ethabi '" + args + "'").c_str(), "r");
 	if (ethabi_pipe == NULL) {
 		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
 		cerr << "ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?\n";

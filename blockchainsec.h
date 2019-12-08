@@ -8,7 +8,8 @@ class BlockchainSecLib {
 	public:
 		BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
 		~BlockchainSecLib();
-	private:
+	
+	//private:
 		std::string ipc_path;
 		std::string eth_my_addr;
 		std::string eth_sec_contract_addr;
