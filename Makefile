@@ -13,7 +13,7 @@ CROSSCOMPILE =
 CFLAGS =
 CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic
 LDFLAGS =
-INCLUDE = -I ../gason/src
+INCLUDE = -I . -I ../gason/src
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
