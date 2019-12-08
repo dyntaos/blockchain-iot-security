@@ -1,23 +1,25 @@
+#include <string>
+#include <array>
+#include <iostream>
 #include "gason.h"
 
 #define PIPE_BUFFER_LENGTH		64
 #define ETH_DEFAULT_GAS				"0x7A120"
 
 using namespace std;
-using namespace blockchain-sec;
 
-namespace blockchain-sec {
+namespace blockchain_sec {
 
-class blockchain-sec::Blockchain-Sec-Lib {
+class Blockchain_Sec_Lib {
 
 	public:
-		Blockchain-Sec-Lib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr) {
+		Blockchain_Sec_Lib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr) {
 			this->ipc_path = ipc_path;
 			this->eth_my_addr = eth_my_addr; //TODO Check for reasonableness
 			this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
 		}
 
-		~Blockchain-Sec-Lib() {
+		~Blockchain_Sec_Lib() {
 
 		}
 
@@ -31,7 +33,7 @@ class blockchain-sec::Blockchain-Sec-Lib {
 			std::array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
 
 			cout << "ethabi()\n";
-			FILE *ethabi_pipe = popen("ethabi '" + args.c_str(), "r");
+			FILE *ethabi_pipe = popen(("ethabi '" + args).c_str(), "r");
 			if (ethabi_pipe == NULL) {
 				// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
 				cerr << "ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?\n";
@@ -53,7 +55,7 @@ class blockchain-sec::Blockchain-Sec-Lib {
 			std::array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
 
 			cout << "eth_ipc_request()\n";
-			FILE *ipc = popen("echo '" + json_request.c_str() + "' | nc -U '" + this->ipc_path.c_str() + "'", "r");
+			FILE *ipc = popen(("echo '" + json_request + "' | nc -U '" + this->ipc_path + "'").c_str(), "r");
 			if (ipc == NULL) {
 				// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
 				cerr << "eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?\n";
@@ -97,6 +99,6 @@ class blockchain-sec::Blockchain-Sec-Lib {
 			return this->eth_ipc_request(json_request);
 		}
 
-}
+};
 
 } //namespace blockchain-sec
