@@ -1,13 +1,13 @@
-#ifndef __BLOCKCHAIN_SEC_LIB_H
-#define __BLOCKCHAIN_SEC_LIB_H
+#ifndef __BLOCKCHAINSEC_H
+#define __BLOCKCHAINSEC_H
 
 
-namespace blockchain_sec {
+namespace blockchainSec {
 
-class Blockchain_Sec_Lib {
+class BlockchainSecLib {
 	public:
-		Blockchain_Sec_Lib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
-		~Blockchain_Sec_Lib();
+		BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
+		~BlockchainSecLib();
 	private:
 		std::string ipc_path;
 		std::string eth_my_addr;
@@ -21,4 +21,4 @@ class Blockchain_Sec_Lib {
 
 }
 
-#endif //__BLOCKCHAIN_SEC_LIB_H
+#endif //__BLOCKCHAINSEC_H

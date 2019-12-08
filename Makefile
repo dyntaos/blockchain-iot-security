@@ -24,7 +24,7 @@ LIB = $(BUILD)/lib/$(ARCH)
 
 .PHONY: all clean
 
-all: mkdirs $(OBJ)/blockchain-sec-lib.o
+all: mkdirs $(BIN)/client
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -33,10 +33,24 @@ clean:
 	rm -rf ./build
 
 
+### Static Library ###
+
+$(OBJ)/blockchainsec.o: blockchainsec.cpp
+	$(CROSSCOMPILE)$(CC) -c -fPIC -o $@ $(INCLUDE) $<
+
+$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
+	ar rcs $@ $^
+
+### Shared Library ###
+#$(LIB)/libblockchainsec.so: $(OBJ)/blockchainsec.o
+#	$(CROSSCOMPILE)$(CC) -o $@ -shared -Wl,-soname,libblockchainsec.so $<
 
 
-$(OBJ)/blockchain-sec-lib.o: blockchain-sec-lib.cpp
+
+### Client Binary ###
+
+$(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) -c -o $@ $(INCLUDE) $<
 
-#$BIN/blockchain-client: blockchain-client.o
-#	$(CROSSCOMPILE)$(CC) -o $@ $<
+$(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec

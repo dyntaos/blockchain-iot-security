@@ -1,7 +1,7 @@
 #include <string>
 #include <array>
 #include <iostream>
-#include <blockchain-sec-lib.h>
+#include <blockchainsec.h>
 #include "gason.h"
 
 #define PIPE_BUFFER_LENGTH		64
@@ -9,19 +9,19 @@
 
 using namespace std;
 
-namespace blockchain_sec {
+namespace blockchainSec {
 
-Blockchain_Sec_Lib::Blockchain_Sec_Lib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr) {
+BlockchainSecLib::BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr) {
 	this->ipc_path = ipc_path;
 	this->eth_my_addr = eth_my_addr; //TODO Check for reasonableness
 	this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
 }
 
-Blockchain_Sec_Lib::~Blockchain_Sec_Lib() {
+BlockchainSecLib::~BlockchainSecLib() {
 
 }
 
-std::string Blockchain_Sec_Lib::ethabi(std::string args) {
+std::string BlockchainSecLib::ethabi(std::string args) {
 	std::string result;
 	std::array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
 
@@ -43,7 +43,7 @@ std::string Blockchain_Sec_Lib::ethabi(std::string args) {
 	return result;
 }
 
-std::string Blockchain_Sec_Lib::eth_ipc_request(std::string json_request) {
+std::string BlockchainSecLib::eth_ipc_request(std::string json_request) {
 	std::string json;
 	std::array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
 
@@ -65,7 +65,7 @@ std::string Blockchain_Sec_Lib::eth_ipc_request(std::string json_request) {
 	return json;
 }
 
-std::string Blockchain_Sec_Lib::eth_call(std::string abi_data) {
+std::string BlockchainSecLib::eth_call(std::string abi_data) {
 	std::string json_request = "{""jsonrpc"":""2.0"","
 								"""method"":""eth_call"","
 								"""params"":[{"
@@ -77,7 +77,7 @@ std::string Blockchain_Sec_Lib::eth_call(std::string abi_data) {
 	return this->eth_ipc_request(json_request);
 }
 
-std::string Blockchain_Sec_Lib::eth_sendTransaction(std::string abi_data) {
+std::string BlockchainSecLib::eth_sendTransaction(std::string abi_data) {
 	std::string json_request = "{""jsonrpc"":""2.0"","
 								"""method"":""eth_sendTransaction"""
 								",""params"":[{"
