@@ -21,13 +21,19 @@ BIN = $(BUILD)/bin/$(ARCH)
 OBJ = $(BUILD)/obj/$(ARCH)
 LIB = $(BUILD)/lib/$(ARCH)
 
+DEBUG =
 
-.PHONY: all clean
+.PHONY: all mkdirs debug clean
 
 all: mkdirs $(BIN)/client
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
+
+debug: debug_flag all
+
+debug_flag:
+	$(eval DEBUG = -D_DEBUG )
 
 clean:
 	rm -rf ./build
@@ -36,7 +42,7 @@ clean:
 ### Static Library ###
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
-	$(CROSSCOMPILE)$(CC) -c -fPIC -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 	ar rcs $@ $^
@@ -50,7 +56,7 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 ### Client Binary ###
 
 $(OBJ)/client.o: client.cpp
-	$(CROSSCOMPILE)$(CC) -c -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec
