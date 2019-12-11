@@ -1,0 +1,1 @@
+[{"constant":true,"inputs":[{"internalType":"int256","name":"a","type":"int256"}],"name":"double","outputs":[{"internalType":"int256","name":"","type":"int256"}],"payable":false,"stateMutability":"pure","type":"function"}]
