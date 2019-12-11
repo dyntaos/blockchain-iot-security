@@ -61,3 +61,4 @@ $(OBJ)/client.o: client.cpp
 $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec
 	cp ./test.abi $(BIN)/
+	cp ./testcontract.abi $(BIN)/
