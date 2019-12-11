@@ -1,6 +1,10 @@
 #include <string>
 #include <array>
 #include <iostream>
+
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <blockchainsec.h>
 #include "gason.h"
 
@@ -26,6 +30,7 @@ BlockchainSecLib::~BlockchainSecLib() {
 }
 
 
+
 //TODO: Don't leave this function here
 string BlockchainSecLib::trim(const string& line) {
 	const char* WhiteSpace = " \t\v\r\n";
@@ -39,7 +44,7 @@ string BlockchainSecLib::trim(const string& line) {
 string BlockchainSecLib::contract_double(int n) {
 	string data;
 	data = this->ethabi("encode -l function test.abi double -p " + to_string(n));
-	return this->eth_call(data);
+	return this->eth_call("0x" + data);
 }
 
 
@@ -116,6 +121,7 @@ string BlockchainSecLib::ethabi(string args) {
 
 
 string BlockchainSecLib::eth_ipc_request(string json_request) {
+	int ipc_fd_flags, ipc_fd;
 	string json;
 	array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
 
@@ -129,9 +135,26 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 		cerr << "eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?" << endl;
 		return ""; //TODO
 	}
+
+	ipc_fd = fileno(ipc);
+
+	if (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
+		cout << "eth_ipc_request(): Error: Failed to read from IPC!" << endl;
+	}
+
+	json += ipc_buffer.data();
+
+	ipc_fd_flags = fcntl(ipc_fd, F_GETFL, 0);
+	ipc_fd_flags |= O_NONBLOCK;
+	fcntl(ipc_fd, F_SETFL, ipc_fd_flags);
+
 	while (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) != NULL) {
+#ifdef _DEBUG
+		cout << "eth_ipc_request(): Read: ''" << ipc_buffer.data() << "'" << endl;
+#endif //_DEBUG
 		json += ipc_buffer.data();
 	}
+
 	if (pclose(ipc) < 0) {
 		cerr << "eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!";
 		return json; //TODO: We may still have valid data to return, despite the error
@@ -150,10 +173,10 @@ string BlockchainSecLib::eth_call(string abi_data) {
 	string json_request = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_call\","
 								"\"params\":[{"
+									//"\"from\":\"" + this->eth_my_addr + "\","
 									"\"to\":\"" + this->eth_sec_contract_addr + "\","
-									"\"gasPrice\":0,"
 									"\"data\":\"" + abi_data +
-								"\"}],\"id\":1}";
+								"\"},\"latest\"],\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_call()" << endl;
