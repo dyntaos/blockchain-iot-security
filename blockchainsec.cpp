@@ -49,6 +49,38 @@ string BlockchainSecLib::contract_double(int n) {
 
 
 
+string BlockchainSecLib::contract_getvar(void) {
+	string data;
+	data = this->ethabi("encode -l function testcontract.abi getvar");
+	return this->eth_call("0x" + data);
+}
+
+
+
+string BlockchainSecLib::contract_setvar(int n) {
+	string data;
+	data = this->ethabi("encode -l function testcontract.abi setvar -p " + to_string(n));
+	return this->eth_sendTransaction("0x" + data);
+}
+
+
+
+string BlockchainSecLib::contract_getmap(int n) {
+	string data;
+	data = this->ethabi("encode -l function testcontract.abi getmap -p " + to_string(n));
+	return this->eth_call("0x" + data);
+}
+
+
+
+string BlockchainSecLib::contract_setmap(int n, int v) {
+	string data;
+	data = this->ethabi("encode -l function testcontract.abi setmap -p " + to_string(n) + " -p " + to_string(v));
+	return this->eth_sendTransaction("0x" + data);
+}
+
+
+
 #ifdef _DEBUG
 void BlockchainSecLib::test(void) {
 	bool testsPassed = true;
@@ -193,8 +225,8 @@ string BlockchainSecLib::eth_sendTransaction(string abi_data) {
 								",\"params\":[{"
 									"\"from\":\"" + this->eth_my_addr + "\","
 									"\"to\":\"" + this->eth_sec_contract_addr + "\","
-									"\"gas\":0,"
-									"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
+									//"\"gas\":0,"
+									//"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
 									"\"data\":\"" + abi_data +
 								"\"}],"
 								"\"id\":1}";
