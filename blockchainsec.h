@@ -9,7 +9,10 @@ class BlockchainSecLib {
 		BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
 		~BlockchainSecLib();
 		std::string contract_double(int n);
-
+		std::string contract_getvar(void);
+		std::string contract_setvar(int n);
+		std::string contract_getmap(int n);
+		std::string contract_setmap(int n, int v);
 
 #ifdef _DEBUG
 		void test(void);
