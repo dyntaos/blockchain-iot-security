@@ -36,7 +36,6 @@ class BlockchainSecLib {
 		libconfig::Config cfg;
 		libconfig::Setting *cfg_root;
 
-		std::string trim(const std::string& line); // http://www.cplusplus.com/forum/beginner/251052/
 		bool create_contract(void);
 		std::string ethabi(std::string args);
 		std::string eth_ipc_request(std::string json_request);

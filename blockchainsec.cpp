@@ -6,12 +6,14 @@
 #include <fcntl.h>
 
 #include <blockchainsec.h>
-#include "gason.h"
+#include <misc.h>
+#include <gason.h>
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 
 using namespace std;
 using namespace libconfig;
+
 
 namespace blockchainSec {
 
@@ -98,16 +100,6 @@ BlockchainSecLib::~BlockchainSecLib() {
 
 
 
-//TODO: Don't leave this function here
-string BlockchainSecLib::trim(const string& line) {
-	const char* WhiteSpace = " \t\v\r\n";
-	size_t start = line.find_first_not_of(WhiteSpace);
-	size_t end = line.find_last_not_of(WhiteSpace);
-	return start == end ? string() : line.substr(start, end - start + 1);
-}
-
-
-
 string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
 	string data;
 
@@ -172,10 +164,17 @@ void BlockchainSecLib::test(void) {
 
 
 bool BlockchainSecLib::create_contract(void) {
+	string contract_bin, contract_abi;
+
 	// TODO: When project is complete we dont need to recompile this everytime
 	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
 	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
 	//TODO: Check for success
+
+	contract_bin = readFile2(ETH_CONTRACT_BIN);
+	contract_abi = readFile2(ETH_CONTRACT_ABI);
+
+
 
 	//TODO: Save contract to config
 	cfg_root->add("contract_addr", Setting::TypeString) = "test";
@@ -210,10 +209,10 @@ string BlockchainSecLib::ethabi(string args) {
 
 #ifdef _DEBUG
 	cout << "ethabi(): Call successful!" << endl;
-	cout << "ethabi(): Returning: " << this->trim(result) << endl;
+	cout << "ethabi(): Returning: " << trim(result) << endl;
 #endif //_DEBUG
 
-	return this->trim(result);
+	return trim(result);
 }
 
 

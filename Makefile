@@ -62,8 +62,11 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client: $(OBJ)/client.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $(OBJ)/*.o -L $(LIB) -lblockchainsec -lconfig++
+$(OBJ)/misc.o: misc.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o -L $(LIB) -lblockchainsec -lconfig++
 	cp ./*.sol ./*.conf $(BIN)/
 
 ### Client Dependencies ###
