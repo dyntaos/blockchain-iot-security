@@ -13,7 +13,11 @@ CROSSCOMPILE =
 CFLAGS =
 CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic
 LDFLAGS =
-INCLUDE = -I . -I ../gason/src
+
+GASONLIB = ./gason/src
+CXXOPTSLIB = ./cssopts/include
+
+INCLUDE = -I . -I $(CXXOPTSLIB) -I $(GASONLIB)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
@@ -42,7 +46,7 @@ clean:
 ### Static Library ###
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
-	$(CROSSCOMPILE)$(CC) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 	ar rcs $@ $^
@@ -56,8 +60,13 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 ### Client Binary ###
 
 $(OBJ)/client.o: client.cpp
-	$(CROSSCOMPILE)$(CC) -c $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec -lconfig++
+$(BIN)/client: $(OBJ)/client.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $(OBJ)/*.o -L $(LIB) -lblockchainsec -lconfig++
 	cp ./*.sol ./*.conf $(BIN)/
+
+### Client Dependencies ###
+
+$(OBJ)/gason.o: $(GASONLIB)/gason.cpp
+	$(CROSSCOMPILE)$(CC) -std=c++11 -c -o $@ $<

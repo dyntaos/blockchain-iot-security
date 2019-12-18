@@ -1,0 +1,12 @@
+[submodule "cxxopts"]
+	path = cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
+[submodule "gason"]
+	path = gason
+	url = https://github.com/vivkin/gason.git
+[submodule "libconfig"]
+	path = libconfig
+	url = https://github.com/hyperrealm/libconfig.git
+[submodule "libhydrogen"]
+	path = libhydrogen
+	url = https://github.com/jedisct1/libhydrogen.git
