@@ -1,6 +1,19 @@
 #ifndef __BLOCKCHAINSEC_H
 #define __BLOCKCHAINSEC_H
 
+#include <libconfig.h++>
+
+#define BLOCKCHAINSEC_CONFIG_F			"blockchainsec.conf"
+#define BLOCKCHAINSEC_MAX_DEV_NAME		16
+
+#define ETH_CONTRACT_SOL				"dev_mgmt_contract.sol"
+#define ETH_CONTRACT_BIN				"dev_mgmt_contract.bin"
+#define ETH_CONTRACT_ABI				"dev_mgmt_contract.abi"
+
+#define PIPE_BUFFER_LENGTH				64
+
+#define ETH_DEFAULT_GAS					"0x7A120"
+
 
 namespace blockchainSec {
 
@@ -8,11 +21,8 @@ class BlockchainSecLib {
 	public:
 		BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
 		~BlockchainSecLib();
-		std::string contract_double(int n);
-		std::string contract_getvar(void);
-		std::string contract_setvar(int n);
-		std::string contract_getmap(int n);
-		std::string contract_setmap(int n, int v);
+		std::string add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
+		std::string add_gateway(std::string client_addr, std::string name, std::string mac, std::string public_key);
 
 #ifdef _DEBUG
 		void test(void);
@@ -22,8 +32,11 @@ class BlockchainSecLib {
 		std::string ipc_path;
 		std::string eth_my_addr;
 		std::string eth_sec_contract_addr;
+		libconfig::Config cfg;
+		libconfig::Setting *cfg_root;
 
 		std::string trim(const std::string& line); // http://www.cplusplus.com/forum/beginner/251052/
+		std::string create_contract(void);
 		std::string ethabi(std::string args);
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);

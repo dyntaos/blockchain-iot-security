@@ -8,10 +8,9 @@
 #include <blockchainsec.h>
 #include "gason.h"
 
-#define PIPE_BUFFER_LENGTH				64
-#define ETH_DEFAULT_GAS					"0x7A120"
 
 using namespace std;
+using namespace libconfig;
 
 namespace blockchainSec {
 
@@ -21,6 +20,38 @@ BlockchainSecLib::BlockchainSecLib(string const ipc_path, string eth_my_addr, st
 	this->ipc_path = ipc_path;
 	this->eth_my_addr = eth_my_addr; //TODO Check for reasonableness
 	this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
+	cfg.setOptions(Config::OptionFsync
+				 | Config::OptionSemicolonSeparators
+				 | Config::OptionColonAssignmentForGroups
+				 | Config::OptionOpenBraceOnSeparateLine);
+	cout << "Read config file..." << endl;
+	try {
+		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
+	}
+	catch(const FileIOException &e) {
+		cerr << "IO error reading config file!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	catch(const ParseException &e) {
+		cerr << "BlockchainSec: Config file error " << e.getFile() << ":" << e.getLine() << " - " << e.getError() << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cfg_root = &cfg.getRoot();
+
+	if (!cfg.exists("contract_addr")) {
+		/* A contract address is not saved in the config file.
+		 * We will compile the contract with solc, upload it
+		 * to the chain and save the address to the config file */
+		cout << "Config doesnt have contract_addr" << endl;
+		string contract_addr = this->create_contract();
+		cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
+		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
+		//TODO: Save contract to config
+	} else {
+		cout << "Config had contract_addr" << endl;
+		cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
+	}
 }
 
 
@@ -41,41 +72,25 @@ string BlockchainSecLib::trim(const string& line) {
 
 
 
-string BlockchainSecLib::contract_double(int n) {
+string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
 	string data;
-	data = this->ethabi("encode -l function test.abi double -p " + to_string(n));
-	return this->eth_call("0x" + data);
-}
 
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) return ""; //Device name too long -- returning "" is an error
+	//TODO: If !gateway_managed make sure clientAddr is valid
 
-
-string BlockchainSecLib::contract_getvar(void) {
-	string data;
-	data = this->ethabi("encode -l function testcontract.abi getvar");
-	return this->eth_call("0x" + data);
-}
-
-
-
-string BlockchainSecLib::contract_setvar(int n) {
-	string data;
-	data = this->ethabi("encode -l function testcontract.abi setvar -p " + to_string(n));
+	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
 	return this->eth_sendTransaction("0x" + data);
 }
 
 
 
-string BlockchainSecLib::contract_getmap(int n) {
+string BlockchainSecLib::add_gateway(string client_addr, string name, string mac, string public_key) {
 	string data;
-	data = this->ethabi("encode -l function testcontract.abi getmap -p " + to_string(n));
-	return this->eth_call("0x" + data);
-}
 
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) return ""; //Device name too long -- returning "" is an error
+	//TODO: If !gateway_managed make sure clientAddr is valid
 
-
-string BlockchainSecLib::contract_setmap(int n, int v) {
-	string data;
-	data = this->ethabi("encode -l function testcontract.abi setmap -p " + to_string(n) + " -p " + to_string(v));
+	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
 	return this->eth_sendTransaction("0x" + data);
 }
 
@@ -117,6 +132,16 @@ void BlockchainSecLib::test(void) {
 	}
 }
 #endif //_DEBUG
+
+
+
+string BlockchainSecLib::create_contract(void) {
+	// TODO: When project is complete we dont need to recompile this everytime
+	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
+	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
+	//TODO: Check for success
+	return "test";
+}
 
 
 

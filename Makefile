@@ -59,6 +59,5 @@ $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec
-	cp ./test.abi $(BIN)/
-	cp ./testcontract.abi $(BIN)/
+	$(CROSSCOMPILE)$(CC) -o $@ $< -L $(LIB) -lblockchainsec -lconfig++
+	cp ./*.sol ./*.conf $(BIN)/
