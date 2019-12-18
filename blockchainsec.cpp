@@ -8,6 +8,7 @@
 #include <blockchainsec.h>
 #include "gason.h"
 
+//TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 
 using namespace std;
 using namespace libconfig;
@@ -16,43 +17,78 @@ namespace blockchainSec {
 
 
 
-BlockchainSecLib::BlockchainSecLib(string const ipc_path, string eth_my_addr, string const eth_sec_contract_addr) {
-	this->ipc_path = ipc_path;
-	this->eth_my_addr = eth_my_addr; //TODO Check for reasonableness
+BlockchainSecLib::BlockchainSecLib(bool compile) {
+
+
 	this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
 	cfg.setOptions(Config::OptionFsync
 				 | Config::OptionSemicolonSeparators
 				 | Config::OptionColonAssignmentForGroups
 				 | Config::OptionOpenBraceOnSeparateLine);
+
 	cout << "Read config file..." << endl;
+
 	try {
 		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
-	}
-	catch(const FileIOException &e) {
+
+	} catch(const FileIOException &e) {
 		cerr << "IO error reading config file!" << endl;
 		exit(EXIT_FAILURE);
-	}
-	catch(const ParseException &e) {
+
+	} catch(const ParseException &e) {
 		cerr << "BlockchainSec: Config file error " << e.getFile() << ":" << e.getLine() << " - " << e.getError() << endl;
 		exit(EXIT_FAILURE);
 	}
 
 	cfg_root = &cfg.getRoot();
 
+	if (!cfg.exists("ipc_path")) {
+		cerr << "Configuration file does not contain 'ipc_path'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cfg.lookupValue("ipc_path", this->ipc_path); //TODO Check for reasonableness
+
+	if (!cfg.exists("client_eth_addr")) {
+		cerr << "Configuration file does not contain 'client_eth_addr'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cfg.lookupValue("client_eth_addr", this->eth_my_addr); //TODO Check for reasonableness
+
 	if (!cfg.exists("contract_addr")) {
 		/* A contract address is not saved in the config file.
 		 * We will compile the contract with solc, upload it
 		 * to the chain and save the address to the config file */
-		cout << "Config doesnt have contract_addr" << endl;
-		string contract_addr = this->create_contract();
-		cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
-		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
-		//TODO: Save contract to config
-	} else {
-		cout << "Config had contract_addr" << endl;
-		cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
+		if (compile) {
+			cout << "Compiling and uploading contract..." << endl << endl;
+			if (this->create_contract()) {
+				cout << "Successfully compiled and uploaded contract" << endl
+					<< "The new contract address has been written to the "
+					"configuration file" << endl;
+				exit(EXIT_SUCCESS);
+			} else {
+				cerr << "Failed to create contract!" << endl;
+				exit(EXIT_FAILURE);
+			}
+
+		} else {
+			cout << "Config doesnt have contract_addr" << endl
+				<< "Either import a config or compile and upload"
+				" a contract using the `--compile` flag" << endl;
+
+			exit(EXIT_FAILURE);
+		}
+
 	}
+
+	cout << "Config had contract_addr" << endl;
+	cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
 }
+
+
+
+BlockchainSecLib::BlockchainSecLib(void) : BlockchainSecLib(false) {}
 
 
 
@@ -135,12 +171,17 @@ void BlockchainSecLib::test(void) {
 
 
 
-string BlockchainSecLib::create_contract(void) {
+bool BlockchainSecLib::create_contract(void) {
 	// TODO: When project is complete we dont need to recompile this everytime
 	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
 	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
 	//TODO: Check for success
-	return "test";
+
+	//TODO: Save contract to config
+	cfg_root->add("contract_addr", Setting::TypeString) = "test";
+	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
+
+	return true;
 }
 
 

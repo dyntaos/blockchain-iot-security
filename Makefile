@@ -15,7 +15,7 @@ CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic
 LDFLAGS =
 
 GASONLIB = ./gason/src
-CXXOPTSLIB = ./cssopts/include
+CXXOPTSLIB = ./cxxopts/include
 
 INCLUDE = -I . -I $(CXXOPTSLIB) -I $(GASONLIB)
 ARCH = $(shell uname -s)$(shell uname -m)

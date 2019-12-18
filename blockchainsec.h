@@ -19,7 +19,8 @@ namespace blockchainSec {
 
 class BlockchainSecLib {
 	public:
-		BlockchainSecLib(std::string const ipc_path, std::string eth_my_addr, std::string const eth_sec_contract_addr);
+		BlockchainSecLib(bool compile);
+		BlockchainSecLib(void);
 		~BlockchainSecLib();
 		std::string add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
 		std::string add_gateway(std::string client_addr, std::string name, std::string mac, std::string public_key);
@@ -36,7 +37,7 @@ class BlockchainSecLib {
 		libconfig::Setting *cfg_root;
 
 		std::string trim(const std::string& line); // http://www.cplusplus.com/forum/beginner/251052/
-		std::string create_contract(void);
+		bool create_contract(void);
 		std::string ethabi(std::string args);
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
