@@ -41,6 +41,7 @@ class BlockchainSecLib {
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
 		std::string eth_sendTransaction(std::string abi_data);
+		std::string eth_createContract(std::string data);
 };
 
 }

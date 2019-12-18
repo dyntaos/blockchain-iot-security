@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include <blockchainsec.h>
 #include <misc.h>
@@ -107,7 +108,7 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
 	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
-	return this->eth_sendTransaction("0x" + data);
+	return this->eth_sendTransaction(data);
 }
 
 
@@ -119,7 +120,7 @@ string BlockchainSecLib::add_gateway(string client_addr, string name, string mac
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
 	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
-	return this->eth_sendTransaction("0x" + data);
+	return this->eth_sendTransaction(data);
 }
 
 
@@ -164,17 +165,54 @@ void BlockchainSecLib::test(void) {
 
 
 bool BlockchainSecLib::create_contract(void) {
-	string contract_bin, contract_abi;
+	string contract_bin, result, transaction_hash;
+	char *source, *endptr;
+	bool json_error = true;
+	int status;
+	JsonValue value;
+	JsonAllocator allocator;
 
 	// TODO: When project is complete we dont need to recompile this everytime
 	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
 	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
 	//TODO: Check for success
 
-	contract_bin = readFile2(ETH_CONTRACT_BIN);
-	contract_abi = readFile2(ETH_CONTRACT_ABI);
+	contract_bin = trim(readFile2(ETH_CONTRACT_BIN));
 
+	result = this->eth_createContract(contract_bin);
+	source = (char*) result.c_str(); //TODO: Is there a better solution than this cast?
 
+	cout << result << endl;
+
+	status = jsonParse(source, &endptr, &value, allocator);
+	if (status != JSON_OK) {
+		cerr << "Error parsing responce JSON data: " << jsonStrError(status) <<
+			" at " << endptr - source << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if (value.getTag() == JSON_OBJECT) {
+		for (auto i: value) {
+			if (strcmp(i->key, "result") == 0) {
+				cout << i->value.toString() << endl;
+				transaction_hash = i->value.toString();
+				json_error = false;
+				break;
+			}
+		}
+	}
+
+	if (json_error) {
+		cerr << "Corrupt JSON responce to contract creation: " <<
+		 	result << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cout << "Parsed contract creation transaction hash: " <<
+		transaction_hash << endl;
+
+	//TODO: eth.getTransactionReceipt -> json(contractAddress)
+	
 
 	//TODO: Save contract to config
 	cfg_root->add("contract_addr", Setting::TypeString) = "test";
@@ -272,7 +310,7 @@ string BlockchainSecLib::eth_call(string abi_data) {
 								"\"params\":[{"
 									//"\"from\":\"" + this->eth_my_addr + "\","
 									"\"to\":\"" + this->eth_sec_contract_addr + "\","
-									"\"data\":\"" + abi_data +
+									"\"data\":\"0x" + abi_data +
 								"\"},\"latest\"],\"id\":1}";
 
 #ifdef _DEBUG
@@ -292,12 +330,32 @@ string BlockchainSecLib::eth_sendTransaction(string abi_data) {
 									"\"to\":\"" + this->eth_sec_contract_addr + "\","
 									//"\"gas\":0,"
 									//"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
-									"\"data\":\"" + abi_data +
+									"\"data\":\"0x" + abi_data +
 								"\"}],"
 								"\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_sendTransaction()" << endl;
+#endif //_DEBUG
+
+	return this->eth_ipc_request(json_request);
+}
+
+
+
+string BlockchainSecLib::eth_createContract(string data) {
+	string json_request = "{\"jsonrpc\":\"2.0\","
+								"\"method\":\"eth_sendTransaction\""
+								",\"params\":[{"
+									"\"from\":\"" + this->eth_my_addr + "\","
+									//"\"gas\":0,"
+									//"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
+									"\"data\":\"0x" + data +
+								"\"}],"
+								"\"id\":1}";
+
+#ifdef _DEBUG
+	cout << "eth_createContract()" << endl;
 #endif //_DEBUG
 
 	return this->eth_ipc_request(json_request);
