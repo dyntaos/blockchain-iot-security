@@ -11,6 +11,7 @@
 #include <gason.h>
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
+//TODO: Make function to see if "0x" needs to be prepended to function arguments
 
 using namespace std;
 using namespace libconfig;
@@ -77,8 +78,8 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 		} else {
 			cout << "Config doesnt have contract_addr" << endl
-				<< "Either import a config or compile and upload"
-				" a contract using the `--compile` flag" << endl;
+				<< "Either add a contract address to the conf file or create a "
+				"new contract using the `--compile` flag" << endl;
 
 			exit(EXIT_FAILURE);
 		}
@@ -165,7 +166,11 @@ void BlockchainSecLib::test(void) {
 
 
 bool BlockchainSecLib::create_contract(void) {
-	string contract_bin, result, transaction_hash;
+	string contract_bin,
+			result,
+			transaction_hash,
+			transaction_receipt,
+			contract_addr;
 	char *source, *endptr;
 	bool json_error = true;
 	int status;
@@ -186,7 +191,7 @@ bool BlockchainSecLib::create_contract(void) {
 
 	status = jsonParse(source, &endptr, &value, allocator);
 	if (status != JSON_OK) {
-		cerr << "Error parsing responce JSON data: " << jsonStrError(status) <<
+		cerr << "Error parsing responce JSON data from eth_sendTransaction() during contract creation: " << jsonStrError(status) <<
 			" at " << endptr - source << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -203,7 +208,7 @@ bool BlockchainSecLib::create_contract(void) {
 	}
 
 	if (json_error) {
-		cerr << "Corrupt JSON responce to contract creation: " <<
+		cerr << "Corrupt JSON responce to eth_sendTransaction during contract creation: " <<
 		 	result << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -212,10 +217,48 @@ bool BlockchainSecLib::create_contract(void) {
 		transaction_hash << endl;
 
 	//TODO: eth.getTransactionReceipt -> json(contractAddress)
-	
+	sleep(10);
+	transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
+
+	cout << "Transaction Receipt: " <<
+		transaction_receipt << endl;
+
+	source = (char*) transaction_receipt.c_str(); //TODO: Is there a better solution than this cast?
+
+	status = jsonParse(source, &endptr, &value, allocator);
+	if (status != JSON_OK) {
+		cerr << "Error parsing responce JSON data from eth_getTransactionReceipt() during contract creation: " << jsonStrError(status) <<
+			" at " << endptr - source << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if (value.getTag() == JSON_OBJECT) {
+		for (auto i: value) {
+			if ((strcmp(i->key, "contractAddress") == 0) && (i->value.getTag() == JSON_STRING)) {
+				cout << i->value.toString() << endl;
+				contract_addr = i->value.toString();
+				json_error = false;
+				break;
+			}
+		}
+	}
+
+	if (json_error) {
+		cerr << "Corrupt JSON responce to eth_getTransactionReceipt during contract creation: " <<
+		 	result << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if (contract_addr.compare("null") == 0) {
+		cerr << "Failed to obtain contract address..." << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cout << "Contract Address: " <<
+		contract_addr << endl;
 
 	//TODO: Save contract to config
-	cfg_root->add("contract_addr", Setting::TypeString) = "test";
+	cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
 	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 
 	return true;
@@ -356,6 +399,22 @@ string BlockchainSecLib::eth_createContract(string data) {
 
 #ifdef _DEBUG
 	cout << "eth_createContract()" << endl;
+#endif //_DEBUG
+
+	return this->eth_ipc_request(json_request);
+}
+
+
+
+string BlockchainSecLib::eth_getTransactionReceipt(string transaction_hash) {
+	string json_request = "{\"jsonrpc\":\"2.0\","
+								"\"method\":\"eth_getTransactionReceipt\","
+								"\"params\":["
+									"\"" + transaction_hash + "\""
+								"],\"id\":1}";
+
+#ifdef _DEBUG
+	cout << "eth_getTransactionReceipt()" << endl;
 #endif //_DEBUG
 
 	return this->eth_ipc_request(json_request);

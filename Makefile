@@ -14,10 +14,11 @@ CFLAGS =
 CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic
 LDFLAGS =
 
-GASONLIB = ./gason/src
-CXXOPTSLIB = ./cxxopts/include
+GASONINC = ./gason/src
+CXXOPTSINC = ./cxxopts/include
+WIRINGPIINC = ./WiringPi/wiringPi
 
-INCLUDE = -I . -I $(CXXOPTSLIB) -I $(GASONLIB)
+INCLUDE = -I . -I $(CXXOPTSINC) -I $(GASONINC) -I $(WIRINGPIINC)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
@@ -29,7 +30,7 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean
 
-all: mkdirs $(BIN)/client
+all: mkdirs $(BIN)/client $(BIN)/lora_server
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -71,5 +72,18 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchain
 
 ### Client Dependencies ###
 
-$(OBJ)/gason.o: $(GASONLIB)/gason.cpp
+$(OBJ)/gason.o: $(GASONINC)/gason.cpp
 	$(CROSSCOMPILE)$(CC) -std=c++11 -c -o $@ $<
+
+
+### LoRa Server/Client Tests ###
+
+$(OBJ)/lora_server.o: lora_server.cpp
+	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ -I ./include $(INCLUDE) $<
+
+$(OBJ)/base64.o: base64.c
+	$(CROSSCOMPILE)$(CC) -c -o $@ -I ./include $<
+
+$(BIN)/lora_server: $(OBJ)/lora_server.o $(OBJ)/base64.o
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $^ -lwiringPi
+

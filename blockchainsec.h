@@ -42,6 +42,7 @@ class BlockchainSecLib {
 		std::string eth_call(std::string abi_data);
 		std::string eth_sendTransaction(std::string abi_data);
 		std::string eth_createContract(std::string data);
+		std::string eth_getTransactionReceipt(std::string transaction_hash);
 };
 
 }
