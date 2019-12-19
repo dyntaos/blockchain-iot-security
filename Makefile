@@ -17,8 +17,9 @@ LDFLAGS =
 GASONINC = ./gason/src
 CXXOPTSINC = ./cxxopts/include
 WIRINGPIINC = ./WiringPi/wiringPi
+LIBCONFIGINC = ./libconfig/lib
 
-INCLUDE = -I . -I $(CXXOPTSINC) -I $(GASONINC) -I $(WIRINGPIINC)
+INCLUDE = -I . -I $(CXXOPTSINC) -I $(GASONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build

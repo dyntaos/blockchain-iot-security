@@ -215,8 +215,6 @@ uint32_t freq = 868100000; // in Mhz! (868.1)
 #define TX_BUFF_SIZE    2048
 #define STATUS_SIZE     1024
 
-void LoadConfiguration(string filename);
-void PrintConfiguration();
 
 void Die(const char *s)
 {
@@ -521,8 +519,6 @@ int main()
   //uint32_t lasttime;
   unsigned int led1_timer;
 
-  LoadConfiguration("global_conf.json");
-  PrintConfiguration();
 
   // Init WiringPI
   wiringPiSetup() ;
