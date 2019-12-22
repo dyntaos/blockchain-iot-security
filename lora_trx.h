@@ -169,6 +169,8 @@ class LoraTrx {
 		bool receive(char *payload);
 		void configPower(int8_t pw);
 		void writeBuf(byte addr, byte *value, byte len);
+		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
+		void txlora(byte *frame, byte datalen);
 		static void *server(void *arg); //TODO: Does this have to have a different access modifier to be a thread main?
 
 	public:
@@ -181,8 +183,6 @@ class LoraTrx {
 		LoraTrx(void);
 		std::string readMessage(void);
 		bool sendMessage(std::string msg);
-		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
-		void txlora(byte *frame, byte datalen);
 		void server_init(void);
 		void close_server(void);
 
