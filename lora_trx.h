@@ -126,6 +126,11 @@
 #define MAP_DIO1_LORA_NOP      0x30  // --11----
 #define MAP_DIO2_LORA_NOP      0xC0  // ----11--
 
+#define PIPE_SERVER_WRITE      0
+#define PIPE_SERVER_READ       1
+
+#define MAX_PIPE_BUFFER_SZ     1048576
+
 
 typedef unsigned char byte;
 
@@ -150,6 +155,10 @@ class LoraTrx {
 		// Set center frequency
 		uint32_t  freq = 915100000; // Mhz
 
+		int buffer_pipe[2];
+		pthread_t server_thread;
+		bool halt_server = false;
+
 		void selectreceiver(void);
 		void unselectreceiver(void);
 		byte readReg(byte addr);
@@ -159,13 +168,23 @@ class LoraTrx {
 		bool receive(char *payload);
 		void configPower(int8_t pw);
 		void writeBuf(byte addr, byte *value, byte len);
+		static void *server(void *arg); //TODO: Does this have to have a different access modifier to be a thread main?
 
 	public:
+		struct server_params {
+			bool *halt_server;
+			int *buffer_pipe;
+			LoraTrx *trx_ptr;
+		};
+
 		LoraTrx(void);
+		std::string readMessage(void);
 		void receiveMode(void);
 		void transmitMode(void);
-		bool receivepacket(std::string &msg, unsigned int &len, byte &packet_rssi, byte &rssi, long int &snr);
+		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
 		void txlora(byte *frame, byte datalen);
+		void server_init(void);
+		void close_server(void);
 
 };
 

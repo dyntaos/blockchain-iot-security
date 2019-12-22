@@ -9,16 +9,12 @@
 
 #include <iostream>
 #include <string>
-#include <stdio.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <string.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <stdlib.h>
 
-#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <pthread.h>
 
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -103,7 +99,7 @@ LoraTrx::LoraTrx(void) {
 
 	if (version == 0x22) {
 		// sx1272
-		printf("SX1272 detected, starting.\n");
+		cout << "SX1272 detected, starting." << endl;
 		sx1272 = true;
 	} else {
 		// sx1276?
@@ -114,12 +110,11 @@ LoraTrx::LoraTrx(void) {
 		version = readReg(REG_VERSION);
 		if (version == 0x12) {
 			// sx1276
-			printf("SX1276 detected, starting.\n");
+			cout << "SX1276 detected, starting." << endl;
 			sx1272 = false;
 		} else {
-			printf("Unrecognized transceiver.\n");
-			//printf("Version: 0x%x\n",version);
-			exit(1);
+			cerr << "Unrecognized transceiver [version " << version << "]" << endl;
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -179,7 +174,7 @@ bool LoraTrx::receive(char *payload) {
 
 	//  payload crc: 0x20
 	if((irqflags & 0x20) == 0x20) {
-		printf("CRC error\n");
+		cout << "CRC error" << endl;
 		writeReg(REG_IRQ_FLAGS, 0x20);
 		return false;
 	} else {
@@ -199,7 +194,7 @@ bool LoraTrx::receive(char *payload) {
 
 
 
-bool LoraTrx::receivepacket(string &msg, unsigned int &len, byte &packet_rssi, byte &rssi, long int &snr) {
+bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr) {
 
 	//long int SNR;
 	int rssicorr;
@@ -292,7 +287,7 @@ void LoraTrx::txlora(byte *frame, byte datalen) {
 	// now we actually start the transmission
 	opmode(OPMODE_TX);
 
-	printf("send: %s\n", frame);
+	cout << "TX: " << frame << endl;
 }
 
 
@@ -309,48 +304,137 @@ void LoraTrx::transmitMode(void) {
 
 
 
+void LoraTrx::server_init(void) {
+	int pipe_flags;
+	uint32_t max_buffer_pipe_sz = 1048576; //TODO: Change after read max size file
+	struct server_params *server_args;
+
+	//TODO: Read /proc/sys/fs/pipe-max-size to max_buffer_pipe_sz
+	
+	if (max_buffer_pipe_sz > MAX_PIPE_BUFFER_SZ) {
+		max_buffer_pipe_sz = MAX_PIPE_BUFFER_SZ;
+	}
+
+	pipe(buffer_pipe);
+
+	pipe_flags = fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_GETFL);
+	pipe_flags |= O_NONBLOCK;
+	if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETFL, pipe_flags) == -1) {
+		cerr << "Failed to set LoRa server pipe to non-blocking!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETPIPE_SZ, max_buffer_pipe_sz) == -1) {
+		cerr << "Failed to set LoRa server pipe size!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	
+	halt_server = false;
+	server_args = (struct server_params*) malloc(sizeof(struct server_params));
+	if (server_args == NULL) {
+		cerr << "Failed to malloc() LoRa server argument structure!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	server_args->buffer_pipe = buffer_pipe;
+	server_args->halt_server = &halt_server;
+	server_args->trx_ptr = this;
+	this->receiveMode();
+	
+	if (pthread_create(
+			&server_thread,
+			NULL,
+			this->server,
+			server_args
+		) != 0)
+	{
+		cerr << "Failed to create the LoRa server thread!" << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+
+
+void LoraTrx::close_server(void) {
+	halt_server = true;
+	//TODO: Check return val
+	pthread_join(server_thread, NULL);
+	close(buffer_pipe[PIPE_SERVER_WRITE]);
+	close(buffer_pipe[PIPE_SERVER_READ]);
+}
+
+
+
+void *LoraTrx::server(void *arg) {
+	string msg;
+	byte len, prssi, rssi;
+	long int snr;
+	struct server_params *trx = (struct server_params*) arg;
+	
+	while (!(*trx->halt_server)) {
+		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr)) {
+			//TODO: Combine these into a struct to do just 1 syscall
+			//except the msg so we can get the len and read just that long of a msg
+			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &len, sizeof(len));
+			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &prssi, sizeof(prssi));
+			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &rssi, sizeof(rssi));
+			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &snr, sizeof(snr));
+			write(trx->buffer_pipe[PIPE_SERVER_WRITE], msg.c_str(), len);
+		}
+		delay(1);
+	}
+
+	pthread_exit(NULL);
+}
+
+
+
+
+
+
+string LoraTrx::readMessage(void) {
+	char c_msg[256];
+	byte len, prssi, rssi;
+	long int snr;
+	
+	//TODO: Return values -- error = flush buffer?
+	read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len));
+	read(buffer_pipe[PIPE_SERVER_READ], &prssi, sizeof(prssi));
+	read(buffer_pipe[PIPE_SERVER_READ], &rssi, sizeof(rssi));
+	read(buffer_pipe[PIPE_SERVER_READ], &snr, sizeof(snr));
+	read(buffer_pipe[PIPE_SERVER_READ], &c_msg, len);
+	c_msg[len] = 0; //Ensure the string read is null terminated
+
+	return c_msg;
+}
+
+
+
 int main (int argc, char *argv[]) {
 	LoraTrx trx;
 	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
 	char tx[1300];
 
 	if (argc < 2) {
-		printf ("Usage: argv[0] sender|rec [message]\n");
-		exit(1);
+		cout << "Usage: " << argv[0] << " sender|rec" << endl;
+		exit(EXIT_FAILURE);
 	}
 
 	if (!strcmp("sender", argv[1])) {
 
-		//printf("Send packets at SF%i on %.6lf Mhz.\n", sf,(double)freq/1000000);
-		//printf("------------------\n");
-
-		//while(1) {
 		for (byte i = 1; i < 256; i++) {
 			strncpy(tx, d, i);
 			trx.txlora((byte*)tx, i);
 			delay(250);
 		}
+
 	} else {
-		string msg;
-		unsigned int len;
-		byte prssi, rssi;
-		long int snr;
+		
+		trx.server_init();
 
-		// radio init
-
-
-		//printf("Listening at SF%i on %.6lf Mhz.\n", sf,(double)freq/1000000);
-		//printf("------------------\n");
-
-		trx.receiveMode();
-
-		while(1) {
-			if (trx.receivepacket(msg, len, prssi, rssi, snr)) {
-				cout << len << endl << msg << endl;
-			}
-			delay(1);
+		for (;;) {
+			cout << "LoraTrx::readMessage() returned: " << trx.readMessage() << endl;
 		}
 
+		trx.close_server();
 	}
 
 	return (0);
