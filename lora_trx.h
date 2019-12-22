@@ -126,8 +126,8 @@
 #define MAP_DIO1_LORA_NOP      0x30  // --11----
 #define MAP_DIO2_LORA_NOP      0xC0  // ----11--
 
-#define PIPE_SERVER_WRITE      0
-#define PIPE_SERVER_READ       1
+#define PIPE_SERVER_READ       0
+#define PIPE_SERVER_WRITE      1
 
 #define MAX_PIPE_BUFFER_SZ     1048576
 

@@ -387,9 +387,6 @@ void *LoraTrx::server(void *arg) {
 
 
 
-
-
-
 string LoraTrx::readMessage(void) {
 	char c_msg[256];
 	byte len, prssi, rssi;
@@ -397,7 +394,7 @@ string LoraTrx::readMessage(void) {
 	
 	//TODO: Return values -- error = flush buffer?
 	if (read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len)) == -1) {
-		cout << "errno " << errno << endl;
+		cout << "Error reading from LoRa server pipe [errno " << errno << "]" << endl;
 	}
 	read(buffer_pipe[PIPE_SERVER_READ], &prssi, sizeof(prssi));
 	read(buffer_pipe[PIPE_SERVER_READ], &rssi, sizeof(rssi));
