@@ -31,7 +31,7 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean
 
-all: mkdirs $(BIN)/client $(BIN)/lora_server
+all: mkdirs $(BIN)/client $(BIN)/lora_trx
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -79,12 +79,9 @@ $(OBJ)/gason.o: $(GASONINC)/gason.cpp
 
 ### LoRa Server/Client Tests ###
 
-$(OBJ)/lora_server.o: lora_server.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ -I ./include $(INCLUDE) $<
+$(OBJ)/lora_trx.o: lora_trx.cpp
+	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ $(INCLUDE) $<
 
-$(OBJ)/base64.o: base64.c
-	$(CROSSCOMPILE)$(CC) -c -o $@ -I ./include $<
-
-$(BIN)/lora_server: $(OBJ)/lora_server.o $(OBJ)/base64.o
+$(BIN)/lora_trx: $(OBJ)/lora_trx.o
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $^ -lwiringPi
 
