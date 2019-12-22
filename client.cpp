@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 #include <blockchainsec.h>
+#include <lora_trx.h>
 #include <client.h>
 
 using namespace std;
@@ -43,6 +44,7 @@ cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+	LoraTrx *trx;
 	cout << ".:Blockchain Security Framework Client:." << endl;
 
 	auto flags = parse_flags(argc, argv);;
@@ -56,15 +58,23 @@ int main(int argc, char *argv[]) {
 
 	if (gateway_flag) {
 		cout << "Got gateway flag" << endl;
+		trx = new LoraTrx();
+		trx->server_init();
 	}
 
 	sec = new BlockchainSecLib(compile_flag);
-
 
 #ifdef _DEBUG
 	sec->test();
 #endif //_DEBUG
 
+	if (gateway_flag) {
+		for (;;) {
+			cout << "LoraTrx::readMessage() returned: " << trx->readMessage() << endl;
+		}
+
+		trx->close_server();
+	}
 
 	return EXIT_SUCCESS;
 }

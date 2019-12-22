@@ -310,7 +310,7 @@ void LoraTrx::server_init(void) {
 	struct server_params *server_args;
 
 	//TODO: Read /proc/sys/fs/pipe-max-size to max_buffer_pipe_sz
-	
+
 	if (max_buffer_pipe_sz > MAX_PIPE_BUFFER_SZ) {
 		max_buffer_pipe_sz = MAX_PIPE_BUFFER_SZ;
 	}
@@ -327,7 +327,7 @@ void LoraTrx::server_init(void) {
 		cerr << "Failed to set LoRa server pipe size!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	
+
 	halt_server = false;
 	server_args = (struct server_params*) malloc(sizeof(struct server_params));
 	if (server_args == NULL) {
@@ -338,7 +338,7 @@ void LoraTrx::server_init(void) {
 	server_args->halt_server = &halt_server;
 	server_args->trx_ptr = this;
 	this->receiveMode();
-	
+
 	if (pthread_create(
 			&server_thread,
 			NULL,
@@ -368,7 +368,7 @@ void *LoraTrx::server(void *arg) {
 	byte len, prssi, rssi;
 	long int snr;
 	struct server_params *trx = (struct server_params*) arg;
-	
+
 	while (!(*trx->halt_server)) {
 		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr)) {
 			//TODO: Combine these into a struct to do just 1 syscall
@@ -391,7 +391,7 @@ string LoraTrx::readMessage(void) {
 	char c_msg[256];
 	byte len, prssi, rssi;
 	long int snr;
-	
+
 	//TODO: Return values -- error = flush buffer?
 	if (read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len)) == -1) {
 		cout << "Error reading from LoRa server pipe [errno " << errno << "]" << endl;
@@ -406,7 +406,7 @@ string LoraTrx::readMessage(void) {
 }
 
 
-
+/*
 int main (int argc, char *argv[]) {
 	LoraTrx trx;
 	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
@@ -426,7 +426,7 @@ int main (int argc, char *argv[]) {
 		}
 
 	} else {
-		
+
 		trx.server_init();
 
 		for (;;) {
@@ -438,3 +438,4 @@ int main (int argc, char *argv[]) {
 
 	return (0);
 }
+*/

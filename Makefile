@@ -64,24 +64,23 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
+$(OBJ)/lora_trx.o: lora_trx.cpp
+	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ $(INCLUDE) $<
+
 $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o -L $(LIB) -lblockchainsec -lconfig++
+$(BIN)/client: $(OBJ)/client.o $(OBJ)/lora_trx.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+		$(OBJ)/client.o \
+		$(OBJ)/lora_trx.o \
+		$(OBJ)/misc.o \
+		$(OBJ)/gason.o \
+		-L $(LIB) \
+		-lblockchainsec -lconfig++ -lwiringPi -lpthread
 	cp ./*.sol ./*.conf $(BIN)/
 
 ### Client Dependencies ###
 
 $(OBJ)/gason.o: $(GASONINC)/gason.cpp
 	$(CROSSCOMPILE)$(CC) -std=c++11 -c -o $@ $<
-
-
-### LoRa Server/Client Tests ###
-
-$(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ $(INCLUDE) $<
-
-$(BIN)/lora_trx: $(OBJ)/lora_trx.o
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $^ -lwiringPi -lpthread
-
