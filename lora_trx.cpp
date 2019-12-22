@@ -305,7 +305,7 @@ void LoraTrx::transmitMode(void) {
 
 
 void LoraTrx::server_init(void) {
-	int pipe_flags;
+	//int pipe_flags;
 	uint32_t max_buffer_pipe_sz = 1048576; //TODO: Change after read max size file
 	struct server_params *server_args;
 
@@ -317,12 +317,12 @@ void LoraTrx::server_init(void) {
 
 	pipe(buffer_pipe);
 
-	pipe_flags = fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_GETFL);
-	pipe_flags |= O_NONBLOCK;
-	if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETFL, pipe_flags) == -1) {
-		cerr << "Failed to set LoRa server pipe to non-blocking!" << endl;
-		exit(EXIT_FAILURE);
-	}
+	//pipe_flags = fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_GETFL);
+	//pipe_flags |= O_NONBLOCK;
+	//if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETFL, pipe_flags) == -1) {
+	//	cerr << "Failed to set LoRa server pipe to non-blocking!" << endl;
+	//	exit(EXIT_FAILURE);
+	//}
 	if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETPIPE_SZ, max_buffer_pipe_sz) == -1) {
 		cerr << "Failed to set LoRa server pipe size!" << endl;
 		exit(EXIT_FAILURE);
@@ -396,7 +396,9 @@ string LoraTrx::readMessage(void) {
 	long int snr;
 	
 	//TODO: Return values -- error = flush buffer?
-	read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len));
+	if (read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len)) == -1) {
+		cout << "errno " << errno << endl;
+	}
 	read(buffer_pipe[PIPE_SERVER_READ], &prssi, sizeof(prssi));
 	read(buffer_pipe[PIPE_SERVER_READ], &rssi, sizeof(rssi));
 	read(buffer_pipe[PIPE_SERVER_READ], &snr, sizeof(snr));
