@@ -292,52 +292,52 @@ void LoraTrx::txlora(byte *frame, byte datalen) {
 
 
 
-void LoraTrx::receiveMode(void) {
-	opmode(OPMODE_RX);
-}
-
-
-
-void LoraTrx::transmitMode(void) {
-	opmode(OPMODE_TX);
-}
-
-
-
 void LoraTrx::server_init(void) {
-	//int pipe_flags;
-	uint32_t max_buffer_pipe_sz = 1048576; //TODO: Change after read max size file
+	int tx_pipe_flags;
+	uint32_t max_trx_buffer_fd_sz = 1048576; //TODO: Change after read max size file
 	struct server_params *server_args;
 
-	//TODO: Read /proc/sys/fs/pipe-max-size to max_buffer_pipe_sz
+	//TODO: Read /proc/sys/fs/pipe-max-size to max_trx_buffer_fd_sz
 
-	if (max_buffer_pipe_sz > MAX_PIPE_BUFFER_SZ) {
-		max_buffer_pipe_sz = MAX_PIPE_BUFFER_SZ;
+	if (max_trx_buffer_fd_sz > MAX_PIPE_BUFFER_SZ) {
+		max_trx_buffer_fd_sz = MAX_PIPE_BUFFER_SZ;
 	}
 
-	pipe(buffer_pipe);
+	pipe(rx_buffer_fd);
+	pipe(tx_buffer_fd);
 
-	//pipe_flags = fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_GETFL);
-	//pipe_flags |= O_NONBLOCK;
-	//if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETFL, pipe_flags) == -1) {
-	//	cerr << "Failed to set LoRa server pipe to non-blocking!" << endl;
-	//	exit(EXIT_FAILURE);
-	//}
-	if (fcntl(buffer_pipe[PIPE_SERVER_WRITE], F_SETPIPE_SZ, max_buffer_pipe_sz) == -1) {
-		cerr << "Failed to set LoRa server pipe size!" << endl;
+	// Set the transmit pipe to non-blocking
+	tx_pipe_flags = fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_GETFL);
+	tx_pipe_flags |= O_NONBLOCK;
+	if (fcntl(rx_buffer_fd[SERVER_PIPE_READ], F_SETFL, tx_pipe_flags) == -1) {
+		cerr << "Failed to set LoRa transmit server pipe to non-blocking!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	
+	// Set the transmit and receive pipe buffer sizes to MAX_PIPE_BUFFER_SZ or
+	// /proc/sys/fs/pipe-max-size (whichever is smaller)
+	if (fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_SETPIPE_SZ, max_trx_buffer_fd_sz) == -1) {
+		cerr << "Failed to set LoRa transmit server pipe size!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (fcntl(rx_buffer_fd[SERVER_PIPE_READ], F_SETPIPE_SZ, max_trx_buffer_fd_sz) == -1) {
+		cerr << "Failed to set LoRa receive server pipe size!" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	halt_server = false;
+	// Populate struct of arguments for server thread
 	server_args = (struct server_params*) malloc(sizeof(struct server_params));
 	if (server_args == NULL) {
 		cerr << "Failed to malloc() LoRa server argument structure!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	server_args->buffer_pipe = buffer_pipe;
+	server_args->tx_buffer_fd = tx_buffer_fd;
+	server_args->rx_buffer_fd = rx_buffer_fd;
 	server_args->halt_server = &halt_server;
 	server_args->trx_ptr = this;
-	this->receiveMode();
+
+	opmode(OPMODE_RX);
+	halt_server = false;
 
 	if (pthread_create(
 			&server_thread,
@@ -357,31 +357,50 @@ void LoraTrx::close_server(void) {
 	halt_server = true;
 	//TODO: Check return val
 	pthread_join(server_thread, NULL);
-	close(buffer_pipe[PIPE_SERVER_WRITE]);
-	close(buffer_pipe[PIPE_SERVER_READ]);
+	close(rx_buffer_fd[SERVER_PIPE_WRITE]);
+	close(rx_buffer_fd[SERVER_PIPE_READ]);
 }
 
 
 
 void *LoraTrx::server(void *arg) {
 	string msg;
+	char tx_data[256];
 	byte len, prssi, rssi;
 	long int snr;
+	int read_return;
+	bool last_transmit = false;
 	struct server_params *trx = (struct server_params*) arg;
+
+	trx->trx_ptr->opmode(OPMODE_RX);
 
 	while (!(*trx->halt_server)) {
 		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr)) {
+			if (last_transmit) {
+				trx->trx_ptr->opmode(OPMODE_RX);
+				last_transmit = false;
+			}
 			//TODO: Combine these into a struct to do just 1 syscall
 			//except the msg so we can get the len and read just that long of a msg
-			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &len, sizeof(len));
-			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &prssi, sizeof(prssi));
-			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &rssi, sizeof(rssi));
-			write(trx->buffer_pipe[PIPE_SERVER_WRITE], &snr, sizeof(snr));
-			write(trx->buffer_pipe[PIPE_SERVER_WRITE], msg.c_str(), len);
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &len, sizeof(len));
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &prssi, sizeof(prssi));
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &rssi, sizeof(rssi));
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &snr, sizeof(snr));
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
+		} else if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len))) > 0) {
+			if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], tx_data, len)) < 0) {
+				continue;
+			}
+			if (!last_transmit) {
+				trx->trx_ptr->opmode(OPMODE_TX);
+				last_transmit = true;
+			}
+			trx->trx_ptr->txlora((byte*) tx_data, len);
 		}
 		delay(1);
 	}
-
+	
+	*trx->halt_server = true;
 	pthread_exit(NULL);
 }
 
@@ -393,49 +412,28 @@ string LoraTrx::readMessage(void) {
 	long int snr;
 
 	//TODO: Return values -- error = flush buffer?
-	if (read(buffer_pipe[PIPE_SERVER_READ], &len, sizeof(len)) == -1) {
+	if (read(rx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len)) == -1) {
 		cout << "Error reading from LoRa server pipe [errno " << errno << "]" << endl;
 	}
-	read(buffer_pipe[PIPE_SERVER_READ], &prssi, sizeof(prssi));
-	read(buffer_pipe[PIPE_SERVER_READ], &rssi, sizeof(rssi));
-	read(buffer_pipe[PIPE_SERVER_READ], &snr, sizeof(snr));
-	read(buffer_pipe[PIPE_SERVER_READ], &c_msg, len);
+	read(rx_buffer_fd[SERVER_PIPE_READ], &prssi, sizeof(prssi));
+	read(rx_buffer_fd[SERVER_PIPE_READ], &rssi, sizeof(rssi));
+	read(rx_buffer_fd[SERVER_PIPE_READ], &snr, sizeof(snr));
+	read(rx_buffer_fd[SERVER_PIPE_READ], &c_msg, len);
 	c_msg[len] = 0; //Ensure the string read is null terminated
 
 	return c_msg;
 }
 
 
-/*
-int main (int argc, char *argv[]) {
-	LoraTrx trx;
-	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
-	char tx[1300];
 
-	if (argc < 2) {
-		cout << "Usage: " << argv[0] << " sender|rec" << endl;
-		exit(EXIT_FAILURE);
-	}
+bool LoraTrx::sendMessage(string msg) {
+	byte len;
 
-	if (!strcmp("sender", argv[1])) {
+	if (msg.length() > 255) return false;
+	len = (byte) msg.length();
 
-		for (byte i = 1; i < 256; i++) {
-			strncpy(tx, d, i);
-			trx.txlora((byte*)tx, i);
-			delay(250);
-		}
-
-	} else {
-
-		trx.server_init();
-
-		for (;;) {
-			cout << "LoraTrx::readMessage() returned: " << trx.readMessage() << endl;
-		}
-
-		trx.close_server();
-	}
-
-	return (0);
+	write(tx_buffer_fd[SERVER_PIPE_WRITE], &len, sizeof(len));
+	write(tx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
+	return true;
 }
-*/
+

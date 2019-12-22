@@ -126,8 +126,8 @@
 #define MAP_DIO1_LORA_NOP      0x30  // --11----
 #define MAP_DIO2_LORA_NOP      0xC0  // ----11--
 
-#define PIPE_SERVER_READ       0
-#define PIPE_SERVER_WRITE      1
+#define SERVER_PIPE_READ       0
+#define SERVER_PIPE_WRITE      1
 
 #define MAX_PIPE_BUFFER_SZ     1048576
 
@@ -155,9 +155,10 @@ class LoraTrx {
 		// Set center frequency
 		uint32_t  freq = 915100000; // Mhz
 
-		int buffer_pipe[2];
+		int tx_buffer_fd[2];
+		int rx_buffer_fd[2];
 		pthread_t server_thread;
-		bool halt_server = false;
+		bool halt_server = true;
 
 		void selectreceiver(void);
 		void unselectreceiver(void);
@@ -173,14 +174,13 @@ class LoraTrx {
 	public:
 		struct server_params {
 			bool *halt_server;
-			int *buffer_pipe;
+			int *tx_buffer_fd, *rx_buffer_fd;
 			LoraTrx *trx_ptr;
 		};
 
 		LoraTrx(void);
 		std::string readMessage(void);
-		void receiveMode(void);
-		void transmitMode(void);
+		bool sendMessage(std::string msg);
 		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
 		void txlora(byte *frame, byte datalen);
 		void server_init(void);
