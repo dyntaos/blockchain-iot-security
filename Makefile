@@ -83,5 +83,5 @@ $(OBJ)/lora_trx.o: lora_trx.cpp
 	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ $(INCLUDE) $<
 
 $(BIN)/lora_trx: $(OBJ)/lora_trx.o
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $^ -lwiringPi
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ $^ -lwiringPi -lpthread
 
