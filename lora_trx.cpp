@@ -370,6 +370,7 @@ void *LoraTrx::server(void *arg) {
 	long int snr;
 	int read_return;
 	bool last_transmit = false;
+	byte *data;
 	struct server_params *trx = (struct server_params*) arg;
 
 	trx->trx_ptr->opmode(OPMODE_RX);
@@ -382,14 +383,20 @@ void *LoraTrx::server(void *arg) {
 				last_transmit = false;
 			}
 			cout << "server:write[" << (int)len << "]: " << msg << endl;
+			data = (byte*) malloc(6 + len);
+			data[0] = prssi;
+			data[1] = rssi;
+			*((int32_t) &data[2]) = (int32_t) snr;
+			memcpy(&data[6], tx_data, len);
 			//TODO: Combine these into a struct to do just 1 syscall
 			//except the msg so we can get the len and read just that long of a msg
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &len, sizeof(len));
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &prssi, sizeof(prssi));
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &rssi, sizeof(rssi));
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &snr, sizeof(snr));
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
-		} else if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len))) > 0) {
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &len, 1);
+			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &prssi, sizeof(prssi));
+			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &rssi, sizeof(rssi));
+			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &snr, sizeof(snr));
+			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
+			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], data, 6 + len);
+		} else if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], &len, 1)) > 0) {
 			if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], tx_data, len)) < 0) {
 				continue;
 			}
@@ -412,16 +419,34 @@ void *LoraTrx::server(void *arg) {
 string LoraTrx::readMessage(void) {
 	char c_msg[256];
 	byte len, prssi, rssi;
-	long int snr;
+	//long int snr;
+	int32_t snr;
 
 	//TODO: Return values -- error = flush buffer?
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len)) == -1) {
-		cout << "Error reading from LoRa server pipe [errno " << errno << "]" << endl;
+		cout << "Error reading from LoRa server pipe (1) [errno " << errno << "]" << endl;
+		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
-	read(rx_buffer_fd[SERVER_PIPE_READ], &prssi, sizeof(prssi));
-	read(rx_buffer_fd[SERVER_PIPE_READ], &rssi, sizeof(rssi));
-	read(rx_buffer_fd[SERVER_PIPE_READ], &snr, sizeof(snr));
-	read(rx_buffer_fd[SERVER_PIPE_READ], &c_msg, len);
+	if (read(rx_buffer_fd[SERVER_PIPE_READ], &prssi, 1) == -1) {
+		cout << "Error reading from LoRa server pipe (2) [errno " << errno << "]" << endl;
+		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
+	}
+
+	if (read(rx_buffer_fd[SERVER_PIPE_READ], &rssi, 1) == -1) {
+		cout << "Error reading from LoRa server pipe (3) [errno " << errno << "]" << endl;
+		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
+	}
+
+	if (read(rx_buffer_fd[SERVER_PIPE_READ], &snr, 4) == -1) {
+		cout << "Error reading from LoRa server pipe (4) [errno " << errno << "]" << endl;
+		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
+	}
+
+	if (read(rx_buffer_fd[SERVER_PIPE_READ], &c_msg, len) == -1) {
+		cout << "Error reading from LoRa server pipe (5) [errno " << errno << "]" << endl;
+		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
+	}
+
 	c_msg[len] = 0; //Ensure the string read is null terminated
 
 	return c_msg;
