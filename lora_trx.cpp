@@ -286,7 +286,7 @@ void LoraTrx::txlora(byte *frame, byte datalen) {
 	writeBuf(REG_FIFO, frame, datalen);
 	// now we actually start the transmission
 	opmode(OPMODE_TX);
-
+	frame[datalen] = 0; // TODO: Temporary
 	cout << "TX: " << frame << endl;
 }
 
@@ -375,7 +375,7 @@ void *LoraTrx::server(void *arg) {
 	trx->trx_ptr->opmode(OPMODE_RX);
 
 	while (!(*trx->halt_server)) {
-		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr)) {
+		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr) && len > 0) {
 			if (last_transmit) {
 				trx->trx_ptr->opmode(OPMODE_RX);
 				last_transmit = false;
