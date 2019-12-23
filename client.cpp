@@ -56,7 +56,6 @@ void *senderThread(void * arg) {
 	trx = (LoraTrx*) arg;
 
 	for (;;) {
-		cout << "LoraTrx::readMessage() returned: " << trx->readMessage() << endl;
 		if (rand() % 10 == 0) {
 			r = rand() % 255;
 			cout << "Send " << r << endl;
