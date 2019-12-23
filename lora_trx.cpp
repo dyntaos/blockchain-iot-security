@@ -425,26 +425,21 @@ string LoraTrx::readMessage(void) {
 	//TODO: Return values -- error = flush buffer?
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len)) == -1) {
 		cout << "Error reading from LoRa server pipe (1) [errno " << errno << "]" << endl;
-		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &prssi, 1) == -1) {
 		cout << "Error reading from LoRa server pipe (2) [errno " << errno << "]" << endl;
-		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
 
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &rssi, 1) == -1) {
 		cout << "Error reading from LoRa server pipe (3) [errno " << errno << "]" << endl;
-		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
 
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &snr, 4) == -1) {
 		cout << "Error reading from LoRa server pipe (4) [errno " << errno << "]" << endl;
-		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
 
 	if (read(rx_buffer_fd[SERVER_PIPE_READ], &c_msg, len) == -1) {
 		cout << "Error reading from LoRa server pipe (5) [errno " << errno << "]" << endl;
-		fflush(rx_buffer_fd[SERVER_PIPE_READ]);
 	}
 
 	c_msg[len] = 0; //Ensure the string read is null terminated
