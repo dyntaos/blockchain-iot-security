@@ -309,7 +309,7 @@ void LoraTrx::server_init(void) {
 	// Set the transmit pipe to non-blocking
 	tx_pipe_flags = fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_GETFL);
 	tx_pipe_flags |= O_NONBLOCK;
-	if (fcntl(rx_buffer_fd[SERVER_PIPE_READ], F_SETFL, tx_pipe_flags) == -1) {
+	if (fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_SETFL, tx_pipe_flags) == -1) {
 		cerr << "Failed to set LoRa transmit server pipe to non-blocking!" << endl;
 		exit(EXIT_FAILURE);
 	}
