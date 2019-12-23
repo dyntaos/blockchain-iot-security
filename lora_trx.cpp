@@ -371,6 +371,7 @@ void *LoraTrx::server(void *arg) {
 	int read_return;
 	bool last_transmit = false;
 	byte *data;
+	int32_t *snrptr;
 	struct server_params *trx = (struct server_params*) arg;
 
 	trx->trx_ptr->opmode(OPMODE_RX);
@@ -386,7 +387,8 @@ void *LoraTrx::server(void *arg) {
 			data = (byte*) malloc(6 + len);
 			data[0] = prssi;
 			data[1] = rssi;
-			*((int32_t) &data[2]) = (int32_t) snr;
+			snrptr = (int32_t*) &data[2];
+			*snrptr = (int32_t) snr;
 			memcpy(&data[6], tx_data, len);
 			//TODO: Combine these into a struct to do just 1 syscall
 			//except the msg so we can get the len and read just that long of a msg
