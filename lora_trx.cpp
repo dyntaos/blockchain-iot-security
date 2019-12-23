@@ -375,11 +375,13 @@ void *LoraTrx::server(void *arg) {
 	trx->trx_ptr->opmode(OPMODE_RX);
 
 	while (!(*trx->halt_server)) {
+		len = 0;
 		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr) && len > 0) {
 			if (last_transmit) {
 				trx->trx_ptr->opmode(OPMODE_RX);
 				last_transmit = false;
 			}
+			cout << "server:write[" << (int)len << "]: " << msg << endl;
 			//TODO: Combine these into a struct to do just 1 syscall
 			//except the msg so we can get the len and read just that long of a msg
 			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &len, sizeof(len));
@@ -395,6 +397,7 @@ void *LoraTrx::server(void *arg) {
 				trx->trx_ptr->opmode(OPMODE_TX);
 				last_transmit = true;
 			}
+			cout << "server:txlora[" << (int)len << "]: " << tx_data << endl;
 			trx->trx_ptr->txlora((byte*) tx_data, len);
 		}
 		delay(1);

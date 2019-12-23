@@ -56,13 +56,11 @@ void *senderThread(void * arg) {
 	trx = (LoraTrx*) arg;
 
 	for (;;) {
-		if (rand() % 10 == 0) {
-			r = rand() % 255;
-			cout << "Send " << r << endl;
-			strncpy(output, d, r);
-			trx->sendMessage(output);
-		}
-		sleep(1);
+		sleep((rand() % 9) + 1);
+		r = rand() % 255;
+		strncpy(output, d, r);
+		cout << "Send[" << r << "]: " << output << endl;
+		trx->sendMessage(output);
 	}
 }
 
@@ -98,7 +96,7 @@ int main(int argc, char *argv[]) {
 		pthread_create(&send_thread, NULL, senderThread, trx);
 
 		for (;;) {
-			cout << "LoraTrx::readMessage() returned: " << trx->readMessage() << endl;
+			cout << "readMessage(): " << trx->readMessage() << endl;
 		}
 
 		trx->close_server();
