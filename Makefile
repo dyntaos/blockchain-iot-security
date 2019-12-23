@@ -31,7 +31,7 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean
 
-all: mkdirs $(BIN)/client $(BIN)/lora_trx
+all: mkdirs $(BIN)/client
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
