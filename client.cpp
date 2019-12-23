@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 #include <cxxopts.hpp>
 #include <blockchainsec.h>
 #include <lora_trx.h>
@@ -68,9 +69,19 @@ int main(int argc, char *argv[]) {
 	sec->test();
 #endif //_DEBUG
 
+	int r;
+	char output[256];
+	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
+
 	if (gateway_flag) {
 		for (;;) {
 			cout << "LoraTrx::readMessage() returned: " << trx->readMessage() << endl;
+			if (rand() % 1000 == 0) {
+				r = rand() % 255;
+				cout << "Send " << r << endl;
+				strncpy(output, d, r);
+				trx->sendMessage(output);
+			}
 		}
 
 		trx->close_server();
