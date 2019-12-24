@@ -9,12 +9,14 @@
 
 #include <iostream>
 #include <string>
+#include <queue>
+#include <mutex>
+#include <thread>
+
 #include <sys/types.h>
 #include <string.h>
-
 #include <fcntl.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -293,172 +295,116 @@ void LoraTrx::txlora(byte *frame, byte datalen) {
 
 
 void LoraTrx::server_init(void) {
-	int tx_pipe_flags;
-	uint32_t max_trx_buffer_fd_sz = 1048576; //TODO: Change after read max size file
-	struct server_params *server_args;
-
-	//TODO: Read /proc/sys/fs/pipe-max-size to max_trx_buffer_fd_sz
-
-	if (max_trx_buffer_fd_sz > MAX_PIPE_BUFFER_SZ) {
-		max_trx_buffer_fd_sz = MAX_PIPE_BUFFER_SZ;
-	}
-
-	pipe(rx_buffer_fd);
-	pipe(tx_buffer_fd);
-
-	// Set the transmit pipe to non-blocking
-	tx_pipe_flags = fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_GETFL);
-	tx_pipe_flags |= O_NONBLOCK;
-	if (fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_SETFL, tx_pipe_flags) == -1) {
-		cerr << "Failed to set LoRa transmit server pipe to non-blocking!" << endl;
-		exit(EXIT_FAILURE);
-	}
-	
-	// Set the transmit and receive pipe buffer sizes to MAX_PIPE_BUFFER_SZ or
-	// /proc/sys/fs/pipe-max-size (whichever is smaller)
-	if (fcntl(tx_buffer_fd[SERVER_PIPE_READ], F_SETPIPE_SZ, max_trx_buffer_fd_sz) == -1) {
-		cerr << "Failed to set LoRa transmit server pipe size!" << endl;
-		exit(EXIT_FAILURE);
-	}
-	if (fcntl(rx_buffer_fd[SERVER_PIPE_READ], F_SETPIPE_SZ, max_trx_buffer_fd_sz) == -1) {
-		cerr << "Failed to set LoRa receive server pipe size!" << endl;
-		exit(EXIT_FAILURE);
-	}
-
-	// Populate struct of arguments for server thread
-	server_args = (struct server_params*) malloc(sizeof(struct server_params));
-	if (server_args == NULL) {
-		cerr << "Failed to malloc() LoRa server argument structure!" << endl;
-		exit(EXIT_FAILURE);
-	}
-	server_args->tx_buffer_fd = tx_buffer_fd;
-	server_args->rx_buffer_fd = rx_buffer_fd;
-	server_args->halt_server = &halt_server;
-	server_args->trx_ptr = this;
 
 	opmode(OPMODE_RX);
 	halt_server = false;
 
-	if (pthread_create(
-			&server_thread,
-			NULL,
+	server_thread = new thread(
 			this->server,
-			server_args
-		) != 0)
-	{
-		cerr << "Failed to create the LoRa server thread!" << endl;
-		exit(EXIT_FAILURE);
-	}
+			std::ref(rx_queue),
+			std::ref(tx_queue),
+			std::ref(rx_queue_mutex),
+			std::ref(tx_queue_mutex),
+			std::ref(halt_server),
+			std::ref(*this)
+	);
 }
 
 
 
 void LoraTrx::close_server(void) {
+	server_thread->join();
 	halt_server = true;
-	//TODO: Check return val
-	pthread_join(server_thread, NULL);
-	close(rx_buffer_fd[SERVER_PIPE_WRITE]);
-	close(rx_buffer_fd[SERVER_PIPE_READ]);
 }
 
 
 
-void *LoraTrx::server(void *arg) {
+void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, bool &halt_server, LoraTrx &trx) {
 	string msg;
-	char tx_data[256];
-	byte len, prssi, rssi;
-	long int snr;
-	int read_return;
 	bool last_transmit = false;
-	byte *data;
-	int32_t *snrptr;
-	struct server_params *trx = (struct server_params*) arg;
+	lora_msg *msg_buffer, *tx_buffer;
 
-	trx->trx_ptr->opmode(OPMODE_RX);
+	trx.opmode(OPMODE_RX);
 
-	while (!(*trx->halt_server)) {
-		len = 0;
-		if (trx->trx_ptr->receivepacket(msg, len, prssi, rssi, snr) && len > 0) {
+	while (!halt_server) {
+
+		if (msg_buffer == NULL) {
+			msg_buffer = (lora_msg*) malloc(sizeof(lora_msg));
+			//TODO: Check return value
+		}
+
+		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
 			if (last_transmit) {
-				trx->trx_ptr->opmode(OPMODE_RX);
+				trx.opmode(OPMODE_RX);
 				last_transmit = false;
 			}
-			cout << "server:write[" << (int)len << "]: " << msg << endl;
-			data = (byte*) malloc(6 + len);
-			data[0] = prssi;
-			data[1] = rssi;
-			snrptr = (int32_t*) &data[2];
-			*snrptr = (int32_t) snr;
-			memcpy(&data[6], tx_data, len);
-			//TODO: Combine these into a struct to do just 1 syscall
-			//except the msg so we can get the len and read just that long of a msg
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &len, 1);
-			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &prssi, sizeof(prssi));
-			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &rssi, sizeof(rssi));
-			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], &snr, sizeof(snr));
-			//write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
-			write(trx->rx_buffer_fd[SERVER_PIPE_WRITE], data, 6 + len);
-		} else if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], &len, 1)) > 0) {
-			if ((read_return = read(trx->tx_buffer_fd[SERVER_PIPE_READ], tx_data, len)) < 0) {
-				continue;
-			}
-			if (!last_transmit) {
-				trx->trx_ptr->opmode(OPMODE_TX);
-				last_transmit = true;
-			}
-			cout << "server:txlora[" << (int)len << "]: " << tx_data << endl;
-			trx->trx_ptr->txlora((byte*) tx_data, len);
+			cout << "rx_queue.push()[" << (int)msg_buffer->len << "]: " << msg_buffer->msg << endl;
+			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
+
+			rx_queue_mutex.lock();
+			rx_queue.push(msg_buffer);
+			rx_queue_mutex.unlock();
+
+			msg_buffer = NULL;
+
+		} else {
+			tx_queue_mutex.lock();
+			if (!tx_queue.empty()) {
+				tx_buffer = tx_queue.front();
+				tx_queue.pop();
+				tx_queue_mutex.unlock();
+
+				if (!last_transmit) {
+					trx.opmode(OPMODE_TX);
+					last_transmit = true;
+				}
+				cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
+				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
+				free(tx_buffer);
+				tx_buffer = NULL;
+
+			} else tx_queue_mutex.unlock();
 		}
 		delay(1);
 	}
 	
-	*trx->halt_server = true;
-	pthread_exit(NULL);
+	halt_server = true;
 }
 
 
 
 string LoraTrx::readMessage(void) {
-	char c_msg[256];
-	byte len, prssi, rssi;
-	//long int snr;
-	int32_t snr;
+	string result;
+	lora_msg *msg;
 
-	//TODO: Return values -- error = flush buffer?
-	if (read(rx_buffer_fd[SERVER_PIPE_READ], &len, sizeof(len)) == -1) {
-		cout << "Error reading from LoRa server pipe (1) [errno " << errno << "]" << endl;
-	}
-	if (read(rx_buffer_fd[SERVER_PIPE_READ], &prssi, 1) == -1) {
-		cout << "Error reading from LoRa server pipe (2) [errno " << errno << "]" << endl;
-	}
+	rx_queue_mutex.lock();
+	msg = rx_queue.front();
+	rx_queue_mutex.unlock();
 
-	if (read(rx_buffer_fd[SERVER_PIPE_READ], &rssi, 1) == -1) {
-		cout << "Error reading from LoRa server pipe (3) [errno " << errno << "]" << endl;
-	}
-
-	if (read(rx_buffer_fd[SERVER_PIPE_READ], &snr, 4) == -1) {
-		cout << "Error reading from LoRa server pipe (4) [errno " << errno << "]" << endl;
-	}
-
-	if (read(rx_buffer_fd[SERVER_PIPE_READ], &c_msg, len) == -1) {
-		cout << "Error reading from LoRa server pipe (5) [errno " << errno << "]" << endl;
-	}
-
-	c_msg[len] = 0; //Ensure the string read is null terminated
-
-	return c_msg;
+	result = msg->msg;
+	free(msg);
+	return result;
 }
 
 
 
-bool LoraTrx::sendMessage(string msg) {
-	byte len;
+bool LoraTrx::sendMessage(string msg_str) {
+	lora_msg *msg;
 
-	if (msg.length() > 255) return false;
-	len = (byte) msg.length();
+	if (msg_str.length() > 255) return false;
 
-	write(tx_buffer_fd[SERVER_PIPE_WRITE], &len, sizeof(len));
-	write(tx_buffer_fd[SERVER_PIPE_WRITE], msg.c_str(), len);
+	if ((msg = (lora_msg*) malloc(sizeof(lora_msg))) == NULL) {
+		cerr << "Malloc failed in LoraTrx::sendMessage()!" << endl;
+		return false;
+	}
+
+	msg->len = msg_str.length();
+	strncpy(msg->msg, msg_str.c_str(), msg->len);
+
+	tx_queue_mutex.lock();
+	tx_queue.push(msg);
+	tx_queue_mutex.unlock();
+
 	return true;
 }
 

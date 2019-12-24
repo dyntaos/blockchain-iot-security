@@ -135,6 +135,17 @@
 typedef unsigned char byte;
 
 
+
+typedef struct lora_msg_t {
+	char msg[256];
+	byte len;
+	byte prssi;
+	byte rssi;
+	int64_t snr;
+} lora_msg;
+
+
+
 class LoraTrx {
 
 	private:
@@ -155,9 +166,9 @@ class LoraTrx {
 		// Set center frequency
 		uint32_t  freq = 915100000; // Mhz
 
-		int tx_buffer_fd[2];
-		int rx_buffer_fd[2];
-		pthread_t server_thread;
+		std::queue<lora_msg*> rx_queue, tx_queue;
+		std::mutex rx_queue_mutex, tx_queue_mutex;
+		std::thread *server_thread;
 		bool halt_server = true;
 
 		void selectreceiver(void);
@@ -171,21 +182,15 @@ class LoraTrx {
 		void writeBuf(byte addr, byte *value, byte len);
 		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
 		void txlora(byte *frame, byte datalen);
-		static void *server(void *arg); //TODO: Does this have to have a different access modifier to be a thread main?
+		static void server(std::queue<lora_msg*> &rx_queue, std::queue<lora_msg*> &tx_queue, std::mutex &rx_queue_mutex, std::mutex &tx_queue_mutex, bool &halt_server, LoraTrx &trx);
 
 	public:
-		struct server_params {
-			bool *halt_server;
-			int *tx_buffer_fd, *rx_buffer_fd;
-			LoraTrx *trx_ptr;
-		};
 
 		LoraTrx(void);
 		std::string readMessage(void);
-		bool sendMessage(std::string msg);
+		bool sendMessage(std::string msg_str);
 		void server_init(void);
 		void close_server(void);
-
 };
 
 #endif //__LORA_TRX_H
