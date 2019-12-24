@@ -1,8 +1,11 @@
 #include <iostream>
+#include <thread>
+
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
+
 #include <cxxopts.hpp>
+
 #include <blockchainsec.h>
 #include <lora_trx.h>
 #include <client.h>
@@ -47,20 +50,17 @@ cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
 }
 
 
-void *senderThread(void * arg) {
-	LoraTrx *trx;
+void senderThread(LoraTrx &trx) {
 	int r;
 	char output[256];
 	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
-
-	trx = (LoraTrx*) arg;
 
 	for (;;) {
 		sleep((rand() % 9) + 1);
 		r = rand() % 255;
 		strncpy(output, d, r);
 		cout << "Send[" << r << "]: " << output << endl;
-		trx->sendMessage(output);
+		trx.sendMessage(output);
 	}
 }
 
@@ -75,11 +75,11 @@ int main(int argc, char *argv[]) {
 
 
 	if (compile_flag) {
-		cout << "Got compile flag" << endl;
+		cout << "Compiling smart contract..." << endl;
 	}
 
 	if (gateway_flag) {
-		cout << "Got gateway flag" << endl;
+		cout << "Started in gateway mode..." << endl;
 		trx = new LoraTrx();
 		trx->server_init();
 	}
@@ -91,12 +91,12 @@ int main(int argc, char *argv[]) {
 #endif //_DEBUG
 
 	if (gateway_flag) {
-		pthread_t send_thread;
-
-		pthread_create(&send_thread, NULL, senderThread, trx);
+		thread send_thread(senderThread, std::ref(*trx));
+		string msg;
 
 		for (;;) {
-			cout << "readMessage(): " << trx->readMessage() << endl;
+			msg = trx->readMessage();
+			cout << "readMessage(): " << msg << endl;
 		}
 
 		trx->close_server();
