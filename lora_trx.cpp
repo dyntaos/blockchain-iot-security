@@ -184,13 +184,15 @@ bool LoraTrx::receive(char *payload) {
 
 		byte currentAddr = readReg(REG_FIFO_RX_CURRENT_ADDR);
 		byte receivedCount = readReg(REG_RX_NB_BYTES);
-		receivedbytes = receivedCount;
+		receivedbytes = receivedCount; //TODO: Move to arguments rather than object scope
 
 		writeReg(REG_FIFO_ADDR_PTR, currentAddr);
 
 		for(int i = 0; i < receivedCount; i++) {
 			payload[i] = (char)readReg(REG_FIFO);
 		}
+		payload[receivedCount] = 0;
+		cout << "receive() payload: " << payload << endl;
 	}
 	return true;
 }
@@ -221,7 +223,7 @@ bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rss
 			}
 
 			msg = message;
-			len = (unsigned int) receivedbytes;
+			len = receivedbytes;
 			packet_rssi = readReg(0x1A) - rssicorr;
 			rssi = readReg(0x1B) - rssicorr;
 
@@ -335,6 +337,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		}
 
 		trx.opmode(OPMODE_RX);
+		delay(100); // TODO: Temporary test to see if this fixes issues
+
 		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
 			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
 			msg_buffer->msg[msg_buffer->len] = 0;
@@ -362,7 +366,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
 				delete tx_buffer;
 				tx_buffer = NULL;
-				delay(50); // TODO: Temporary test to see if this fixes issues
+				delay(100); // TODO: Temporary test to see if this fixes issues
 			} else tx_queue_mutex.unlock();
 		}
 		delay(1);
