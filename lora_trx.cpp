@@ -305,6 +305,7 @@ void LoraTrx::server_init(void) {
 			std::ref(tx_queue),
 			std::ref(rx_queue_mutex),
 			std::ref(tx_queue_mutex),
+			std::ref(rx_queue_condvar),
 			std::ref(halt_server),
 			std::ref(*this)
 	);
@@ -319,7 +320,7 @@ void LoraTrx::close_server(void) {
 
 
 
-void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, bool &halt_server, LoraTrx &trx) {
+void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
 	bool last_transmit = false;
 	lora_msg *msg_buffer, *tx_buffer;
@@ -378,7 +379,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 string LoraTrx::readMessage(void) {
 	string result;
 	lora_msg *msg;
-	unique_lock<mutex> ulock(rx_ulock_mtx);
+	unique_lock<mutex> ulock(rx_ulock_mutex);
 
 start:
 	while (rx_queue.empty()) rx_queue_condvar.wait(ulock);

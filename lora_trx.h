@@ -1,14 +1,14 @@
 #ifndef __LORA_TRX_H
 #define __LORA_TRX_H
 
-/*******************************************************************************
+/******************************************************************************
  *
  * Copyright (c) 2018 Dragino
  *
  * http://www.dragino.com
  * https://github.com/dragino/rpi-lora-tranceiver
  *
- *******************************************************************************/
+ ******************************************************************************/
 
 #include <thread>
 #include <mutex>
@@ -183,9 +183,23 @@ class LoraTrx {
 		bool receive(char *payload);
 		void configPower(int8_t pw);
 		void writeBuf(byte addr, byte *value, byte len);
-		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, int64_t &snr);
+		bool receivepacket(
+				std::string &msg,
+				byte &len,
+				byte &packet_rssi,
+				byte &rssi, 
+				int64_t &snr
+		);
 		void txlora(byte *frame, byte datalen);
-		static void server(std::queue<lora_msg*> &rx_queue, std::queue<lora_msg*> &tx_queue, std::mutex &rx_queue_mutex, std::mutex &tx_queue_mutex, bool &halt_server, LoraTrx &trx);
+		static void server(
+				std::queue<lora_msg*> &rx_queue,
+				std::queue<lora_msg*> &tx_queue,
+				std::mutex &rx_queue_mutex,
+				std::mutex &tx_queue_mutex,
+				std::condition_variable &rx_queue_condvar,
+				bool &halt_server,
+				LoraTrx &trx
+		);
 
 	public:
 
