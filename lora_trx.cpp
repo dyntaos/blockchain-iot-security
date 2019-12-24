@@ -390,11 +390,14 @@ start:
 		rx_queue_mutex.unlock();
 		goto start;
 	}
+	cout << "--Before " << rx_queue.size() << " in rx_queue" << endl;
 	msg = rx_queue.front();
 	rx_queue.pop();
+	cout << "--After " << rx_queue.size() << " in rx_queue" << endl;
 	rx_queue_mutex.unlock();
 
 	result = msg->msg;
+	cout << "Freed " << (void*)msg << endl;
 	delete msg;
 	return result;
 }
