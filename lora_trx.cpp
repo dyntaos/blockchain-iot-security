@@ -330,7 +330,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 	while (!halt_server) {
 
 		if (msg_buffer == NULL) {
-			msg_buffer = (lora_msg*) malloc(sizeof(lora_msg));
+			msg_buffer = new lora_msg;
 			//TODO: Check return value
 		}
 
@@ -363,7 +363,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				}
 				cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
-				free(tx_buffer);
+				delete tx_buffer;
 				tx_buffer = NULL;
 
 			} else tx_queue_mutex.unlock();
@@ -393,7 +393,7 @@ start:
 	rx_queue_mutex.unlock();
 
 	result = msg->msg;
-	free(msg);
+	delete msg;
 	return result;
 }
 
@@ -404,10 +404,7 @@ bool LoraTrx::sendMessage(string msg_str) {
 
 	if (msg_str.length() > 255) return false;
 
-	if ((msg = (lora_msg*) malloc(sizeof(lora_msg))) == NULL) {
-		cerr << "Malloc failed in LoraTrx::sendMessage()!" << endl;
-		return false;
-	}
+	msg = new lora_msg;
 
 	msg->len = msg_str.length();
 	strncpy(msg->msg, msg_str.c_str(), msg->len);
