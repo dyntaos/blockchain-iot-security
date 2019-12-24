@@ -65,7 +65,7 @@ $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -std=c++11 -c -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c -o $@ $(INCLUDE) $<
 
 $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
@@ -83,4 +83,4 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/lora_trx.o $(OBJ)/misc.o $(OBJ)/gason.o $(
 ### Client Dependencies ###
 
 $(OBJ)/gason.o: $(GASONINC)/gason.cpp
-	$(CROSSCOMPILE)$(CC) -std=c++11 -c -o $@ $<
+	$(CROSSCOMPILE)$(CC) -std=c++11 -g -c -o $@ $<
