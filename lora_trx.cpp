@@ -331,7 +331,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 		if (msg_buffer == NULL) {
 			msg_buffer = new lora_msg;
-			//TODO: Check return value
+			cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
 		}
 
 		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
