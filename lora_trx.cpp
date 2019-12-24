@@ -323,7 +323,6 @@ void LoraTrx::close_server(void) {
 
 void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
-	bool last_transmit = false;
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 
 	trx.opmode(OPMODE_RX);
@@ -335,11 +334,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
 		}
 
+		trx.opmode(OPMODE_RX);
 		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
-			if (last_transmit) {
-				trx.opmode(OPMODE_RX);
-				last_transmit = false;
-			}
 			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
 			msg_buffer->msg[msg_buffer->len] = 0;
 			//cout << "rx_queue.push()[" << (int)msg_buffer->len << "]: " << msg_buffer->msg << endl;
@@ -360,10 +356,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_queue.pop();
 				tx_queue_mutex.unlock();
 
-				if (!last_transmit) {
-					trx.opmode(OPMODE_TX);
-					last_transmit = true;
-				}
+				trx.opmode(OPMODE_TX);
+
 				cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
 				delete tx_buffer;
