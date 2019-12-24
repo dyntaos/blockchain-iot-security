@@ -390,6 +390,7 @@ start:
 		goto start;
 	}
 	msg = rx_queue.front();
+	rx_queue.pop();
 	rx_queue_mutex.unlock();
 
 	result = msg->msg;
