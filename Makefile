@@ -11,7 +11,7 @@
 CC = g++
 CROSSCOMPILE =
 CFLAGS =
-CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic
+CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic -g
 LDFLAGS =
 
 GASONINC = ./gason/src
