@@ -12,6 +12,7 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <queue>
 
 
@@ -130,10 +131,6 @@
 #define MAP_DIO1_LORA_NOP      0x30  // --11----
 #define MAP_DIO2_LORA_NOP      0xC0  // ----11--
 
-#define SERVER_PIPE_READ       0
-#define SERVER_PIPE_WRITE      1
-
-#define MAX_PIPE_BUFFER_SZ     1048576
 
 
 typedef unsigned char byte;
@@ -172,6 +169,8 @@ class LoraTrx {
 
 		std::queue<lora_msg*> rx_queue, tx_queue;
 		std::mutex rx_queue_mutex, tx_queue_mutex;
+		std::mutex rx_ulock_mutex;
+		std::condition_variable rx_queue_condvar;
 		std::thread *server_thread;
 		bool halt_server = true;
 

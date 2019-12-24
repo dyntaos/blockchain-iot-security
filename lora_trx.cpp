@@ -9,9 +9,10 @@
 
 #include <iostream>
 #include <string>
-#include <queue>
-#include <mutex>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
 
 #include <sys/types.h>
 #include <string.h>
@@ -344,6 +345,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			rx_queue.push(msg_buffer);
 			rx_queue_mutex.unlock();
 
+			rx_queue_condvar.notify_all();
+
 			msg_buffer = NULL;
 
 		} else {
@@ -375,8 +378,16 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 string LoraTrx::readMessage(void) {
 	string result;
 	lora_msg *msg;
+	unique_lock<mutex> ulock(rx_ulock_mtx);
+
+start:
+	while (rx_queue.empty()) rx_queue_condvar.wait(ulock);
 
 	rx_queue_mutex.lock();
+	if (rx_queue.empty()) {
+		rx_queue_mutex.unlock();
+		goto start;
+	}
 	msg = rx_queue.front();
 	rx_queue_mutex.unlock();
 
