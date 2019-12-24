@@ -340,7 +340,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				last_transmit = false;
 			}
 			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
-			msg_buffer->msg[msg_buffer] = 0;
+			msg_buffer->msg[msg_buffer->len] = 0;
 			cout << "rx_queue.push()[" << (int)msg_buffer->len << "]: " << msg_buffer->msg << endl;
 
 			rx_queue_mutex.lock();
