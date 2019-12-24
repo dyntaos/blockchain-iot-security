@@ -192,7 +192,7 @@ bool LoraTrx::receive(char *payload) {
 			payload[i] = (char)readReg(REG_FIFO);
 		}
 		payload[receivedCount] = 0;
-		cout << "receive() payload: " << payload << endl;
+		cout << "receive() payload [" << (uint8_t) receivedCount << "]: " << payload << endl;
 	}
 	return true;
 }
@@ -205,7 +205,7 @@ bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rss
 
 	if(digitalRead(dio0) == 1) {
 		if(receive(message)) {
-			cout << "receivepacket @ 1" << endl;
+			cout << "receivepacket @ 1 [" << (uint8_t) len << "]" << endl;
 			byte value = readReg(REG_PKT_SNR_VALUE);
 			if( value & 0x80 ) { // The SNR sign bit is 1
 				// Invert and divide by 4
