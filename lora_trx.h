@@ -10,6 +10,10 @@
  *
  *******************************************************************************/
 
+#include <thread>
+#include <mutex>
+#include <queue>
+
 
 #define REG_FIFO                    0x00
 #define REG_OPMODE                  0x01
@@ -180,7 +184,7 @@ class LoraTrx {
 		bool receive(char *payload);
 		void configPower(int8_t pw);
 		void writeBuf(byte addr, byte *value, byte len);
-		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr);
+		bool receivepacket(std::string &msg, byte &len, byte &packet_rssi, byte &rssi, int64_t &snr);
 		void txlora(byte *frame, byte datalen);
 		static void server(std::queue<lora_msg*> &rx_queue, std::queue<lora_msg*> &tx_queue, std::mutex &rx_queue_mutex, std::mutex &tx_queue_mutex, bool &halt_server, LoraTrx &trx);
 

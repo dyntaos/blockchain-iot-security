@@ -196,9 +196,8 @@ bool LoraTrx::receive(char *payload) {
 
 
 
-bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rssi, long int &snr) {
+bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rssi, int64_t &snr) {
 
-	//long int SNR;
 	int rssicorr;
 
 	if(digitalRead(dio0) == 1) {
