@@ -323,7 +323,7 @@ void LoraTrx::close_server(void) {
 void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
 	bool last_transmit = false;
-	lora_msg *msg_buffer, *tx_buffer;
+	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 
 	trx.opmode(OPMODE_RX);
 
