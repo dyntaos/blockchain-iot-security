@@ -362,7 +362,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
 				delete tx_buffer;
 				tx_buffer = NULL;
-
+				delay(50); // TODO: Temporary test to see if this fixes issues
 			} else tx_queue_mutex.unlock();
 		}
 		delay(1);
