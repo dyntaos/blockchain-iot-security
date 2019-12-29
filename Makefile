@@ -79,7 +79,7 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/lora_trx.o $(OBJ)/misc.o $(OBJ)/gason.o $(
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lwiringPi -lpthread
 	cp ./*.sol ./*.conf $(BIN)/
-	ln -s client $@
+	ln -s $@ ./client
 
 ### Client Dependencies ###
 
