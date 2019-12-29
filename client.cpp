@@ -19,6 +19,8 @@ bool gateway_flag = false;
 
 BlockchainSecLib *sec;
 
+
+
 cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
 	bool help_flag;
 	try {
@@ -50,6 +52,7 @@ cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
 }
 
 
+
 void senderThread(LoraTrx &trx) {
 	int r;
 	char output[256];
@@ -63,6 +66,7 @@ void senderThread(LoraTrx &trx) {
 		trx.sendMessage(output);
 	}
 }
+
 
 
 int main(int argc, char *argv[]) {
@@ -104,3 +108,4 @@ int main(int argc, char *argv[]) {
 
 	return EXIT_SUCCESS;
 }
+

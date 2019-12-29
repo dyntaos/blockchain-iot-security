@@ -42,7 +42,7 @@ debug_flag:
 	$(eval DEBUG = -D_DEBUG )
 
 clean:
-	rm -rf ./build
+	rm -rf ./build ./client
 
 
 ### Static Library ###
@@ -79,6 +79,7 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/lora_trx.o $(OBJ)/misc.o $(OBJ)/gason.o $(
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lwiringPi -lpthread
 	cp ./*.sol ./*.conf $(BIN)/
+	ln -s client $@
 
 ### Client Dependencies ###
 

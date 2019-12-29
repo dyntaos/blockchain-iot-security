@@ -205,7 +205,7 @@ bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rss
 
 	if(digitalRead(dio0) == 1) {
 		if(receive(message)) {
-			cout << "receivepacket @ 1 [" << (int) len << "]" << endl;
+			cout << "receivepacket @ 1 [" << (int) receivedbytes << "]" << endl;
 			byte value = readReg(REG_PKT_SNR_VALUE);
 			if( value & 0x80 ) { // The SNR sign bit is 1
 				// Invert and divide by 4
