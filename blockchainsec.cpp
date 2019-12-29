@@ -1,6 +1,7 @@
 #include <string>
 #include <array>
 #include <iostream>
+#include <stdexcept>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -223,31 +224,7 @@ bool BlockchainSecLib::create_contract(void) {
 	cout << "Transaction Receipt: " <<
 		transaction_receipt << endl;
 
-	source = (char*) transaction_receipt.c_str(); //TODO: Is there a better solution than this cast?
-
-	status = jsonParse(source, &endptr, &value, allocator);
-	if (status != JSON_OK) {
-		cerr << "Error parsing responce JSON data from eth_getTransactionReceipt() during contract creation: " << jsonStrError(status) <<
-			" at " << endptr - source << endl;
-		exit(EXIT_FAILURE);
-	}
-
-	if (value.getTag() == JSON_OBJECT) {
-		for (auto i: value) {
-			if ((strcmp(i->key, "contractAddress") == 0) && (i->value.getTag() == JSON_STRING)) {
-				cout << i->value.toString() << endl;
-				contract_addr = i->value.toString();
-				json_error = false;
-				break;
-			}
-		}
-	}
-
-	if (json_error) {
-		cerr << "Corrupt JSON responce to eth_getTransactionReceipt during contract creation: " <<
-		 	result << endl;
-		exit(EXIT_FAILURE);
-	}
+	contract_addr = getJSONelement(transaction_receipt, "result");
 
 	if (contract_addr.compare("null") == 0) {
 		cerr << "Failed to obtain contract address..." << endl;
@@ -262,6 +239,29 @@ bool BlockchainSecLib::create_contract(void) {
 	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 
 	return true;
+}
+
+
+
+string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
+	int retries = 0;
+	string transaction_receipt, result;
+
+	while(retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES) {
+		transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
+
+		retries++;
+
+		try {
+			result = this->getJSONelement(transaction_receipt, "result");
+			return result;
+		} catch(runtime_error& e) {
+			
+		}
+
+		sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+	}
+	throw runtime_error("Failed to obtain transaction result in getTransactionReceipt() for transaction hash \"" + transaction_hash + "\"; transaction may or may not have been mined!");
 }
 
 
@@ -418,6 +418,50 @@ string BlockchainSecLib::eth_getTransactionReceipt(string transaction_hash) {
 #endif //_DEBUG
 
 	return this->eth_ipc_request(json_request);
+}
+
+
+
+string BlockchainSecLib::getJSONelement(string json, string element) {
+	char *source, *endptr;
+	int status;
+	string result;
+	bool json_error = true;
+	JsonValue value;
+	JsonAllocator allocator;
+
+	source = (char*) json.c_str();
+
+	status = jsonParse(source, &endptr, &value, allocator);
+	if (status != JSON_OK) {
+		cerr << "Error parsing responce JSON data in getJSONelement(): " << jsonStrError(status) <<
+			" at " << endptr - source << endl;
+		string error = "Error parsing JSON data in getJSONelement(): ";
+		error += jsonStrError(status);
+		error += " at ";
+		error += (endptr - source);
+		throw runtime_error(error);
+	}
+
+	if (value.getTag() == JSON_OBJECT) {
+		for (auto i: value) {
+			if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
+				cout << i->value.toString() << endl;
+				result = i->value.toString();
+				json_error = false;
+				break;
+			}
+		}
+	}
+
+	if (json_error) {
+		cerr << "Corrupt JSON data passed to getJSONelement(): "
+			<< json << endl;
+		string error = "Corrupt JSON data passed to getJSONelement(): ";
+		error += json;
+		throw runtime_error(error);
+	}
+	return result;
 }
 
 

@@ -3,16 +3,19 @@
 
 #include <libconfig.h++>
 
-#define BLOCKCHAINSEC_CONFIG_F			"blockchainsec.conf"
-#define BLOCKCHAINSEC_MAX_DEV_NAME		16
+#define BLOCKCHAINSEC_CONFIG_F						"blockchainsec.conf"
+#define BLOCKCHAINSEC_MAX_DEV_NAME					16
+#define BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES	25
+#define BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY	1
 
-#define ETH_CONTRACT_SOL				"dev_mgmt_contract.sol"
-#define ETH_CONTRACT_BIN				"dev_mgmt_contract.bin"
-#define ETH_CONTRACT_ABI				"dev_mgmt_contract.abi"
 
-#define PIPE_BUFFER_LENGTH				64
+#define ETH_CONTRACT_SOL							"dev_mgmt_contract.sol"
+#define ETH_CONTRACT_BIN							"dev_mgmt_contract.bin"
+#define ETH_CONTRACT_ABI							"dev_mgmt_contract.abi"
 
-#define ETH_DEFAULT_GAS					"0x7A120"
+#define PIPE_BUFFER_LENGTH							64
+
+#define ETH_DEFAULT_GAS								"0x7A120"
 
 
 namespace blockchainSec {
@@ -37,7 +40,11 @@ class BlockchainSecLib {
 		libconfig::Setting *cfg_root;
 
 		bool create_contract(void);
+		std::string getTransactionReceipt(std::string transaction_hash);
+
 		std::string ethabi(std::string args);
+		std::string getJSONelement(std::string json, std::string element);
+
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
 		std::string eth_sendTransaction(std::string abi_data);
