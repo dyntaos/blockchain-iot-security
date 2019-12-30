@@ -39,10 +39,17 @@ mkdirs:
 debug: debug_flag all
 
 debug_flag:
-	$(eval DEBUG = -D_DEBUG )
+	$(eval DEBUG = -D_DEBUG)
 
 clean:
 	rm -rf ./build ./client
+
+lora: _lora mkdirs $(OBJ)/lora_trx.o $(BIN)/client
+
+_lora:
+	$(eval LINK_LORA = -lwiringPi -lpthread)
+	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
+	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
 
 
 ### Static Library ###
@@ -62,22 +69,22 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 ### Client Binary ###
 
 $(OBJ)/client.o: client.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/misc.o: misc.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client: $(OBJ)/client.o $(OBJ)/lora_trx.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
+$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
 		$(OBJ)/client.o \
-		$(OBJ)/lora_trx.o \
+		$(LORA_OBJ) \
 		$(OBJ)/misc.o \
 		$(OBJ)/gason.o \
 		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lwiringPi -lpthread
+		-lblockchainsec -lconfig++ $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -s $@ ./client
 
