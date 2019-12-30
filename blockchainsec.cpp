@@ -24,7 +24,6 @@ namespace blockchainSec {
 
 BlockchainSecLib::BlockchainSecLib(bool compile) {
 
-
 	this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
 	cfg.setOptions(Config::OptionFsync
 				 | Config::OptionSemicolonSeparators
@@ -61,31 +60,29 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 	cfg.lookupValue("client_eth_addr", this->eth_my_addr); //TODO Check for reasonableness
 
-	if (!cfg.exists("contract_addr")) {
-		/* A contract address is not saved in the config file.
-		 * We will compile the contract with solc, upload it
+	if (!compile && !cfg.exists("contract_addr")) {
+		cout << "Config doesnt have contract_addr" << endl
+			<< "Either add a contract address to the conf file or create a "
+			"new contract using the `--compile` flag" << endl;
+
+		exit(EXIT_FAILURE);
+	}
+
+	if (compile) {
+		/* We will compile the contract with solc, upload it
 		 * to the chain and save the address to the config file */
-		if (compile) {
-			cout << "Compiling and uploading contract..." << endl << endl;
-			if (this->create_contract()) {
-				cout << "Successfully compiled and uploaded contract" << endl
-					<< "The new contract address has been written to the "
-					"configuration file" << endl;
-				exit(EXIT_SUCCESS);
-			} else {
-				cerr << "Failed to create contract!" << endl;
-				exit(EXIT_FAILURE);
-			}
-
+		cout << "Compiling and uploading contract..." << endl << endl;
+		if (this->create_contract()) {
+			cout << "Successfully compiled and uploaded contract" << endl
+				<< "The new contract address has been written to the "
+				"configuration file" << endl;
+			exit(EXIT_SUCCESS);
 		} else {
-			cout << "Config doesnt have contract_addr" << endl
-				<< "Either add a contract address to the conf file or create a "
-				"new contract using the `--compile` flag" << endl;
-
+			cerr << "Failed to create contract!" << endl;
 			exit(EXIT_FAILURE);
 		}
-
 	}
+
 
 	cout << "Config had contract_addr" << endl;
 	cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
