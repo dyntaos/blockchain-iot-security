@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity >=0.6.0;
 
 //TODO: Can all functions be non-payable? How to handle ether? SOLUTION: On miners: "geth ... --gasprice 0 ..." https://stackoverflow.com/questions/49318479/how-to-make-sure-transactions-take-0-fee-in-a-private-ethereum-blockchain
 //TODO?: Implement log of events?
@@ -108,12 +108,15 @@ contract DeviceMgmt {
 	constructor() public {
 		next_device_id = 0;
 		admin_mapping[msg.sender].isAdmin = true;
-		admin_mapping[msg.sender].authorizedAdminUsersIndex = uint32(active_admin_users.push(msg.sender));
+		active_admin_users.push(msg.sender);
+		admin_mapping[msg.sender].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
 	}
 
 
 	// Fallback function -- Allow this contract to accept ether
-	function() external payable {}
+	fallback() external payable {}
+
+	receive() external payable {}
 
 
 	 /*
@@ -352,7 +355,8 @@ contract DeviceMgmt {
 	 */
 	function authorize_admin(address newAdminAddr) external _admin returns(bool) {
 		admin_mapping[newAdminAddr].isAdmin = true;
-		admin_mapping[newAdminAddr].authorizedAdminUsersIndex = uint32(active_admin_users.push(newAdminAddr) - 1);
+		active_admin_users.push(newAdminAddr);
+		admin_mapping[newAdminAddr].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
 		return true;
 	}
 
