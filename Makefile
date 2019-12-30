@@ -86,7 +86,7 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchain
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
-	ln -s $@ ./client
+	ln -fs $@ ./client
 
 ### Client Dependencies ###
 
