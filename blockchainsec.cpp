@@ -1,7 +1,6 @@
 #include <string>
 #include <array>
 #include <iostream>
-#include <stdexcept>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -9,7 +8,7 @@
 
 #include <blockchainsec.h>
 #include <misc.h>
-#include <gason.h>
+//#include <gason.h>
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 //TODO: Make function to see if "0x" needs to be prepended to function arguments
@@ -215,13 +214,12 @@ bool BlockchainSecLib::create_contract(void) {
 		transaction_hash << endl;
 
 	//TODO: eth.getTransactionReceipt -> json(contractAddress)
-	sleep(10);
-	transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
+	transaction_receipt = this->getTransactionReceipt(transaction_hash);
 
 	cout << "Transaction Receipt: " <<
 		transaction_receipt << endl;
 
-	contract_addr = getJSONelement(transaction_receipt, "result");
+	contract_addr = getJSONstring(transaction_receipt, "contractAddr");
 
 	if (contract_addr.compare("null") == 0) {
 		cerr << "Failed to obtain contract address..." << endl;
@@ -246,14 +244,18 @@ string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
 
 	while(retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES) {
 		transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
-
 		retries++;
+		cout << "Try #" << retries << endl;
+		cout << transaction_receipt << endl << endl;
 
 		try {
-			result = this->getJSONelement(transaction_receipt, "result");
+			result = this->getJSONstring(transaction_receipt, "result");
 			return result;
-		} catch(runtime_error& e) {
-			
+		} catch(jsonNullException& e) {
+			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+			continue;
+		} catch(jsonTypeException& e) {
+			throw e; //TODO
 		}
 
 		sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
@@ -419,11 +421,9 @@ string BlockchainSecLib::eth_getTransactionReceipt(string transaction_hash) {
 
 
 
-string BlockchainSecLib::getJSONelement(string json, string element) {
+string BlockchainSecLib::getJSONstring(string json, string element) {
 	char *source, *endptr;
 	int status;
-	string result;
-	bool json_error = true;
 	JsonValue value;
 	JsonAllocator allocator;
 
@@ -431,31 +431,53 @@ string BlockchainSecLib::getJSONelement(string json, string element) {
 
 	status = jsonParse(source, &endptr, &value, allocator);
 	if (status != JSON_OK) {
-		cerr << "Error parsing responce JSON data in getJSONelement(): " << jsonStrError(status) <<
+		cerr << "Error parsing responce JSON data in getJSONstring(): " << jsonStrError(status) <<
 			" at " << endptr - source << endl;
-		string error = "Error parsing JSON data in getJSONelement(): ";
+		string error = "Error parsing JSON data in getJSONstring(): ";
 		error += jsonStrError(status);
 		error += " at ";
 		error += (endptr - source);
 		throw runtime_error(error);
 	}
+	return this->getJSONstring(value, element);
+}
 
-	if (value.getTag() == JSON_OBJECT) {
+
+
+string BlockchainSecLib::getJSONstring(JsonValue value, string element) {
+	string result;
+	bool json_error = true;
+
+	if (value.getTag() == JSON_OBJECT || value.getTag() == JSON_ARRAY) {
 		for (auto i: value) {
-			if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
-				cout << i->value.toString() << endl;
+			if (i->value.getTag() == JSON_OBJECT) {
+				try {
+					result = this->getJSONstring(i->value, element);
+					return result;
+				} catch(runtime_error& e) {
+					
+				}
+			} else if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
+				cout << "getJSONstring(): key = " << i->key << "; value = " << i->value.toString() << endl;
 				result = i->value.toString();
 				json_error = false;
 				break;
+			} else if (strcmp(i->key, element.c_str()) == 0) {
+				if (i->value.getTag() == JSON_NULL) {
+					throw new jsonNullException("Requested JSON element is null.");
+				} else {
+					throw new jsonTypeException("Requested JSON element was a type other than JSON_STRING.");
+				}
 			}
 		}
 	}
 
 	if (json_error) {
-		cerr << "Corrupt JSON data passed to getJSONelement(): "
-			<< json << endl;
-		string error = "Corrupt JSON data passed to getJSONelement(): ";
-		error += json;
+		cerr << "getJSONstring() did not find the requested element \"" <<
+			element << "\"" << endl;
+		string error = "getJSONstring() did not find the requested element \"";
+		error += element;
+		error += "\"";
 		throw runtime_error(error);
 	}
 	return result;

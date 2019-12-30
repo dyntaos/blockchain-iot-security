@@ -2,6 +2,9 @@
 #define __BLOCKCHAINSEC_H
 
 #include <libconfig.h++>
+#include <gason.h>
+
+#include <blockchainsec_except.hpp>
 
 #define BLOCKCHAINSEC_CONFIG_F						"blockchainsec.conf"
 #define BLOCKCHAINSEC_MAX_DEV_NAME					16
@@ -43,7 +46,9 @@ class BlockchainSecLib {
 		std::string getTransactionReceipt(std::string transaction_hash);
 
 		std::string ethabi(std::string args);
-		std::string getJSONelement(std::string json, std::string element);
+
+		std::string getJSONstring(std::string json, std::string element);
+		std::string getJSONstring(JsonValue json, std::string element);
 
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
