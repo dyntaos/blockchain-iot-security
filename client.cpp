@@ -6,9 +6,9 @@
 
 #include <cxxopts.hpp>
 
-#include <blockchainsec.h>
-#include <lora_trx.h>
-#include <client.h>
+#include <blockchainsec.hpp>
+#include <lora_trx.hpp>
+#include <client.hpp>
 
 using namespace std;
 using namespace blockchainSec;

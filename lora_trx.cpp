@@ -22,7 +22,7 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
-#include <lora_trx.h>
+#include <lora_trx.hpp>
 
 
 using namespace std;

@@ -6,9 +6,8 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <blockchainsec.h>
-#include <misc.h>
-//#include <gason.h>
+#include <blockchainsec.hpp>
+#include <misc.hpp>
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 //TODO: Make function to see if "0x" needs to be prepended to function arguments

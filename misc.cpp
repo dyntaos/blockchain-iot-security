@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 
-#include <misc.h>
+#include <misc.hpp>
 
 using namespace std;
 
