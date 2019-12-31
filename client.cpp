@@ -121,6 +121,9 @@ int main(int argc, char *argv[]) {
 	}
 #endif //LORA_GATEWAY
 
+	sec->add_device("f086676ecc0cdd5d2dd4ab1855498a09d35dd420", "TestDevice1", "TESTMAC1", "TESTPUBKEY1", false);
+
+
 	return EXIT_SUCCESS;
 }
 
