@@ -26,7 +26,7 @@ contract DeviceMgmt {
 	struct Device {
 		address eth_addr;
 		bool has_eth_addr;
-		bytes16 name;                           // Arbitrary, admin assigned, human readable name
+		string name;                            // Arbitrary, admin assigned, human readable name
 		bool active;
 		bool is_gateway;                        //
 		uint32 device_id;                       // Integer ID of this device (NEW)
@@ -116,7 +116,8 @@ contract DeviceMgmt {
 	// Fallback function -- Allow this contract to accept ether
 	fallback() external payable {}
 
-	receive() external payable {}
+	//TODO: ETHABI fails to encode calls when this exists as it currently stands in ABI form
+	//receive() external payable {}
 
 
 	 /*
@@ -203,7 +204,7 @@ contract DeviceMgmt {
 	 * @param gateway_managed
 	 * @return
 	 */
-	function add_device(address clientAddr, bytes16 name, string calldata mac, string calldata publicKey, bool gateway_managed) external _admin returns(uint32) {
+	function add_device(address clientAddr, string calldata name, string calldata mac, string calldata publicKey, bool gateway_managed) external _admin returns(uint32) {
 		require(gateway_managed || (!id_to_device[addr_to_id[clientAddr]].active));
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
@@ -245,7 +246,7 @@ contract DeviceMgmt {
 	 * @param publicKey
 	 * @return
 	 */
-	function add_gateway(address clientAddr, bytes16 name, string calldata mac, string calldata publicKey) external _admin returns(uint32) {
+	function add_gateway(address clientAddr, string calldata name, string calldata mac, string calldata publicKey) external _admin returns(uint32) {
 		require(!id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
