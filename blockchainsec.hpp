@@ -7,7 +7,7 @@
 #include <blockchainsec_except.hpp>
 
 #define BLOCKCHAINSEC_CONFIG_F						"blockchainsec.conf"
-#define BLOCKCHAINSEC_MAX_DEV_NAME					16
+#define BLOCKCHAINSEC_MAX_DEV_NAME					32
 #define BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES	25
 #define BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY	1
 

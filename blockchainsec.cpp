@@ -92,20 +92,35 @@ BlockchainSecLib::BlockchainSecLib(void) : BlockchainSecLib(false) {}
 
 
 
-BlockchainSecLib::~BlockchainSecLib() {
-
-}
+BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
 string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
-	string data;
+	string data, transaction_hash;
 
-	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) return ""; //Device name too long -- returning "" is an error
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
+		throw InvalidArgumentException("Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
+	}
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
-	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
-	return this->eth_sendTransaction(data);
+	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
+	transaction_hash = this->eth_sendTransaction(data);
+	cout << transaction_hash;
+	//this->getJSONstring(transaction_hash, );
+
+	/*
+	try {
+		transaction_receipt = this->getTransactionReceipt(transaction_hash);
+	} catch(const JsonTypeException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	} catch(const TransactionFailedException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	}
+	*/
+	return "";
 }
 
 
@@ -113,10 +128,12 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 string BlockchainSecLib::add_gateway(string client_addr, string name, string mac, string public_key) {
 	string data;
 
-	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) return ""; //Device name too long -- returning "" is an error
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
+		throw InvalidArgumentException("Gateway name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
+	}	
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
-	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '0x" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
+	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
 	return this->eth_sendTransaction(data);
 }
 
