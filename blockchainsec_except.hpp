@@ -8,17 +8,52 @@
 namespace blockchainSec {
 
 
-class jsonTypeException : public std::runtime_error {
+class JsonException : public std::runtime_error {
 	public:
-		jsonTypeException(const char* msg) : std::runtime_error(msg) {}
-		jsonTypeException(const std::string& msg) : std::runtime_error(msg) {}
+		JsonException(const char* msg) : std::runtime_error(msg) {}
+		JsonException(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 
-class jsonNullException : public virtual jsonTypeException {
+class JsonElementNotFoundException : public JsonException {
 	public:
-		jsonNullException(const char* msg) : jsonTypeException(msg) {}
-		jsonNullException(const std::string& msg) : jsonTypeException(msg) {}
+		JsonElementNotFoundException(const char* msg) : JsonException(msg) {}
+		JsonElementNotFoundException(const std::string& msg) : JsonException(msg) {}
+};
+
+
+class JsonDataException : public JsonException {
+	public:
+		JsonDataException(const char* msg) : JsonException(msg) {}
+		JsonDataException(const std::string& msg) : JsonException(msg) {}
+};
+
+
+class JsonTypeException : public JsonException {
+	public:
+		JsonTypeException(const char* msg) : JsonException(msg) {}
+		JsonTypeException(const std::string& msg) : JsonException(msg) {}
+};
+
+
+class JsonNullException : public virtual JsonTypeException {
+	public:
+		JsonNullException(const char* msg) : JsonTypeException(msg) {}
+		JsonNullException(const std::string& msg) : JsonTypeException(msg) {}
+};
+
+
+class TransactionException : public std::runtime_error {
+	public:
+		TransactionException(const char* msg) : std::runtime_error(msg) {}
+		TransactionException(const std::string& msg) : std::runtime_error(msg) {}
+};
+
+
+class TransactionFailedException : public TransactionException {
+	public:
+		TransactionFailedException(const char* msg) : TransactionException(msg) {}
+		TransactionFailedException(const std::string& msg) : TransactionException(msg) {}
 };
 
 

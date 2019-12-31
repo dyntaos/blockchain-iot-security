@@ -184,19 +184,17 @@ bool BlockchainSecLib::create_contract(void) {
 	result = this->eth_createContract(contract_bin);
 	source = (char*) result.c_str(); //TODO: Is there a better solution than this cast?
 
-	cout << result << endl;
-
 	status = jsonParse(source, &endptr, &value, allocator);
 	if (status != JSON_OK) {
 		cerr << "Error parsing responce JSON data from eth_sendTransaction() during contract creation: " << jsonStrError(status) <<
 			" at " << endptr - source << endl;
 		exit(EXIT_FAILURE);
 	}
-
+	//TODO: Swap out for getJSONstring()
 	if (value.getTag() == JSON_OBJECT) {
 		for (auto i: value) {
 			if (strcmp(i->key, "result") == 0) {
-				cout << i->value.toString() << endl;
+				//cout << i->value.toString() << endl;
 				transaction_hash = i->value.toString();
 				json_error = false;
 				break;
@@ -214,22 +212,35 @@ bool BlockchainSecLib::create_contract(void) {
 		transaction_hash << endl;
 
 	//TODO: eth.getTransactionReceipt -> json(contractAddress)
-	transaction_receipt = this->getTransactionReceipt(transaction_hash);
+	try {
+		transaction_receipt = this->getTransactionReceipt(transaction_hash);
+	} catch(const JsonTypeException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	} catch(const TransactionFailedException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	}
 
-	cout << "Transaction Receipt: " <<
-		transaction_receipt << endl;
-
-	contract_addr = getJSONstring(transaction_receipt, "contractAddr");
+	try {
+		contract_addr = getJSONstring(transaction_receipt, "contractAddress");
+	} catch(const JsonTypeException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	} catch(const TransactionFailedException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	}
 
 	if (contract_addr.compare("null") == 0) {
 		cerr << "Failed to obtain contract address..." << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Contract Address: " <<
-		contract_addr << endl;
+	cout << "Contract Address: " << contract_addr << endl;
 
 	//TODO: Save contract to config
+	if (cfg_root->exists("contract_addr")) cfg_root->remove("contract_addr");
 	cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
 	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 
@@ -245,22 +256,36 @@ string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
 	while(retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES) {
 		transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
 		retries++;
+
+#ifdef _DEBUG
 		cout << "Try #" << retries << endl;
 		cout << transaction_receipt << endl << endl;
+#endif //_DEBUG
 
 		try {
 			result = this->getJSONstring(transaction_receipt, "result");
-			return result;
-		} catch(jsonNullException& e) {
+			return transaction_receipt;
+
+		} catch(const JsonNullException &e) {
 			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
 			continue;
-		} catch(jsonTypeException& e) {
-			throw e; //TODO
+
+		} catch(const JsonElementNotFoundException &e) {
+			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+			continue;
+
+		} catch(const JsonTypeException &e) {
+			return transaction_receipt;
 		}
 
 		sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
 	}
-	throw runtime_error("Failed to obtain transaction result in getTransactionReceipt() for transaction hash \"" + transaction_hash + "\"; transaction may or may not have been mined!");
+
+	throw TransactionFailedException(
+			"Failed to obtain transaction result in getTransactionReceipt() "
+			"for transaction hash \"" + transaction_hash + "\"; "
+			"transaction may or may not have been mined!"
+	);
 }
 
 
@@ -316,7 +341,7 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 	ipc_fd = fileno(ipc);
 
 	if (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
-		cout << "eth_ipc_request(): Error: Failed to read from IPC!" << endl;
+		cerr << "eth_ipc_request(): Error: Failed to read from IPC!" << endl;
 	}
 
 	json += ipc_buffer.data();
@@ -437,7 +462,7 @@ string BlockchainSecLib::getJSONstring(string json, string element) {
 		error += jsonStrError(status);
 		error += " at ";
 		error += (endptr - source);
-		throw runtime_error(error);
+		throw JsonDataException(error);
 	}
 	return this->getJSONstring(value, element);
 }
@@ -446,41 +471,34 @@ string BlockchainSecLib::getJSONstring(string json, string element) {
 
 string BlockchainSecLib::getJSONstring(JsonValue value, string element) {
 	string result;
-	bool json_error = true;
 
 	if (value.getTag() == JSON_OBJECT || value.getTag() == JSON_ARRAY) {
 		for (auto i: value) {
-			if (i->value.getTag() == JSON_OBJECT) {
+			if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
+				return i->value.toString();
+
+			} else if (strcmp(i->key, element.c_str()) == 0) {
+				if (i->value.getTag() == JSON_NULL) {
+					throw JsonNullException("Requested JSON element is null.");
+				} else {
+					throw JsonTypeException("Requested JSON element was a type other than JSON_STRING.");
+				}
+
+			} else if (i->value.getTag() == JSON_OBJECT || i->value.getTag() == JSON_ARRAY) {
 				try {
 					result = this->getJSONstring(i->value, element);
 					return result;
-				} catch(runtime_error& e) {
-					
-				}
-			} else if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
-				cout << "getJSONstring(): key = " << i->key << "; value = " << i->value.toString() << endl;
-				result = i->value.toString();
-				json_error = false;
-				break;
-			} else if (strcmp(i->key, element.c_str()) == 0) {
-				if (i->value.getTag() == JSON_NULL) {
-					throw new jsonNullException("Requested JSON element is null.");
-				} else {
-					throw new jsonTypeException("Requested JSON element was a type other than JSON_STRING.");
+				} catch(const JsonElementNotFoundException &e) {
+					//Ignore this error if it originated form a recursive call
 				}
 			}
 		}
 	}
 
-	if (json_error) {
-		cerr << "getJSONstring() did not find the requested element \"" <<
-			element << "\"" << endl;
-		string error = "getJSONstring() did not find the requested element \"";
-		error += element;
-		error += "\"";
-		throw runtime_error(error);
-	}
-	return result;
+	string error = "getJSONstring() did not find the requested element \"";
+	error += element;
+	error += "\"";
+	throw JsonElementNotFoundException(error);
 }
 
 
