@@ -36,11 +36,13 @@ class JsonTypeException : public JsonException {
 };
 
 
-class JsonNullException : public virtual JsonTypeException {
+class JsonNullException : public JsonTypeException {
 	public:
 		JsonNullException(const char* msg) : JsonTypeException(msg) {}
 		JsonNullException(const std::string& msg) : JsonTypeException(msg) {}
 };
+
+
 
 
 class TransactionException : public std::runtime_error {
@@ -55,6 +57,17 @@ class TransactionFailedException : public TransactionException {
 		TransactionFailedException(const char* msg) : TransactionException(msg) {}
 		TransactionFailedException(const std::string& msg) : TransactionException(msg) {}
 };
+
+
+
+
+class InvalidArgumentException : public std::runtime_error {
+	public:
+		InvalidArgumentException (const char* msg) : std::runtime_error(msg) {}
+		InvalidArgumentException (const std::string& msg) : std::runtime_error(msg) {}
+};
+
+
 
 
 }
