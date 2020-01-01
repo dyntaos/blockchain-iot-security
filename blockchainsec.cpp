@@ -97,7 +97,7 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
-	string data, transaction_hash;
+	string data, transaction_hash, transaction_receipt;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
 		throw InvalidArgumentException("Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
@@ -105,8 +105,24 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
 	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
+
 	transaction_hash = this->eth_sendTransaction(data);
-	cout << transaction_hash;
+	cout << "JSON DATA: " << transaction_hash << endl;
+	transaction_hash = this->getJSONstring(transaction_hash, "result");
+	cout << "Transaction Hash: " << transaction_hash << endl;
+
+	try {
+		transaction_receipt = this->getTransactionReceipt(transaction_hash);
+	} catch(const JsonTypeException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	} catch(const TransactionFailedException &e) {
+		//TODO: How to best handle this?
+		throw e;
+	}
+
+	cout << "Transaction Receipt: " << transaction_receipt << endl;
+
 	//this->getJSONstring(transaction_hash, );
 
 	/*
@@ -141,7 +157,7 @@ string BlockchainSecLib::add_gateway(string client_addr, string name, string mac
 
 #ifdef _DEBUG
 void BlockchainSecLib::test(void) {
-	bool testsPassed = true;
+	/*bool testsPassed = true;
 	string result;
 
 	result = this->ethabi("encode params -v bool 1");
@@ -172,7 +188,7 @@ void BlockchainSecLib::test(void) {
 		cout << "All tests passed successfully!" << endl;
 	} else {
 		cout << "Tests failed!" << endl;
-	}
+	}*/
 }
 #endif //_DEBUG
 
@@ -227,7 +243,6 @@ bool BlockchainSecLib::create_contract(void) {
 	cout << "Parsed contract creation transaction hash: " <<
 		transaction_hash << endl;
 
-	//TODO: eth.getTransactionReceipt -> json(contractAddress)
 	try {
 		transaction_receipt = this->getTransactionReceipt(transaction_hash);
 	} catch(const JsonTypeException &e) {
@@ -411,8 +426,8 @@ string BlockchainSecLib::eth_sendTransaction(string abi_data) {
 								",\"params\":[{"
 									"\"from\":\"" + this->eth_my_addr + "\","
 									"\"to\":\"" + this->eth_sec_contract_addr + "\","
-									//"\"gas\":0,"
-									//"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
+									"\"gas\":\"0x14F46B\"," //TODO: WHERE THE THE BLOCK GAS LIMIT SET? Choose this value more intentionally
+									"\"gasPrice\":\"0x0\","
 									"\"data\":\"0x" + abi_data +
 								"\"}],"
 								"\"id\":1}";
