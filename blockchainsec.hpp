@@ -16,7 +16,7 @@
 #define ETH_CONTRACT_BIN							"dev_mgmt_contract.bin"
 #define ETH_CONTRACT_ABI							"dev_mgmt_contract.abi"
 
-#define PIPE_BUFFER_LENGTH							64
+#define PIPE_BUFFER_LENGTH							128
 
 #define ETH_DEFAULT_GAS								"0x7A120"
 
