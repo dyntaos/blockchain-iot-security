@@ -66,6 +66,18 @@ contract DeviceMgmt {
 	address[] authorized_devices;
 
 
+
+	event Add_Device(address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
+	event Add_Gateway(address clientAddr, string name, string mac, string publicKey, uint32 device_id);
+	event Remove_Device(uint32 device_id);
+	event Remove_Gateway(address clientAddr);
+	event Update_Publickey(uint32 device_id, string newPublicKey);
+	event Update_Addr(uint32 device_id, uint addrType, string addr);
+	event Authorize_Admin(address newAdminAddr);
+	event Deauthorize_Admin(address adminAddr);
+
+
+
 	/*
 	 * @dev
 	 */
@@ -113,8 +125,8 @@ contract DeviceMgmt {
 	}
 
 
-	// Fallback function -- Allow this contract to accept ether
-	fallback() external payable {}
+	//TODO: Which of fallback and/or receive is needed?
+	//fallback() external payable {}
 
 	//TODO: ETHABI fails to encode calls when this exists as it currently stands in ABI form
 	//receive() external payable {}
@@ -234,6 +246,8 @@ contract DeviceMgmt {
 			id_to_device[device_id].has_eth_addr = false;
 		}
 		id_to_device[device_id].isAuthd = true;
+
+		emit Add_Device(clientAddr, name, mac, publicKey, gateway_managed, device_id);
 		return device_id;
 	}
 
@@ -274,6 +288,7 @@ contract DeviceMgmt {
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
 
+		emit Add_Gateway(clientAddr, name, mac, publicKey, device_id);
 		return device_id;
 	}
 
@@ -291,6 +306,8 @@ contract DeviceMgmt {
 			delete addr_to_id[id_to_device[device_id].eth_addr];
 		}
 		delete id_to_device[device_id];
+
+		emit Remove_Device(device_id);
 		return true;
 	}
 
@@ -307,6 +324,8 @@ contract DeviceMgmt {
 		delete gateway_pool[clientAddr];
 		delete id_to_device[addr_to_id[clientAddr]];
 		delete addr_to_id[clientAddr];
+
+		emit Remove_Gateway(clientAddr);
 		return true;
 	}
 
@@ -318,6 +337,8 @@ contract DeviceMgmt {
 	 */
 	function update_publickey(string calldata newPublicKey) external _authorizedDeviceOnly returns(bool) {
 		id_to_device[addr_to_id[msg.sender]].publicKey = newPublicKey;
+
+		emit Update_Publickey(addr_to_id[msg.sender], newPublicKey);
 		return true;
 	}
 
@@ -331,6 +352,8 @@ contract DeviceMgmt {
 	function update_addr(uint32 device_id, uint addrType, string calldata addr) external _authorizedDeviceOnly returns(bool) {
 		id_to_device[device_id].addrType = AddrType(addrType);
 		id_to_device[device_id].addr = addr;
+
+		emit Update_Addr(device_id, addrType, addr);
 		return true;
 	}
 
@@ -341,10 +364,12 @@ contract DeviceMgmt {
 	 * @param newPublicKey
 	 * @return
 	 */
-	function admin_update_publickey(address clientAddr, string calldata newPublicKey) external _admin returns(bool) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
+	function admin_update_publickey(uint32 device_id, string calldata newPublicKey) external _admin returns(bool) {
+		require(id_to_device[device_id].isAuthd);
 
-		id_to_device[addr_to_id[clientAddr]].publicKey = newPublicKey;
+		id_to_device[device_id].publicKey = newPublicKey;
+
+		emit Update_Publickey(device_id, newPublicKey);
 		return true;
 	}
 
@@ -358,6 +383,8 @@ contract DeviceMgmt {
 		admin_mapping[newAdminAddr].isAdmin = true;
 		active_admin_users.push(newAdminAddr);
 		admin_mapping[newAdminAddr].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
+
+		emit Authorize_Admin(newAdminAddr);
 		return true;
 	}
 
@@ -383,6 +410,8 @@ contract DeviceMgmt {
 
 		admin_mapping[adminAddr].authorizedAdminUsersIndex = 0;
 		admin_mapping[adminAddr].isAdmin = false;
+
+		emit Deauthorize_Admin(adminAddr);
 		return true;
 	}
 
