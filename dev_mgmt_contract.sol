@@ -32,7 +32,6 @@ contract DeviceMgmt {
 		uint32 device_id;                       // Integer ID of this device (NEW)
 		uint creationTimestamp;                 // Time this device was first created
 		uint dataTimestamp;                     // NEW
-		bool isAuthd;                           // Is this a valid & authorized device mapping
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
 
 		AddrType addrType;                      // How the device connects to the network (IP (ethernet, WiFi, GSM/LTE), LoRa, etc.)
@@ -67,11 +66,12 @@ contract DeviceMgmt {
 
 
 
+	// TODO: Should we index any of these event topics?
 	event Add_Device(address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
 	event Add_Gateway(address clientAddr, string name, string mac, string publicKey, uint32 device_id);
 	event Remove_Device(uint32 device_id);
-	event Remove_Gateway(address clientAddr);
-	event Update_Publickey(uint32 device_id, string newPublicKey);
+	event Remove_Gateway(address gateway_addr, uint32 device_id);
+	event Push_Data(uint32 device_id, uint timestamp, string data);
 	event Update_Addr(uint32 device_id, uint addrType, string addr);
 	event Authorize_Admin(address newAdminAddr);
 	event Deauthorize_Admin(address adminAddr);
@@ -82,7 +82,7 @@ contract DeviceMgmt {
 	 * @dev
 	 */
 	modifier _authorized {
-		require(id_to_device[addr_to_id[msg.sender]].isAuthd || admin_mapping[msg.sender].isAdmin);
+		require(id_to_device[addr_to_id[msg.sender]].active || admin_mapping[msg.sender].isAdmin);
 		_;
 	}
 
@@ -91,7 +91,16 @@ contract DeviceMgmt {
 	 * @dev
 	 */
 	modifier _authorizedDeviceOnly {
-		require(id_to_device[addr_to_id[msg.sender]].isAuthd);
+		require(id_to_device[addr_to_id[msg.sender]].active);
+		_;
+	}
+
+
+	/*
+	 * @dev
+	 */
+	modifier _authorizedDeviceOrGateway {
+		require(id_to_device[addr_to_id[msg.sender]].active || gateway_pool[msg.sender]);
 		_;
 	}
 
@@ -101,6 +110,20 @@ contract DeviceMgmt {
 	 */
 	modifier _gateway {
 		require(gateway_pool[msg.sender]);
+		_;
+	}
+
+
+	/*
+	 * @dev
+	 */
+	modifier _mutator(uint32 device_id) {
+		require(id_to_device[device_id].active);
+		if (gateway_pool[msg.sender]) {
+			require(id_to_device[device_id].gateway_managed || id_to_device[device_id].eth_addr == msg.sender);
+		} else {
+			require(id_to_device[device_id].eth_addr == msg.sender);
+		}
 		_;
 	}
 
@@ -143,67 +166,82 @@ contract DeviceMgmt {
 
 
 	/*
-	 * @dev Is the given address an authorized device? Only for external calls. For internal use, test: id_to_device[clientAddr].isAuthd
-	 * @param clientAddr
+	 * @dev Is the given address an authorized device? Only for external calls. For internal use, test: id_to_device[clientAddr].active
+	 * @param
 	 * @return
 	 */
-	function is_authd(address clientAddr) external view _authorized returns(bool) {
-		return id_to_device[addr_to_id[clientAddr]].isAuthd;
+	function is_authd(uint32 device_id) external view _authorized returns(bool) {
+		return id_to_device[device_id].active;
 	}
 
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function get_key(address clientAddr) external view _authorized returns(string memory) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
-		return id_to_device[addr_to_id[clientAddr]].publicKey;
+	function get_my_device_id() external view returns(int64) {
+		if (id_to_device[addr_to_id[msg.sender]].active) {
+			return addr_to_id[msg.sender];
+		} else {
+			return -1;
+		}
 	}
 
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function get_addrtype(address clientAddr) external view _authorized returns(uint) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
-		return uint(id_to_device[addr_to_id[clientAddr]].addrType);
+	function get_key(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].publicKey;
 	}
 
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function get_addr(address clientAddr) external view _authorized returns(string memory) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
-		return id_to_device[addr_to_id[clientAddr]].addr;
+	function get_addrtype(uint32 device_id) external view _authorized returns(uint) {
+		require(id_to_device[device_id].active);
+		return uint(id_to_device[device_id].addrType);
 	}
 
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function get_mac(address clientAddr) external view _authorized returns(string memory) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
-		return id_to_device[addr_to_id[clientAddr]].mac;
+	function get_addr(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].addr;
 	}
 
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function get_data(address clientAddr) external view _authorized returns(string memory) {
-		require(id_to_device[addr_to_id[clientAddr]].isAuthd);
-		return id_to_device[addr_to_id[clientAddr]].data;
+	function get_mac(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].mac;
+	}
+
+
+	// TODO: Modifier should probably be _authorizedDeviceOrGateway
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function get_data(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].data;
 	}
 
 
@@ -245,7 +283,6 @@ contract DeviceMgmt {
 			addr_to_id[clientAddr] = id_to_device[device_id].device_id;
 			id_to_device[device_id].has_eth_addr = false;
 		}
-		id_to_device[device_id].isAuthd = true;
 
 		emit Add_Device(clientAddr, name, mac, publicKey, gateway_managed, device_id);
 		return device_id;
@@ -281,7 +318,6 @@ contract DeviceMgmt {
 		id_to_device[device_id].publicKey = publicKey;
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = false;
-		id_to_device[device_id].isAuthd = true;
 		id_to_device[device_id].eth_addr = clientAddr;
 		id_to_device[device_id].has_eth_addr = true;
 
@@ -299,7 +335,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function remove_device(uint32 device_id) external _admin returns(bool) {
-		require(id_to_device[device_id].isAuthd);
+		require(id_to_device[device_id].active);
 
 		free_device_id_stack.push(device_id);
 		if (id_to_device[device_id].has_eth_addr) {
@@ -314,31 +350,19 @@ contract DeviceMgmt {
 
 	/*
 	 * @dev
-	 * @param clientAddr
+	 * @param
 	 * @return
 	 */
-	function remove_gateway(address clientAddr) external _admin returns(bool) {
-		require(gateway_pool[clientAddr]);
+	function remove_gateway(uint32 device_id) external _admin returns(bool) {
+		address gateway_addr = id_to_device[device_id].eth_addr;
+		require(gateway_pool[gateway_addr]);
 
-		free_device_id_stack.push(addr_to_id[clientAddr]);
-		delete gateway_pool[clientAddr];
-		delete id_to_device[addr_to_id[clientAddr]];
-		delete addr_to_id[clientAddr];
+		free_device_id_stack.push(device_id);
+		delete gateway_pool[gateway_addr];
+		delete id_to_device[device_id];
+		delete addr_to_id[gateway_addr];
 
-		emit Remove_Gateway(clientAddr);
-		return true;
-	}
-
-
-	/*
-	 * @dev
-	 * @param newPublicKey
-	 * @return
-	 */
-	function update_publickey(string calldata newPublicKey) external _authorizedDeviceOnly returns(bool) {
-		id_to_device[addr_to_id[msg.sender]].publicKey = newPublicKey;
-
-		emit Update_Publickey(addr_to_id[msg.sender], newPublicKey);
+		emit Remove_Gateway(gateway_addr, device_id);
 		return true;
 	}
 
@@ -349,7 +373,7 @@ contract DeviceMgmt {
 	 * @param addr
 	 * @return
 	 */
-	function update_addr(uint32 device_id, uint addrType, string calldata addr) external _authorizedDeviceOnly returns(bool) {
+	function update_addr(uint32 device_id, uint addrType, string calldata addr) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].addrType = AddrType(addrType);
 		id_to_device[device_id].addr = addr;
 
@@ -360,16 +384,15 @@ contract DeviceMgmt {
 
 	/*
 	 * @dev
-	 * @param clientAddr
-	 * @param newPublicKey
+	 * @param addrType
+	 * @param addr
 	 * @return
 	 */
-	function admin_update_publickey(uint32 device_id, string calldata newPublicKey) external _admin returns(bool) {
-		require(id_to_device[device_id].isAuthd);
+	function push_data(uint32 device_id, string calldata data) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
+		id_to_device[device_id].data = data;
+		id_to_device[device_id].dataTimestamp = now;
 
-		id_to_device[device_id].publicKey = newPublicKey;
-
-		emit Update_Publickey(device_id, newPublicKey);
+		emit Push_Data(device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
 		return true;
 	}
 
