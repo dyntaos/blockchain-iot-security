@@ -402,6 +402,54 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 
 
 
+void BlockchainSecLib::ipc_subscription_listener_thread(void) {
+	int ipc_fd_flags, ipc_fd;
+	string json;
+	array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
+
+#ifdef _DEBUG
+	cout << "ipc_subscription_listener_thread()" << endl;
+#endif //_DEBUG
+
+	FILE *ipc = popen(("echo '{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x545890850b849c345b5ca9e57276b1f50984aae4\"}]}' | nc -U '/home/kale/.ethereum/geth.ipc'"), "r");
+	if (ipc == NULL) {
+		// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
+		cerr << "ipc_subscription_listener_thread(): Failed to popen() unix domain socket for IPC with geth! Is geth running?" << endl;
+		exit(EXIT_FAILURE);
+		//return ""; //TODO
+	}
+
+	ipc_fd = fileno(ipc);
+
+	//if (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
+	//	cerr << "ipc_subscription_listener_thread(): Error: Failed to read from IPC!" << endl;
+	//}
+
+	//json += ipc_buffer.data();
+
+	ipc_fd_flags = fcntl(ipc_fd, F_GETFL, 0);
+	ipc_fd_flags |= O_NONBLOCK;
+	fcntl(ipc_fd, F_SETFL, ipc_fd_flags);
+
+	while (1) {
+		while (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) != NULL) {
+			fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc);
+//#ifdef _DEBUG
+			cout << "ipc_subscription_listener_thread(): Read: ''" << ipc_buffer.data() << "'" << endl;
+//#endif //_DEBUG
+		//json += ipc_buffer.data();
+		}
+		sleep(1);
+	}
+
+	if (pclose(ipc) < 0) {
+		cerr << "ipc_subscription_listener_thread(): Failed to pclose() unix domain socket for IPC with geth!";
+		//return json; //TODO: We may still have valid data to return, despite the error
+	}
+}
+
+
+
 string BlockchainSecLib::eth_call(string abi_data) {
 	string json_request = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_call\","
@@ -431,7 +479,7 @@ string BlockchainSecLib::eth_sendTransaction(string abi_data) {
 									"\"data\":\"0x" + abi_data +
 								"\"}],"
 								"\"id\":1}";
-
+	cout << json_request << endl << endl;
 #ifdef _DEBUG
 	cout << "eth_sendTransaction()" << endl;
 #endif //_DEBUG
@@ -530,6 +578,63 @@ string BlockchainSecLib::getJSONstring(JsonValue value, string element) {
 	error += element;
 	error += "\"";
 	throw JsonElementNotFoundException(error);
+}
+
+
+
+void BlockchainSecLib::getFilterChanges(filter_id_t filter_id) {
+	string json_request, responce;
+	
+	json_request = "{\"jsonrpc\":\"2.0\","
+					"\"method\":\"eth_getFilterChanges\","
+					//"\"method\":\"eth_getFilterLogs\","
+					"\"params\":["
+					"\"" + filter_id + "\""
+					"],\"id\":1}";
+
+#ifdef _DEBUG
+	cout << "getFilterChanges()" << endl;
+#endif //_DEBUG
+
+	responce = this->eth_ipc_request(json_request);
+	cout << "getFitlerChanges(\"" << filter_id << "\") = " << responce << endl << endl;
+}
+
+
+
+filter_id_t BlockchainSecLib::newFilter(string keccak_event_sig_hash) {
+	filter_id_t filter_id;
+	string json_request, responce;
+
+	json_request = "{\"jsonrpc\":\"2.0\","
+					"\"method\":\"eth_newFilter\","
+					"\"params\":[{"
+					"\"fromBlock\":\"0x0\","
+					"\"toBlock\":\"latest\","
+					"\"address\":\"" + this->eth_sec_contract_addr + "\","
+					//"\"topics\":[\"" + keccak_event_sig_hash + "\"]"
+					"\"topics\":[]"
+					"}],\"id\":1}";
+
+#ifdef _DEBUG
+	cout << "newFilter()" << endl;
+#endif //_DEBUG
+
+	responce = this->eth_ipc_request(json_request);
+
+	cout << "newFilter() JSON responce: " << responce << endl << endl;
+
+	try {
+		filter_id = getJSONstring(responce, "result");
+	} catch (const JsonNullException &e) {
+		throw e; //TODO
+	} catch (const JsonElementNotFoundException &e) {
+		throw e; //TODO
+	} catch (const JsonTypeException &e) {
+		throw e; //TODO
+	}
+
+	return filter_id;
 }
 
 

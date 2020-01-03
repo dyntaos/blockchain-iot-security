@@ -23,6 +23,9 @@
 
 namespace blockchainSec {
 
+typedef std::string filter_id_t;
+
+
 class BlockchainSecLib {
 	public:
 		BlockchainSecLib(bool compile);
@@ -35,7 +38,7 @@ class BlockchainSecLib {
 		void test(void);
 #endif //_DEBUG
 
-	private:
+	//private: // TODO: Temporarily commented out for testing/debugging
 		std::string ipc_path;
 		std::string eth_my_addr;
 		std::string eth_sec_contract_addr;
@@ -55,6 +58,10 @@ class BlockchainSecLib {
 		std::string eth_sendTransaction(std::string abi_data);
 		std::string eth_createContract(std::string data);
 		std::string eth_getTransactionReceipt(std::string transaction_hash);
+		void getFilterChanges(filter_id_t filter_id);
+		filter_id_t newFilter(std::string keccak_event_sig_hash);
+		static void ipc_subscription_listener_thread(void);
+
 };
 
 }

@@ -121,8 +121,22 @@ int main(int argc, char *argv[]) {
 	}
 #endif //LORA_GATEWAY
 
-	sec->add_device("f086676ecc0cdd5d2dd4ab1855498a09d35dd420", "TestDevice1", "TESTMAC1", "TESTPUBKEY1", false);
+	thread ipc_thread(sec->ipc_subscription_listener_thread);
+	
+	//filter_id_t filter = sec->newFilter("0x5f626ba70c61a68e9ff2aa5ec734ccab48bff6ee59f90bb81dc90dda5c90eecf");
+	//cout << "Got filter id: " << filter << endl << endl;
 
+	sleep(10);
+	cout << "Adding device..." << endl;
+	sec->add_device("f086676ecc0cdd5d2dd4ab1855498a09d35d0008", "TestDevice 8", "TEST MAC8", "TEST   PUBKEY8", false);
+
+	cout << endl << endl;
+	//sec->getFilterChanges(filter);
+	//sleep(11);
+	cout << endl << endl;
+	//sec->getFilterChanges(filter);
+	cout << endl << endl;
+	ipc_thread.join();
 
 	return EXIT_SUCCESS;
 }

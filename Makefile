@@ -84,7 +84,7 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchain
 		$(OBJ)/misc.o \
 		$(OBJ)/gason.o \
 		-L $(LIB) \
-		-lblockchainsec -lconfig++ $(LINK_LORA)
+		-lblockchainsec -lconfig++ -lpthread $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
 
