@@ -1,5 +1,5 @@
-#ifndef __BLOCKCHAINSEC_H
-#define __BLOCKCHAINSEC_H
+#ifndef __BLOCKCHAINSEC_HPP
+#define __BLOCKCHAINSEC_HPP
 
 #include <libconfig.h++>
 #include "json/include/nlohmann/json.hpp"
@@ -50,8 +50,6 @@ class BlockchainSecLib {
 		void create_contract(void);
 		std::string getTransactionReceipt(std::string transaction_hash);
 
-		std::string ethabi(std::string args);
-
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
 		std::string eth_sendTransaction(std::string abi_data);
@@ -63,4 +61,4 @@ class BlockchainSecLib {
 
 }
 
-#endif //__BLOCKCHAINSEC_H
+#endif //__BLOCKCHAINSEC_HPP

@@ -57,12 +57,17 @@ _lora:
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
-	ar rcs $@ $^
+$(OBJ)/ethabi.o: ethabi.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
-### Shared Library ###
-#$(LIB)/libblockchainsec.so: $(OBJ)/blockchainsec.o
-#	$(CROSSCOMPILE)$(CC) -o $@ -shared -Wl,-soname,libblockchainsec.so $<
+$(OBJ)/lora_trx.o: lora_trx.cpp
+	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(OBJ)/misc.o: misc.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o
+	ar rcs $@ $^
 
 
 
@@ -71,17 +76,9 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o
 $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
-
-$(OBJ)/misc.o: misc.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
-
-$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(LIB)/libblockchainsec.a
+$(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
 		$(OBJ)/client.o \
-		$(LORA_OBJ) \
-		$(OBJ)/misc.o \
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lpthread -lboost_system $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/

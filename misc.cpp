@@ -4,9 +4,12 @@
 
 #include <misc.hpp>
 
+
 using namespace std;
 
 namespace blockchainSec {
+
+
 
 // https://stackoverflow.com/questions/116038/how-do-i-read-an-entire-file-into-a-stdstring-in-c
 string readFile2(const string &fileName) {
@@ -22,12 +25,5 @@ string readFile2(const string &fileName) {
 }
 
 
-// http://www.cplusplus.com/forum/beginner/251052/
-string trim(const string& line) {
-	const char* WhiteSpace = " \t\v\r\n";
-	size_t start = line.find_first_not_of(WhiteSpace);
-	size_t end = line.find_last_not_of(WhiteSpace);
-	return start == end ? string() : line.substr(start, end - start + 1);
-}
 
 }

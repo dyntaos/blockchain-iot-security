@@ -2,12 +2,14 @@
 #include <array>
 #include <iostream>
 #include <boost/asio.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 
 #include <blockchainsec.hpp>
+#include <ethabi.hpp>
 #include <misc.hpp>
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
@@ -108,7 +110,7 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	}
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
-	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
+	data = ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
 
 	transaction_hash = this->eth_sendTransaction(data);
 	cout << "JSON DATA: " << transaction_hash << endl;
@@ -146,7 +148,7 @@ string BlockchainSecLib::add_gateway(string client_addr, string name, string mac
 	}
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
-	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
+	data = ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
 	return this->eth_sendTransaction(data);
 }
 
@@ -173,7 +175,7 @@ void BlockchainSecLib::create_contract(void) {
 	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
 	//TODO: Check for success
 
-	contract_bin = trim(readFile2(ETH_CONTRACT_BIN));
+	contract_bin = boost::trim_copy(readFile2(ETH_CONTRACT_BIN));
 
 	transactionJsonStr = this->eth_createContract(contract_bin);
 
@@ -261,36 +263,6 @@ string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
 			"for transaction hash \"" + transaction_hash + "\"; "
 			"transaction may or may not have been mined!"
 	);
-}
-
-
-
-string BlockchainSecLib::ethabi(string args) {
-	string result;
-	array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
-
-#ifdef _DEBUG
-	cout << "ethabi(): Requested '" << args << "'" << endl;
-#endif //_DEBUG
-
-	FILE *ethabi_pipe = popen(("ethabi " + args).c_str(), "r");
-	if (ethabi_pipe == NULL) {
-		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
-		throw ResourceRequestFailedException("ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?");
-	}
-	while (fgets(pipe_buffer.data(), PIPE_BUFFER_LENGTH, ethabi_pipe) != NULL) {
-		result += pipe_buffer.data();
-	}
-	if (pclose(ethabi_pipe) < 0) {
-		throw ResourceRequestFailedException("ethabi(): Failed to pclose() pipe to ethabi binary!");
-	}
-
-#ifdef _DEBUG
-	cout << "ethabi(): Call successful!" << endl;
-	cout << "ethabi(): Returning: " << trim(result) << endl;
-#endif //_DEBUG
-
-	return trim(result);
 }
 
 
