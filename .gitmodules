@@ -10,3 +10,6 @@
 [submodule "WiringPi"]
 	path = WiringPi
 	url = https://github.com/WiringPi/WiringPi.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json.git
