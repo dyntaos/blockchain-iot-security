@@ -126,25 +126,13 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	try {
 		transaction_receipt = this->getTransactionReceipt(transaction_hash);
 	} catch(const TransactionFailedException &e) {
-		//TODO: How to best handle this?
+		//TODO: How to best handle this? Allow it to be passed up -- Append to what()?
 		throw e;
 	}
 
 	cout << "Transaction Receipt: " << transaction_receipt << endl;
 
-	//this->getJSONstring(transaction_hash, );
-
-	/*
-	try {
-		transaction_receipt = this->getTransactionReceipt(transaction_hash);
-	} catch(const JsonTypeException &e) {
-		//TODO: How to best handle this?
-		throw e;
-	} catch(const TransactionFailedException &e) {
-		//TODO: How to best handle this?
-		throw e;
-	}
-	*/
+	//TODO: Confirm success from logs
 	return "";
 }
 

@@ -68,15 +68,29 @@ contract DeviceMgmt {
 
 	// TODO: Should we index any of these event topics?
 
-	// Keccak256 Signature: 5f626ba70c61a68e9ff2aa5ec734ccab48bff6ee59f90bb81dc90dda5c90eecf
-	event Add_Device(address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
-	event Add_Gateway(address clientAddr, string name, string mac, string publicKey, uint32 device_id);
-	event Remove_Device(uint32 device_id);
-	event Remove_Gateway(address gateway_addr, uint32 device_id);
-	event Push_Data(uint32 device_id, uint timestamp, string data);
-	event Update_Addr(uint32 device_id, uint addrType, string addr);
-	event Authorize_Admin(address newAdminAddr);
-	event Deauthorize_Admin(address adminAddr);
+	// Keccak256 Signature: 6d8b1348ac9490868dcf5de10f66764c3fd6abf3274c6d36fbf877fc9f6e798f
+	event Add_Device		(address msgSender, address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
+
+	// Keccak256 Signature: 3288eeac8a88a024bc145e835dbfecbe5095e00c717c48986f19943367e9fa20
+	event Add_Gateway		(address msgSender, address clientAddr, string name, string mac, string publicKey, uint32 device_id);
+
+	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
+	event Remove_Device		(address msgSender, uint32 device_id);
+
+	// Keccak256 Signature: 0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9
+	event Remove_Gateway	(address msgSender, address gateway_addr, uint32 device_id);
+
+	// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
+	event Push_Data			(address msgSender, uint32 device_id, uint timestamp, string data);
+
+	// Keccak256 Signature: 8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80
+	event Update_Addr		(address msgSender, uint32 device_id, uint addrType, string addr);
+
+	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
+	event Authorize_Admin	(address msgSender, address newAdminAddr);
+
+	// Keccak256 Signature: e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160
+	event Deauthorize_Admin	(address msgSender, address adminAddr);
 
 
 
@@ -287,7 +301,7 @@ contract DeviceMgmt {
 			id_to_device[device_id].has_eth_addr = false;
 		}
 
-		emit Add_Device(clientAddr, name, mac, publicKey, gateway_managed, device_id);
+		emit Add_Device(msg.sender, clientAddr, name, mac, publicKey, gateway_managed, device_id);
 		return device_id;
 	}
 
@@ -327,7 +341,7 @@ contract DeviceMgmt {
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
 
-		emit Add_Gateway(clientAddr, name, mac, publicKey, device_id);
+		emit Add_Gateway(msg.sender, clientAddr, name, mac, publicKey, device_id);
 		return device_id;
 	}
 
@@ -346,7 +360,7 @@ contract DeviceMgmt {
 		}
 		delete id_to_device[device_id];
 
-		emit Remove_Device(device_id);
+		emit Remove_Device(msg.sender, device_id);
 		return true;
 	}
 
@@ -365,7 +379,7 @@ contract DeviceMgmt {
 		delete id_to_device[device_id];
 		delete addr_to_id[gateway_addr];
 
-		emit Remove_Gateway(gateway_addr, device_id);
+		emit Remove_Gateway(msg.sender, gateway_addr, device_id);
 		return true;
 	}
 
@@ -380,7 +394,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].addrType = AddrType(addrType);
 		id_to_device[device_id].addr = addr;
 
-		emit Update_Addr(device_id, addrType, addr);
+		emit Update_Addr(msg.sender, device_id, addrType, addr);
 		return true;
 	}
 
@@ -393,9 +407,9 @@ contract DeviceMgmt {
 	 */
 	function push_data(uint32 device_id, string calldata data) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].data = data;
-		id_to_device[device_id].dataTimestamp = now;
+		id_to_device[device_id].dataTimestamp = now; //TODO: Is using 'now' bad?
 
-		emit Push_Data(device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
+		emit Push_Data(msg.sender, device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
 		return true;
 	}
 
@@ -410,7 +424,7 @@ contract DeviceMgmt {
 		active_admin_users.push(newAdminAddr);
 		admin_mapping[newAdminAddr].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
 
-		emit Authorize_Admin(newAdminAddr);
+		emit Authorize_Admin(msg.sender, newAdminAddr);
 		return true;
 	}
 
@@ -437,7 +451,7 @@ contract DeviceMgmt {
 		admin_mapping[adminAddr].authorizedAdminUsersIndex = 0;
 		admin_mapping[adminAddr].isAdmin = false;
 
-		emit Deauthorize_Admin(adminAddr);
+		emit Deauthorize_Admin(msg.sender, adminAddr);
 		return true;
 	}
 
