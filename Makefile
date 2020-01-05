@@ -47,7 +47,7 @@ clean:
 lora: _lora mkdirs $(OBJ)/lora_trx.o $(BIN)/client
 
 _lora:
-	$(eval LINK_LORA = -lwiringPi -lpthread)
+	$(eval LINK_LORA = -lwiringPi)
 	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
 	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
 
@@ -84,7 +84,7 @@ $(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchain
 		$(OBJ)/misc.o \
 		$(OBJ)/gason.o \
 		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread $(LINK_LORA)
+		-lblockchainsec -lconfig++ -lpthread -lboost_system $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
 
