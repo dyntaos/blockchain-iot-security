@@ -1,6 +1,7 @@
 #include <string>
 #include <array>
 #include <iostream>
+#include <boost/asio.hpp>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -146,7 +147,7 @@ string BlockchainSecLib::add_gateway(string client_addr, string name, string mac
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
 		throw InvalidArgumentException("Gateway name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
-	}	
+	}
 	//TODO: If !gateway_managed make sure clientAddr is valid
 
 	data = this->ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "'");
@@ -403,49 +404,27 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 
 
 void BlockchainSecLib::ipc_subscription_listener_thread(void) {
-	int ipc_fd_flags, ipc_fd;
-	string json;
-	array<char, PIPE_BUFFER_LENGTH> ipc_buffer;
+	char recvbuff[4097];
+	int recvlen;
+	boost::asio::io_service io_service;
+	boost::asio::local::stream_protocol::endpoint ep("/home/kale/.ethereum/geth.ipc");
+	boost::asio::local::stream_protocol::socket socket(io_service);
+	string data = "{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x022edf15cbe92ebaf84f2ada6efdc54f66727357\"}]}";
 
 #ifdef _DEBUG
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
-	FILE *ipc = popen(("echo '{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x545890850b849c345b5ca9e57276b1f50984aae4\"}]}' | nc -U '/home/kale/.ethereum/geth.ipc'"), "r");
-	if (ipc == NULL) {
-		// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
-		cerr << "ipc_subscription_listener_thread(): Failed to popen() unix domain socket for IPC with geth! Is geth running?" << endl;
-		exit(EXIT_FAILURE);
-		//return ""; //TODO
-	}
+	socket.connect(ep);
+	socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
-	ipc_fd = fileno(ipc);
-
-	//if (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
-	//	cerr << "ipc_subscription_listener_thread(): Error: Failed to read from IPC!" << endl;
-	//}
-
-	//json += ipc_buffer.data();
-
-	ipc_fd_flags = fcntl(ipc_fd, F_GETFL, 0);
-	ipc_fd_flags |= O_NONBLOCK;
-	fcntl(ipc_fd, F_SETFL, ipc_fd_flags);
-
+	// TODO: What if the connection is closed by the other end?
 	while (1) {
-		while (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) != NULL) {
-			fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc);
-//#ifdef _DEBUG
-			cout << "ipc_subscription_listener_thread(): Read: ''" << ipc_buffer.data() << "'" << endl;
-//#endif //_DEBUG
-		//json += ipc_buffer.data();
-		}
-		sleep(1);
+		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
+		recvbuff[recvlen] = 0;
+		cout << "\tipc_subscription_listener_thread(): Read: ''" << recvbuff << "'" << endl;
 	}
-
-	if (pclose(ipc) < 0) {
-		cerr << "ipc_subscription_listener_thread(): Failed to pclose() unix domain socket for IPC with geth!";
-		//return json; //TODO: We may still have valid data to return, despite the error
-	}
+	socket.close();
 }
 
 
@@ -584,7 +563,7 @@ string BlockchainSecLib::getJSONstring(JsonValue value, string element) {
 
 void BlockchainSecLib::getFilterChanges(filter_id_t filter_id) {
 	string json_request, responce;
-	
+
 	json_request = "{\"jsonrpc\":\"2.0\","
 					"\"method\":\"eth_getFilterChanges\","
 					//"\"method\":\"eth_getFilterLogs\","
