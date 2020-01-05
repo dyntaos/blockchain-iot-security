@@ -67,6 +67,8 @@ contract DeviceMgmt {
 
 
 	// TODO: Should we index any of these event topics?
+
+	// Keccak256 Signature: 5f626ba70c61a68e9ff2aa5ec734ccab48bff6ee59f90bb81dc90dda5c90eecf
 	event Add_Device(address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
 	event Add_Gateway(address clientAddr, string name, string mac, string publicKey, uint32 device_id);
 	event Remove_Device(uint32 device_id);
@@ -277,7 +279,8 @@ contract DeviceMgmt {
 		id_to_device[device_id].gateway_managed = gateway_managed;
 
 		if (gateway_managed) {
-			id_to_device[device_id].eth_addr = clientAddr;
+			//id_to_device[device_id].eth_addr = clientAddr;
+			id_to_device[device_id].eth_addr = 0x0000000000000000000000000000000000000000;
 			id_to_device[device_id].has_eth_addr = true;
 		} else {
 			addr_to_id[clientAddr] = id_to_device[device_id].device_id;
