@@ -14,12 +14,12 @@ CFLAGS =
 CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic -g
 LDFLAGS =
 
-GASONINC = ./gason/src
+JSONINC = ./json/include
 CXXOPTSINC = ./cxxopts/include
 WIRINGPIINC = ./WiringPi/wiringPi
 LIBCONFIGINC = ./libconfig/lib
 
-INCLUDE = -I . -I $(CXXOPTSINC) -I $(GASONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
+INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
@@ -77,18 +77,13 @@ $(OBJ)/lora_trx.o: lora_trx.cpp
 $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(OBJ)/gason.o $(LIB)/libblockchainsec.a
+$(BIN)/client: $(OBJ)/client.o $(OBJ)/misc.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
 		$(OBJ)/client.o \
 		$(LORA_OBJ) \
 		$(OBJ)/misc.o \
-		$(OBJ)/gason.o \
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lpthread -lboost_system $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
 
-### Client Dependencies ###
-
-$(OBJ)/gason.o: $(GASONINC)/gason.cpp
-	$(CROSSCOMPILE)$(CC) -std=c++11 -g -c -o $@ $<
