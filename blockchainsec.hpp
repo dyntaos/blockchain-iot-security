@@ -2,7 +2,7 @@
 #define __BLOCKCHAINSEC_H
 
 #include <libconfig.h++>
-#include <gason.h>
+#include "json/include/nlohmann/json.hpp"
 
 #include <blockchainsec_except.hpp>
 
@@ -20,6 +20,8 @@
 
 #define ETH_DEFAULT_GAS								"0x7A120"
 
+
+using Json = nlohmann::json;
 
 namespace blockchainSec {
 
@@ -45,21 +47,16 @@ class BlockchainSecLib {
 		libconfig::Config cfg;
 		libconfig::Setting *cfg_root;
 
-		bool create_contract(void);
+		void create_contract(void);
 		std::string getTransactionReceipt(std::string transaction_hash);
 
 		std::string ethabi(std::string args);
-
-		std::string getJSONstring(std::string json, std::string element);
-		std::string getJSONstring(JsonValue json, std::string element);
 
 		std::string eth_ipc_request(std::string json_request);
 		std::string eth_call(std::string abi_data);
 		std::string eth_sendTransaction(std::string abi_data);
 		std::string eth_createContract(std::string data);
 		std::string eth_getTransactionReceipt(std::string transaction_hash);
-		void getFilterChanges(filter_id_t filter_id);
-		filter_id_t newFilter(std::string keccak_event_sig_hash);
 		static void ipc_subscription_listener_thread(void);
 
 };

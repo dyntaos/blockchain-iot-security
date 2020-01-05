@@ -8,42 +8,6 @@
 namespace blockchainSec {
 
 
-class JsonException : public std::runtime_error {
-	public:
-		JsonException(const char* msg) : std::runtime_error(msg) {}
-		JsonException(const std::string& msg) : std::runtime_error(msg) {}
-};
-
-
-class JsonElementNotFoundException : public JsonException {
-	public:
-		JsonElementNotFoundException(const char* msg) : JsonException(msg) {}
-		JsonElementNotFoundException(const std::string& msg) : JsonException(msg) {}
-};
-
-
-class JsonDataException : public JsonException {
-	public:
-		JsonDataException(const char* msg) : JsonException(msg) {}
-		JsonDataException(const std::string& msg) : JsonException(msg) {}
-};
-
-
-class JsonTypeException : public JsonException {
-	public:
-		JsonTypeException(const char* msg) : JsonException(msg) {}
-		JsonTypeException(const std::string& msg) : JsonException(msg) {}
-};
-
-
-class JsonNullException : public JsonTypeException {
-	public:
-		JsonNullException(const char* msg) : JsonTypeException(msg) {}
-		JsonNullException(const std::string& msg) : JsonTypeException(msg) {}
-};
-
-
-
 
 class TransactionException : public std::runtime_error {
 	public:
@@ -67,6 +31,13 @@ class InvalidArgumentException : public std::runtime_error {
 		InvalidArgumentException (const std::string& msg) : std::runtime_error(msg) {}
 };
 
+
+
+class ResourceRequestFailedException : public std::runtime_error {
+	public:
+		ResourceRequestFailedException (const char* msg) : std::runtime_error(msg) {}
+		ResourceRequestFailedException (const std::string& msg) : std::runtime_error(msg) {}
+};
 
 
 

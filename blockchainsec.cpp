@@ -71,12 +71,14 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 		/* We will compile the contract with solc, upload it
 		 * to the chain and save the address to the config file */
 		cout << "Compiling and uploading contract..." << endl << endl;
-		if (this->create_contract()) {
+		try {
+			this->create_contract();
 			cout << "Successfully compiled and uploaded contract" << endl
 				<< "The new contract address has been written to the "
 				"configuration file" << endl;
 			exit(EXIT_SUCCESS);
-		} else {
+		} catch(const TransactionFailedException &e) {
+			throw e;
 			cerr << "Failed to create contract!" << endl;
 			exit(EXIT_FAILURE);
 		}
@@ -99,6 +101,7 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
 	string data, transaction_hash, transaction_receipt;
+	Json transactionJsonData;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
 		throw InvalidArgumentException("Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
@@ -109,14 +112,19 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 
 	transaction_hash = this->eth_sendTransaction(data);
 	cout << "JSON DATA: " << transaction_hash << endl;
-	transaction_hash = this->getJSONstring(transaction_hash, "result");
+
+	transactionJsonData = Json::parse(transaction_hash);
+	auto findResult = transactionJsonData.find("result");
+
+	if (findResult == transactionJsonData.end()) {
+		throw TransactionFailedException("add_device(): Transaction hash was not present in responce to eth_sendTransaction!");
+	}
+	transaction_hash = findResult.value();
+
 	cout << "Transaction Hash: " << transaction_hash << endl;
 
 	try {
 		transaction_receipt = this->getTransactionReceipt(transaction_hash);
-	} catch(const JsonTypeException &e) {
-		//TODO: How to best handle this?
-		throw e;
 	} catch(const TransactionFailedException &e) {
 		//TODO: How to best handle this?
 		throw e;
@@ -158,54 +166,19 @@ string BlockchainSecLib::add_gateway(string client_addr, string name, string mac
 
 #ifdef _DEBUG
 void BlockchainSecLib::test(void) {
-	/*bool testsPassed = true;
-	string result;
 
-	result = this->ethabi("encode params -v bool 1");
-	if (result != "0000000000000000000000000000000000000000000000000000000000000001") {
-		cout << "ethabi(): Test 1 failed! Got return value of '" << result << "'" << endl;
-		testsPassed = false;
-	}
-
-	result = this->ethabi("encode params -v bool 1 -v string gavofyork -v bool 0");
-	if (result != "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000096761766f66796f726b0000000000000000000000000000000000000000000000") {
-		cout << "ethabi(): Test 2 failed! Got return value of '" << result << "'" << endl;
-		testsPassed = false;
-	}
-
-	result = this->ethabi("encode params -v bool[] [1,0,false]");
-	if (result != "00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") {
-		cout << "ethabi(): Test 3 failed! Got return value of '" << result << "'" << endl;
-		testsPassed = false;
-	}
-
-	result = this->ethabi("decode params -t bool[] 00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-	if (result != "bool[] [true,false,false]") {
-		cout << "ethabi(): Test 4 failed! Got return value of '" << result << "'" << endl;
-		testsPassed = false;
-	}
-
-	if (testsPassed) {
-		cout << "All tests passed successfully!" << endl;
-	} else {
-		cout << "Tests failed!" << endl;
-	}*/
 }
 #endif //_DEBUG
 
 
 
-bool BlockchainSecLib::create_contract(void) {
+void BlockchainSecLib::create_contract(void) {
 	string contract_bin,
-			result,
+			transactionJsonStr,
 			transaction_hash,
 			transaction_receipt,
 			contract_addr;
-	char *source, *endptr;
-	bool json_error = true;
-	int status;
-	JsonValue value;
-	JsonAllocator allocator;
+	Json transactionJsonData, receiptJsonData;
 
 	// TODO: When project is complete we dont need to recompile this everytime
 	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
@@ -214,59 +187,48 @@ bool BlockchainSecLib::create_contract(void) {
 
 	contract_bin = trim(readFile2(ETH_CONTRACT_BIN));
 
-	result = this->eth_createContract(contract_bin);
-	source = (char*) result.c_str(); //TODO: Is there a better solution than this cast?
+	transactionJsonStr = this->eth_createContract(contract_bin);
 
-	status = jsonParse(source, &endptr, &value, allocator);
-	if (status != JSON_OK) {
-		cerr << "Error parsing responce JSON data from eth_sendTransaction() during contract creation: " << jsonStrError(status) <<
-			" at " << endptr - source << endl;
-		exit(EXIT_FAILURE);
-	}
-	//TODO: Swap out for getJSONstring()
-	if (value.getTag() == JSON_OBJECT) {
-		for (auto i: value) {
-			if (strcmp(i->key, "result") == 0) {
-				//cout << i->value.toString() << endl;
-				transaction_hash = i->value.toString();
-				json_error = false;
-				break;
-			}
-		}
+	transactionJsonData = Json::parse(transactionJsonStr);
+	auto jsonFindResult = transactionJsonData.find("result");
+
+	if (jsonFindResult == transactionJsonData.end()) {
+		// "result" not in JSON responce
+		// TODO: What if "result" is not a string
+		throw TransactionFailedException("create_contract(): Transaction hash was not present in responce to eth_sendTransaction!");
 	}
 
-	if (json_error) {
-		cerr << "Corrupt JSON responce to eth_sendTransaction during contract creation: " <<
-		 	result << endl;
-		exit(EXIT_FAILURE);
-	}
+	transaction_hash = jsonFindResult.value();
 
 	cout << "Parsed contract creation transaction hash: " <<
 		transaction_hash << endl;
 
 	try {
 		transaction_receipt = this->getTransactionReceipt(transaction_hash);
-	} catch(const JsonTypeException &e) {
-		//TODO: How to best handle this?
-		throw e;
 	} catch(const TransactionFailedException &e) {
 		//TODO: How to best handle this?
 		throw e;
 	}
 
-	try {
-		contract_addr = getJSONstring(transaction_receipt, "contractAddress");
-	} catch(const JsonTypeException &e) {
-		//TODO: How to best handle this?
-		throw e;
-	} catch(const TransactionFailedException &e) {
-		//TODO: How to best handle this?
-		throw e;
+	cout << "RECEIPT: " << transaction_receipt << endl << endl;
+	receiptJsonData = Json::parse(transaction_receipt);
+	jsonFindResult = receiptJsonData.find("result");
+
+	if (!jsonFindResult.value().is_object()) {
+		throw TransactionFailedException("create_contract(): \"result\" was not a JSON object!");
 	}
+	auto subJsonFindResult = jsonFindResult.value().find("contractAddress");
+
+	if (subJsonFindResult == jsonFindResult.value().end()) {
+		// "contractAddress" not in JSON responce
+		// TODO: What if "contractAddress" is not a string
+		throw TransactionFailedException("create_contract(): \"contractAddress\" was not present in responce!");
+	}
+
+	contract_addr = subJsonFindResult.value();
 
 	if (contract_addr.compare("null") == 0) {
-		cerr << "Failed to obtain contract address..." << endl;
-		exit(EXIT_FAILURE);
+		throw TransactionFailedException("create_contract(): \"contractAddress\" was null!");
 	}
 
 	cout << "Contract Address: " << contract_addr << endl;
@@ -275,8 +237,6 @@ bool BlockchainSecLib::create_contract(void) {
 	if (cfg_root->exists("contract_addr")) cfg_root->remove("contract_addr");
 	cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
 	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
-
-	return true;
 }
 
 
@@ -284,6 +244,7 @@ bool BlockchainSecLib::create_contract(void) {
 string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
 	int retries = 0;
 	string transaction_receipt, result;
+	Json jsonData;
 
 	while(retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES) {
 		transaction_receipt = this->eth_getTransactionReceipt(transaction_hash);
@@ -294,23 +255,17 @@ string BlockchainSecLib::getTransactionReceipt(string transaction_hash) {
 		cout << transaction_receipt << endl << endl;
 #endif //_DEBUG
 
-		try {
-			result = this->getJSONstring(transaction_receipt, "result");
-			return transaction_receipt;
-
-		} catch(const JsonNullException &e) {
+		jsonData = Json::parse(transaction_receipt);
+		auto jsonFindResult = jsonData.find("result");
+		if (jsonFindResult == jsonData.end()) {
 			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
 			continue;
-
-		} catch(const JsonElementNotFoundException &e) {
+		} else if (jsonFindResult.value().is_null()) {
 			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
 			continue;
-
-		} catch(const JsonTypeException &e) {
-			return transaction_receipt;
 		}
 
-		sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+		return transaction_receipt;
 	}
 
 	throw TransactionFailedException(
@@ -333,15 +288,13 @@ string BlockchainSecLib::ethabi(string args) {
 	FILE *ethabi_pipe = popen(("ethabi " + args).c_str(), "r");
 	if (ethabi_pipe == NULL) {
 		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
-		cerr << "ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?" << endl;
-		return ""; //TODO
+		throw ResourceRequestFailedException("ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?");
 	}
 	while (fgets(pipe_buffer.data(), PIPE_BUFFER_LENGTH, ethabi_pipe) != NULL) {
 		result += pipe_buffer.data();
 	}
 	if (pclose(ethabi_pipe) < 0) {
-		cerr << "ethabi(): Failed to pclose() pipe to ethabi binary!";
-		return result; //TODO: We may still have valid data to return, despite the error
+		throw ResourceRequestFailedException("ethabi(): Failed to pclose() pipe to ethabi binary!");
 	}
 
 #ifdef _DEBUG
@@ -354,6 +307,8 @@ string BlockchainSecLib::ethabi(string args) {
 
 
 
+// TODO: Should this be ported to Unix Domain Sockets?
+// TODO: At the very least, replace cerr/return with exceptions
 string BlockchainSecLib::eth_ipc_request(string json_request) {
 	int ipc_fd_flags, ipc_fd;
 	string json;
@@ -366,14 +321,13 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 	FILE *ipc = popen(("echo '" + json_request + "' | nc -U '" + this->ipc_path + "'").c_str(), "r");
 	if (ipc == NULL) {
 		// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
-		cerr << "eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?" << endl;
-		return ""; //TODO
+		throw ResourceRequestFailedException("eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?");
 	}
 
 	ipc_fd = fileno(ipc);
 
 	if (fgets(ipc_buffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
-		cerr << "eth_ipc_request(): Error: Failed to read from IPC!" << endl;
+		throw ResourceRequestFailedException("eth_ipc_request(): Error: Failed to read from IPC!");
 	}
 
 	json += ipc_buffer.data();
@@ -390,8 +344,7 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 	}
 
 	if (pclose(ipc) < 0) {
-		cerr << "eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!";
-		return json; //TODO: We may still have valid data to return, despite the error
+		throw ResourceRequestFailedException("eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!");
 	}
 
 #ifdef _DEBUG
@@ -409,7 +362,7 @@ void BlockchainSecLib::ipc_subscription_listener_thread(void) {
 	boost::asio::io_service io_service;
 	boost::asio::local::stream_protocol::endpoint ep("/home/kale/.ethereum/geth.ipc");
 	boost::asio::local::stream_protocol::socket socket(io_service);
-	string data = "{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x022edf15cbe92ebaf84f2ada6efdc54f66727357\"}]}";
+	string data = "{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x73d28b0e8253a659b5d0dc96614550f970925bf1\"}]}";
 
 #ifdef _DEBUG
 	cout << "ipc_subscription_listener_thread()" << endl;
@@ -500,120 +453,6 @@ string BlockchainSecLib::eth_getTransactionReceipt(string transaction_hash) {
 #endif //_DEBUG
 
 	return this->eth_ipc_request(json_request);
-}
-
-
-
-string BlockchainSecLib::getJSONstring(string json, string element) {
-	char *source, *endptr;
-	int status;
-	JsonValue value;
-	JsonAllocator allocator;
-
-	source = (char*) json.c_str();
-
-	status = jsonParse(source, &endptr, &value, allocator);
-	if (status != JSON_OK) {
-		cerr << "Error parsing responce JSON data in getJSONstring(): " << jsonStrError(status) <<
-			" at " << endptr - source << endl;
-		string error = "Error parsing JSON data in getJSONstring(): ";
-		error += jsonStrError(status);
-		error += " at ";
-		error += (endptr - source);
-		throw JsonDataException(error);
-	}
-	return this->getJSONstring(value, element);
-}
-
-
-
-string BlockchainSecLib::getJSONstring(JsonValue value, string element) {
-	string result;
-
-	if (value.getTag() == JSON_OBJECT || value.getTag() == JSON_ARRAY) {
-		for (auto i: value) {
-			if ((strcmp(i->key, element.c_str()) == 0) && (i->value.getTag() == JSON_STRING)) {
-				return i->value.toString();
-
-			} else if (strcmp(i->key, element.c_str()) == 0) {
-				if (i->value.getTag() == JSON_NULL) {
-					throw JsonNullException("Requested JSON element is null.");
-				} else {
-					throw JsonTypeException("Requested JSON element was a type other than JSON_STRING.");
-				}
-
-			} else if (i->value.getTag() == JSON_OBJECT || i->value.getTag() == JSON_ARRAY) {
-				try {
-					result = this->getJSONstring(i->value, element);
-					return result;
-				} catch(const JsonElementNotFoundException &e) {
-					//Ignore this error if it originated form a recursive call
-				}
-			}
-		}
-	}
-
-	string error = "getJSONstring() did not find the requested element \"";
-	error += element;
-	error += "\"";
-	throw JsonElementNotFoundException(error);
-}
-
-
-
-void BlockchainSecLib::getFilterChanges(filter_id_t filter_id) {
-	string json_request, responce;
-
-	json_request = "{\"jsonrpc\":\"2.0\","
-					"\"method\":\"eth_getFilterChanges\","
-					//"\"method\":\"eth_getFilterLogs\","
-					"\"params\":["
-					"\"" + filter_id + "\""
-					"],\"id\":1}";
-
-#ifdef _DEBUG
-	cout << "getFilterChanges()" << endl;
-#endif //_DEBUG
-
-	responce = this->eth_ipc_request(json_request);
-	cout << "getFitlerChanges(\"" << filter_id << "\") = " << responce << endl << endl;
-}
-
-
-
-filter_id_t BlockchainSecLib::newFilter(string keccak_event_sig_hash) {
-	filter_id_t filter_id;
-	string json_request, responce;
-
-	json_request = "{\"jsonrpc\":\"2.0\","
-					"\"method\":\"eth_newFilter\","
-					"\"params\":[{"
-					"\"fromBlock\":\"0x0\","
-					"\"toBlock\":\"latest\","
-					"\"address\":\"" + this->eth_sec_contract_addr + "\","
-					//"\"topics\":[\"" + keccak_event_sig_hash + "\"]"
-					"\"topics\":[]"
-					"}],\"id\":1}";
-
-#ifdef _DEBUG
-	cout << "newFilter()" << endl;
-#endif //_DEBUG
-
-	responce = this->eth_ipc_request(json_request);
-
-	cout << "newFilter() JSON responce: " << responce << endl << endl;
-
-	try {
-		filter_id = getJSONstring(responce, "result");
-	} catch (const JsonNullException &e) {
-		throw e; //TODO
-	} catch (const JsonElementNotFoundException &e) {
-		throw e; //TODO
-	} catch (const JsonTypeException &e) {
-		throw e; //TODO
-	}
-
-	return filter_id;
 }
 
 
