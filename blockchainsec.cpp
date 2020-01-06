@@ -23,6 +23,18 @@ namespace blockchainSec {
 
 
 
+string BlockchainSecLib::getClientAddress(void) {
+	return this->eth_my_addr;
+}
+
+
+
+string BlockchainSecLib::getContractAddress(void) {
+	return this->eth_sec_contract_addr;
+}
+
+
+
 BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 	this->eth_sec_contract_addr = eth_sec_contract_addr; //TODO Check for reasonableness
@@ -316,26 +328,123 @@ string BlockchainSecLib::eth_ipc_request(string json_request) {
 
 
 
-void BlockchainSecLib::ipc_subscription_listener_thread(void) {
+void BlockchainSecLib::ipc_subscription_listener_thread(BlockchainSecLib &lib) {
+//void BlockchainSecLib::ipc_subscription_listener_thread(void) {
+	const string events[] = {
+		"Add_Device",
+		"Add_Gateway",
+		"Remove_Device",
+		"Remove_Gateway",
+		"Push_Data",
+		"Update_Addr",
+		"Authorize_Admin",
+		"Deauthorize_Admin"
+	};
+	const string signatures[] = {
+		"6d8b1348ac9490868dcf5de10f66764c3fd6abf3274c6d36fbf877fc9f6e798f",
+		"3288eeac8a88a024bc145e835dbfecbe5095e00c717c48986f19943367e9fa20",
+		"c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363",
+		"0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9",
+		"0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51",
+		"8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80",
+		"134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf",
+		"e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"
+	};
 	char recvbuff[4097];
 	int recvlen;
+
+	Json jsonData;
+	string data;
+
+	map<string, string> subscriptionToEventName;
+
 	boost::asio::io_service io_service;
 	boost::asio::local::stream_protocol::endpoint ep("/home/kale/.ethereum/geth.ipc");
 	boost::asio::local::stream_protocol::socket socket(io_service);
-	string data = "{\"id\": 1, \"method\": \"eth_subscribe\", \"params\": [\"logs\", {\"address\": \"0x73d28b0e8253a659b5d0dc96614550f970925bf1\"}]}";
 
 #ifdef _DEBUG
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
+	//TODO: Setup separate subscriptions for each log and store subscription/event names
+restart:
 	socket.connect(ep);
-	socket.send(boost::asio::buffer(data.c_str(), data.length()));
+
+	for (uint16_t i = 0; i < (uint16_t) sizeof(events); i++) {
+		data = "{\"id\":1,"
+					"\"method\":\"eth_subscribe\","
+					"\"params\":["
+						"\"logs\",{"
+							"\"address\":\"" + lib.getContractAddress() + "\","
+							"\"topics\":[\"" + signatures[i] + lib.getClientAddress() + "\"]"
+						"}"
+					"]"
+				"}"; //"\"topics\":[\"" + signatures[i] + lib.getClientAddress + "\"]"
+
+		socket.send(boost::asio::buffer(data.c_str(), data.length()));
+
+		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
+		recvbuff[recvlen] = 0;
+
+		// TODO URGENT: What if a subscription comes before this loop completes?!
+		// TODO: Should this be in a try catch? What to do if fails?
+		Json responce = Json::parse(recvbuff);
+		if (responce["result"].is_string()) {
+			throw ResourceRequestFailedException("Unexpected responce to eth_subscribe received!");
+		}
+		string result = responce["result"];
+		subscriptionToEventName[events[i]] = result;
+	}
 
 	// TODO: What if the connection is closed by the other end?
 	while (1) {
 		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
 		recvbuff[recvlen] = 0;
 		cout << "\tipc_subscription_listener_thread(): Read: ''" << recvbuff << "'" << endl;
+
+		string method, subscription, topics, data, logIndex;
+		Json resultJsonObject;
+
+		try {
+			jsonData = Json::parse(recvbuff); //TODO: Check for error? Try Catch?
+
+			method = jsonData["method"];
+			subscription = jsonData["params"]["subscription"];
+			resultJsonObject = jsonData["params"]["result"];
+			topics = resultJsonObject["topics"][0]; //TODO: Topics is an array, can we just use the first element?
+			data = resultJsonObject["data"];
+			logIndex = resultJsonObject["logIndex"];
+
+		} catch (const Json::exception &e) {
+			//TODO: More granularity?
+			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce:"
+				<< endl << "\t" << recvbuff << endl << e.what();
+			continue;
+		}
+
+		if (method.compare("eth_subscribe")) {
+			// "method" field of the JSON data is "eth_subscribe"
+			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscribe\"!"
+				<< endl << "\t" << recvbuff << endl << endl;
+			continue;
+		}
+
+		if (subscriptionToEventName.count(subscription) <= 0) {
+			//TODO: The subscription does not exist! Something is out of sync! -- Unsubscribe and start again?
+			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!" << endl;
+			socket.close();
+			subscriptionToEventName.clear();
+			goto restart; // TODO: Refactor to remove this
+		}
+
+		map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data);
+
+		eventLogMapMutex.lock();
+
+		eventLogMap[subscription + logIndex] = log;
+
+		eventLogMapMutex.unlock();
+		cout << "\t" << "ADDED TO MAP IN INDEX [\"" + subscription + logIndex + "\"]: " << eventLogMap[subscription + logIndex].dump() << endl << endl;
 	}
 	socket.close();
 }
