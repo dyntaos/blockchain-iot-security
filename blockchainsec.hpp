@@ -1,10 +1,12 @@
 #ifndef __BLOCKCHAINSEC_HPP
 #define __BLOCKCHAINSEC_HPP
 
+#include <thread>
 #include <mutex>
 #include <libconfig.h++>
 #include "json/include/nlohmann/json.hpp"
 
+#include <subscription_server.hpp>
 #include <blockchainsec_except.hpp>
 
 #define BLOCKCHAINSEC_CONFIG_F						"blockchainsec.conf"
@@ -26,7 +28,6 @@ using Json = nlohmann::json;
 
 namespace blockchainSec {
 
-typedef std::string filter_id_t;
 
 
 class BlockchainSecLib {
@@ -41,9 +42,7 @@ class BlockchainSecLib {
 		std::string add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
 		std::string add_gateway(std::string client_addr, std::string name, std::string mac, std::string public_key);
 
-		// Thread main function for geth log monitor thread
-		void ipc_subscription_listener_thread(BlockchainSecLib &lib);
-
+		void joinThreads(void);
 #ifdef _DEBUG
 		void test(void);
 #endif //_DEBUG
@@ -55,8 +54,8 @@ class BlockchainSecLib {
 		libconfig::Config cfg;
 		libconfig::Setting *cfg_root;
 
-		std::map<std::string, Json> eventLogMap;
-		std::mutex eventLogMapMutex;
+		std::thread *subscriptionListener;
+		EventLogWaitManager *eventLogWaitManager;
 
 		void create_contract(void);
 		std::string getTransactionReceipt(std::string transaction_hash);

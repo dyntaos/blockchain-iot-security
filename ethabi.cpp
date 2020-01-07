@@ -48,11 +48,11 @@ string ethabi(string args) {
 }
 
 
-
-map<string, string> ethabi_decode_log(string abi_file, string event_name, vector<string> topics, string data) {
+//TODO: Should I be using unique_ptr<unordered_map<...>> ?
+unordered_map<string, string> ethabi_decode_log(string abi_file, string event_name, vector<string> topics, string data) {
 	string query, responce;
 	vector<string> lines;
-	map<string, string> parsedLog;
+	unordered_map<string, string> parsedLog;
 	string topic_query;
 
 	for (vector<string>::iterator iter = topics.begin(); iter != topics.end(); ++iter) {

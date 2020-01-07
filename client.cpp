@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -121,15 +120,11 @@ int main(int argc, char *argv[]) {
 	}
 #endif //LORA_GATEWAY
 
-	// TODO: Move to inside BlockchainSecLib constructor?
-	thread ipc_thread(&BlockchainSecLib::ipc_subscription_listener_thread, sec, std::ref(*sec));
-
-	sleep(10);
+	sleep(4);
 	cout << "Adding device..." << endl;
 	sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true);
 
-	ipc_thread.join();
-
+	sec->joinThreads();
 	return EXIT_SUCCESS;
 }
 

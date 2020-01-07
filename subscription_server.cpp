@@ -1,9 +1,12 @@
 #include <iostream>
 #include <string>
+#include <condition_variable>
+#include <mutex>
 #include <boost/asio.hpp>
 
 #include <blockchainsec.hpp>
 #include <ethabi.hpp>
+#include <subscription_server.hpp>
 
 
 using namespace std;
@@ -11,7 +14,66 @@ namespace blockchainSec {
 
 
 
-void BlockchainSecLib::ipc_subscription_listener_thread(BlockchainSecLib &lib) {
+EventLogWaitManager::EventLogWaitManager(string clientAddress, string contractAddress) {
+	this->clientAddress = clientAddress;
+	this->contractAddress = contractAddress;
+}
+
+
+unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string logID) {
+	unordered_map<string, string> *element;
+	mtx.lock();
+
+	if (eventLogMap.count(logID) == 0) {
+		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
+	}
+
+	if (eventLogMap[logID]->hasWaitingThread) {
+		mtx.unlock();
+		throw ResourceRequestFailedException("Cannot request log which already has a thread waiting on it.");
+	}
+	eventLogMap[logID].get()->hasWaitingThread = true;
+
+	if (!eventLogMap[logID].get()->hasEventLog) {
+		mtx.unlock();
+		eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock); //TODO URGENT: Race condition!
+		mtx.lock();
+	}
+
+	element = new unordered_map<string, string>(*eventLogMap[logID].get()->eventLog.get());
+
+	mtx.unlock();
+
+	return unique_ptr<unordered_map<string, string>>(element);
+}
+
+
+
+void EventLogWaitManager::setEventLog(string logID, unordered_map<string, string> eventLog) {
+	mtx.lock();
+
+	if (eventLogMap.count(logID) == 0) {
+		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
+	}
+
+	if (eventLogMap[logID].get()->hasEventLog) {
+		mtx.unlock();
+		throw ResourceRequestFailedException("logID \"" + logID + "\" already has an associated event log.");
+	}
+
+	eventLogMap[logID].get()->eventLog = unique_ptr<unordered_map<string, string>>(new unordered_map<string, string>(eventLog));
+	eventLogMap[logID].get()->hasEventLog = true;
+
+	if (eventLogMap[logID].get()->hasWaitingThread) {
+		eventLogMap[logID].get()->cv.notify_all();
+	}
+
+	mtx.unlock();
+}
+
+
+
+void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 	const string events[] = {
 		"Add_Device",
 		"Add_Gateway",
@@ -57,10 +119,10 @@ restart:
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
 						"\"logs\",{"
-							"\"address\":\"" + lib.getContractAddress() + "\","
+							"\"address\":\"0x" + contractAddress + "\","
 							"\"topics\":[\"" +
 								"0x" + signatures[i] + "\"," +
-								"\"0x000000000000000000000000" + lib.getClientAddress().substr(2) +
+								"\"0x000000000000000000000000" + clientAddress +
 							"\"]"
 						"}"
 					"]"
@@ -90,7 +152,7 @@ restart:
 		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
 		recvbuff[recvlen] = 0;
 
-		string method, subscription, data, logIndex;
+		string method, subscription, data, transactionHash;
 		vector<string> topics;
 		Json resultJsonObject;
 
@@ -106,7 +168,7 @@ restart:
 				topics.push_back(iterStr);
 			}
 			data = resultJsonObject["data"];
-			logIndex = resultJsonObject["logIndex"];
+			transactionHash = resultJsonObject["transactionHash"];
 
 		} catch (const Json::exception &e) {
 			//TODO: More granularity?
@@ -145,23 +207,22 @@ restart:
 			goto restart; // TODO: Refactor to remove this
 		}
 
-		map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
+		unordered_map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
 
-		eventLogMapMutex.lock();
+		setEventLog(transactionHash, log);
 
-		eventLogMap[subscription] = log;
-
-		eventLogMapMutex.unlock();
-
+		mtx.lock();
 		cout << "\t"
 			<< "Event log received:"
 			<< endl
-			<< "[\"" << subscription
-			<< "\" (AKA \""
+			<< "[\"" << transactionHash
+			<< "\" (\""
 			<< subscriptionToEventName[subscription]
 			<< "\")] = "
-			<< eventLogMap[subscription].dump()
+			<< eventLogMap[transactionHash].get()->toString()
 			<< endl << endl;
+		mtx.unlock();
+
 
 	}
 	socket.close();

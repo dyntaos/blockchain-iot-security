@@ -10,7 +10,7 @@ namespace blockchainSec {
 
 
 std::string ethabi(std::string args);
-std::map<std::string, std::string> ethabi_decode_log(std::string abi_file, std::string event_name, std::vector<std::string> topics, std::string data);
+std::unordered_map<std::string, std::string> ethabi_decode_log(std::string abi_file, std::string event_name, std::vector<std::string> topics, std::string data);
 
 
 

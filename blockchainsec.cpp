@@ -114,6 +114,10 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 	cout << "Config contains contract_addr" << endl;
 	cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
+
+	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2));
+
+	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, eventLogWaitManager);
 }
 
 
@@ -407,6 +411,12 @@ string BlockchainSecLib::eth_getTransactionReceipt(string transaction_hash) {
 #endif //_DEBUG
 
 	return this->eth_ipc_request(json_request);
+}
+
+
+
+void BlockchainSecLib::joinThreads(void) {
+	subscriptionListener->join();
 }
 
 
