@@ -18,6 +18,7 @@ JSONINC = ./json/include
 CXXOPTSINC = ./cxxopts/include
 WIRINGPIINC = ./WiringPi/wiringPi
 LIBCONFIGINC = ./libconfig/lib
+LIBHYDROGENINC = ./libhydrogen
 
 INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
 ARCH = $(shell uname -s)$(shell uname -m)
@@ -57,6 +58,9 @@ _lora:
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
+$(OBJ)/subscription_server.o: subscription_server.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+
 $(OBJ)/ethabi.o: ethabi.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
@@ -66,8 +70,10 @@ $(OBJ)/lora_trx.o: lora_trx.cpp
 $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o
+$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o
 	ar rcs $@ $^
+
+
 
 
 
