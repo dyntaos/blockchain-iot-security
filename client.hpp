@@ -1,6 +1,6 @@
-#ifndef __CLIENT_H
-#define __CLIENT_H
+#ifndef __CLIENT_HPP
+#define __CLIENT_HPP
 
 
 
-#endif //__CLIENT_H
+#endif //__CLIENT_HPP

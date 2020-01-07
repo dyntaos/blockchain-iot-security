@@ -1,6 +1,12 @@
 #include <array>
 #include <vector>
 
+#ifdef _DEBUG
+
+#include <iostream>
+
+#endif //_DEBUG
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
@@ -29,8 +35,8 @@ string ethabi(string args) {
 	while (fgets(pipe_buffer.data(), PIPE_BUFFER_LENGTH, ethabi_pipe) != NULL) {
 		result += pipe_buffer.data();
 	}
-	if (pclose(ethabi_pipe) < 0) {
-		throw ResourceRequestFailedException("ethabi(): Failed to pclose() pipe to ethabi binary!");
+	if (pclose(ethabi_pipe) != 0) {
+		throw ResourceRequestFailedException("ethabi(): ethabi binary exited with a failure status!");
 	}
 
 #ifdef _DEBUG
@@ -43,23 +49,27 @@ string ethabi(string args) {
 
 
 
-map<string, string> ethabi_decode_log(string abi_file, string event_name, string topics, string data) {
+map<string, string> ethabi_decode_log(string abi_file, string event_name, vector<string> topics, string data) {
 	string query, responce;
 	vector<string> lines;
 	map<string, string> parsedLog;
+	string topic_query;
 
-	query = "decode log '" + abi_file + "' " + event_name + " -l " + topics + " " + data;
+	for (vector<string>::iterator iter = topics.begin(); iter != topics.end(); ++iter) {
+		topic_query += "-l " + *iter + " ";
+	}
+
+	query = "decode log " + abi_file + " " + event_name + " " + topic_query + data;
 	responce = ethabi(query);
 
-	// TODO: Devise a way to detect success or failiure, as the exit status is always 0
 	boost::split(lines, responce, boost::is_any_of("\n"));
 
 	for (vector<string>::iterator iter = lines.begin(); iter != lines.end(); ++iter) {
-		if (boost::trim_copy(*iter).compare("")) {
+		if (boost::trim_copy(*iter).compare("") == 0) {
 			continue;
 		}
 		//TODO: What if there is no space to sepatate key and value?
-		string key = (*iter).substr(0, (*iter).find_first_of(" ") - 1); //TODO: is minus 1 correct?
+		string key = (*iter).substr(0, (*iter).find_first_of(" "));
 		string value = (*iter).substr((*iter).find_first_of(" ") + 1);
 		parsedLog[key] = value;
 	}

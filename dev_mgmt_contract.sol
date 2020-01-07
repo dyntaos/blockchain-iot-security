@@ -69,28 +69,28 @@ contract DeviceMgmt {
 	// TODO: Should we index any of these event topics?
 
 	// Keccak256 Signature: 6d8b1348ac9490868dcf5de10f66764c3fd6abf3274c6d36fbf877fc9f6e798f
-	event Add_Device		(address msgSender, address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
+	event Add_Device		(address indexed msgSender, address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
 
 	// Keccak256 Signature: 3288eeac8a88a024bc145e835dbfecbe5095e00c717c48986f19943367e9fa20
-	event Add_Gateway		(address msgSender, address clientAddr, string name, string mac, string publicKey, uint32 device_id);
+	event Add_Gateway		(address indexed msgSender, address clientAddr, string name, string mac, string publicKey, uint32 device_id);
 
 	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
-	event Remove_Device		(address msgSender, uint32 device_id);
+	event Remove_Device		(address indexed msgSender, uint32 device_id);
 
 	// Keccak256 Signature: 0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9
-	event Remove_Gateway	(address msgSender, address gateway_addr, uint32 device_id);
+	event Remove_Gateway	(address indexed msgSender, address gateway_addr, uint32 device_id);
 
 	// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
-	event Push_Data			(address msgSender, uint32 device_id, uint timestamp, string data);
+	event Push_Data			(address indexed msgSender, uint32 device_id, uint timestamp, string data);
 
 	// Keccak256 Signature: 8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80
-	event Update_Addr		(address msgSender, uint32 device_id, uint addrType, string addr);
+	event Update_Addr		(address indexed msgSender, uint32 device_id, uint addrType, string addr);
 
 	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
-	event Authorize_Admin	(address msgSender, address newAdminAddr);
+	event Authorize_Admin	(address indexed msgSender, address newAdminAddr);
 
 	// Keccak256 Signature: e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160
-	event Deauthorize_Admin	(address msgSender, address adminAddr);
+	event Deauthorize_Admin	(address indexed msgSender, address adminAddr);
 
 
 

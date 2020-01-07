@@ -14,6 +14,7 @@
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 //TODO: Make function to see if "0x" needs to be prepended to function arguments
+//TODO: Make all stored addresses NOT store "0x"
 
 using namespace std;
 using namespace libconfig;
@@ -43,7 +44,7 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 				 | Config::OptionColonAssignmentForGroups
 				 | Config::OptionOpenBraceOnSeparateLine);
 
-	cout << "Read config file..." << endl;
+	cout << "Reading config file..." << endl;
 
 	try {
 		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
@@ -53,7 +54,13 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 		exit(EXIT_FAILURE);
 
 	} catch(const ParseException &e) {
-		cerr << "BlockchainSec: Config file error " << e.getFile() << ":" << e.getLine() << " - " << e.getError() << endl;
+		cerr << "BlockchainSec: Config file error "
+			<< e.getFile()
+			<< ":"
+			<< e.getLine()
+			<< " - "
+			<< e.getError()
+			<< endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -74,9 +81,11 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	cfg.lookupValue("client_eth_addr", this->eth_my_addr); //TODO Check for reasonableness
 
 	if (!compile && !cfg.exists("contract_addr")) {
-		cout << "Config doesnt have contract_addr" << endl
-			<< "Either add a contract address to the conf file or create a "
-			"new contract using the `--compile` flag" << endl;
+		cerr << "Config doesnt have contract_addr"
+			<< endl
+			<< "Either add a contract address to the conf file or "
+			"create a new contract using the `--compile` flag"
+			<< endl;
 
 		exit(EXIT_FAILURE);
 	}
@@ -84,13 +93,20 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	if (compile) {
 		/* We will compile the contract with solc, upload it
 		 * to the chain and save the address to the config file */
-		cout << "Compiling and uploading contract..." << endl << endl;
+		cout << "Compiling and uploading contract..."
+			<< endl
+			<< endl;
+
 		try {
 			this->create_contract();
-			cout << "Successfully compiled and uploaded contract" << endl
-				<< "The new contract address has been written to the "
-				"configuration file" << endl;
+			cout << "Successfully compiled and uploaded contract"
+				<< endl
+				<< "The new contract address has been "
+				"written to the configuration file"
+				<< endl;
+
 			exit(EXIT_SUCCESS);
+
 		} catch(const TransactionFailedException &e) {
 			throw e;
 			cerr << "Failed to create contract!" << endl;
@@ -98,8 +114,7 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 		}
 	}
 
-
-	cout << "Config had contract_addr" << endl;
+	cout << "Config contains contract_addr" << endl;
 	cfg.lookupValue("contract_addr", this->eth_sec_contract_addr);
 }
 
@@ -125,7 +140,6 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	data = ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + client_addr + "' -p '" + name + "' -p '" + mac + "' -p '" + public_key + "' -p " + (gateway_managed ? "true" : "false"));
 
 	transaction_hash = this->eth_sendTransaction(data);
-	cout << "JSON DATA: " << transaction_hash << endl;
 
 	transactionJsonData = Json::parse(transaction_hash);
 	auto findResult = transactionJsonData.find("result");
@@ -135,16 +149,12 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 	}
 	transaction_hash = findResult.value();
 
-	cout << "Transaction Hash: " << transaction_hash << endl;
-
 	try {
 		transaction_receipt = this->getTransactionReceipt(transaction_hash);
 	} catch(const TransactionFailedException &e) {
 		//TODO: How to best handle this? Allow it to be passed up -- Append to what()?
 		throw e;
 	}
-
-	cout << "Transaction Receipt: " << transaction_receipt << endl;
 
 	//TODO: Confirm success from logs
 	return "";
@@ -212,7 +222,6 @@ void BlockchainSecLib::create_contract(void) {
 		throw e;
 	}
 
-	cout << "RECEIPT: " << transaction_receipt << endl << endl;
 	receiptJsonData = Json::parse(transaction_receipt);
 	jsonFindResult = receiptJsonData.find("result");
 
@@ -238,6 +247,7 @@ void BlockchainSecLib::create_contract(void) {
 	//TODO: Save contract to config
 	if (cfg_root->exists("contract_addr")) cfg_root->remove("contract_addr");
 	cfg_root->add("contract_addr", Setting::TypeString) = contract_addr;
+	this->eth_sec_contract_addr = contract_addr;
 	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 }
 
@@ -370,16 +380,19 @@ void BlockchainSecLib::ipc_subscription_listener_thread(BlockchainSecLib &lib) {
 restart:
 	socket.connect(ep);
 
-	for (uint16_t i = 0; i < (uint16_t) sizeof(events); i++) {
+	for (uint16_t i = 0; i < 8; i++) {
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
 						"\"logs\",{"
 							"\"address\":\"" + lib.getContractAddress() + "\","
-							"\"topics\":[\"" + signatures[i] + lib.getClientAddress() + "\"]"
+							"\"topics\":[\"" +
+								"0x" + signatures[i] + "\"," +
+								"\"0x000000000000000000000000" + lib.getClientAddress().substr(2) +
+							"\"]"
 						"}"
 					"]"
-				"}"; //"\"topics\":[\"" + signatures[i] + lib.getClientAddress + "\"]"
+				"}";
 
 		socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
@@ -389,20 +402,24 @@ restart:
 		// TODO URGENT: What if a subscription comes before this loop completes?!
 		// TODO: Should this be in a try catch? What to do if fails?
 		Json responce = Json::parse(recvbuff);
-		if (responce["result"].is_string()) {
-			throw ResourceRequestFailedException("Unexpected responce to eth_subscribe received!");
+		if (responce.count("error") > 0) {
+			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!");
+		}
+		if (!responce["result"].is_string()) {
+			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Unexpected responce to eth_subscribe received!");
 		}
 		string result = responce["result"];
-		subscriptionToEventName[events[i]] = result;
+
+		subscriptionToEventName[result] = events[i];
 	}
 
 	// TODO: What if the connection is closed by the other end?
-	while (1) {
+	for (;;) {
 		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
 		recvbuff[recvlen] = 0;
-		cout << "\tipc_subscription_listener_thread(): Read: ''" << recvbuff << "'" << endl;
 
-		string method, subscription, topics, data, logIndex;
+		string method, subscription, data, logIndex;
+		vector<string> topics;
 		Json resultJsonObject;
 
 		try {
@@ -411,40 +428,69 @@ restart:
 			method = jsonData["method"];
 			subscription = jsonData["params"]["subscription"];
 			resultJsonObject = jsonData["params"]["result"];
-			topics = resultJsonObject["topics"][0]; //TODO: Topics is an array, can we just use the first element?
+			for (Json::iterator iter = resultJsonObject["topics"].begin(); iter != resultJsonObject["topics"].end(); ++iter) {
+				string iterStr = *iter;
+				iterStr = iterStr.substr(2);
+				topics.push_back(iterStr);
+			}
 			data = resultJsonObject["data"];
 			logIndex = resultJsonObject["logIndex"];
 
 		} catch (const Json::exception &e) {
 			//TODO: More granularity?
 			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce:"
-				<< endl << "\t" << recvbuff << endl << e.what();
+				<< endl
+				<< "\t"
+				<< recvbuff
+				<< endl
+				<< e.what()
+				<< endl;
 			continue;
 		}
 
-		if (method.compare("eth_subscribe")) {
-			// "method" field of the JSON data is "eth_subscribe"
-			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscribe\"!"
-				<< endl << "\t" << recvbuff << endl << endl;
+		if (method.compare("eth_subscription") != 0) {
+			// "method" field of the JSON data is not "eth_subscription"
+			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscription\"!"
+				<< endl
+				<< "\t"
+				<< recvbuff
+				<< endl
+				<< endl;
 			continue;
 		}
 
 		if (subscriptionToEventName.count(subscription) <= 0) {
 			//TODO: The subscription does not exist! Something is out of sync! -- Unsubscribe and start again?
-			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!" << endl;
+			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!"
+				<< endl
+				<< "\t"
+				<< recvbuff
+				<< endl
+				<< endl;
+
 			socket.close();
 			subscriptionToEventName.clear();
 			goto restart; // TODO: Refactor to remove this
 		}
 
-		map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data);
+		map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
 
 		eventLogMapMutex.lock();
 
-		eventLogMap[subscription + logIndex] = log;
+		eventLogMap[subscription] = log;
 
 		eventLogMapMutex.unlock();
-		cout << "\t" << "ADDED TO MAP IN INDEX [\"" + subscription + logIndex + "\"]: " << eventLogMap[subscription + logIndex].dump() << endl << endl;
+
+		cout << "\t"
+			<< "Event log received:"
+			<< endl
+			<< "[\"" << subscription
+			<< "\" (AKA \""
+			<< subscriptionToEventName[subscription]
+			<< "\")] = "
+			<< eventLogMap[subscription].dump()
+			<< endl << endl;
+
 	}
 	socket.close();
 }
@@ -480,7 +526,7 @@ string BlockchainSecLib::eth_sendTransaction(string abi_data) {
 									"\"data\":\"0x" + abi_data +
 								"\"}],"
 								"\"id\":1}";
-	cout << json_request << endl << endl;
+
 #ifdef _DEBUG
 	cout << "eth_sendTransaction()" << endl;
 #endif //_DEBUG
