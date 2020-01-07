@@ -36,12 +36,12 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 
 	if (!eventLogMap[logID].get()->hasEventLog) {
 		mtx.unlock();
-		eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock); //TODO URGENT: Race condition!
+		while (!eventLogMap[logID].get()->hasEventLog) eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock);
 		mtx.lock();
 	}
 
 	element = new unordered_map<string, string>(*eventLogMap[logID].get()->eventLog.get());
-
+	eventLogMap.erase(logID);
 	mtx.unlock();
 
 	return unique_ptr<unordered_map<string, string>>(element);

@@ -39,7 +39,7 @@ class BlockchainSecLib {
 		std::string getClientAddress(void);
 		std::string getContractAddress(void);
 
-		std::string add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
+		void add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
 		std::string add_gateway(std::string client_addr, std::string name, std::string mac, std::string public_key);
 
 		void joinThreads(void);

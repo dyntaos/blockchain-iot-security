@@ -130,7 +130,7 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
-string BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
+void BlockchainSecLib::add_device(string client_addr, string name, string mac, string public_key, bool gateway_managed) {
 	string data, transaction_hash, transaction_receipt;
 	Json transactionJsonData;
 
@@ -158,8 +158,17 @@ string BlockchainSecLib::add_device(string client_addr, string name, string mac,
 		throw e;
 	}
 
-	//TODO: Confirm success from logs
-	return "";
+	auto eventLog = eventLogWaitManager->getEventLog(transaction_hash); // TODO URGENT: If the transaction fails this will hang!
+	string logStr = "{ ";
+	for (std::pair<std::string, std::string> kv : *eventLog.get()) {
+		logStr += "\"" + kv.first + "\":\"" + kv.second + "\", ";
+	}
+	logStr = logStr.substr(0, logStr.length() - 2);
+	logStr += " }";
+	cout << "Device added successfully!"
+		<< endl
+		<< logStr
+		<< endl;
 }
 
 

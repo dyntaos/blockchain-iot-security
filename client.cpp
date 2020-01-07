@@ -123,6 +123,11 @@ int main(int argc, char *argv[]) {
 	sleep(4);
 	cout << "Adding device..." << endl;
 	sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true);
+	cout << "Back in client!" << endl;
+
+	cout << "Adding device2..." << endl;
+	sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", "TEST   PUBKEY    2", true);
+	cout << "Back in client 2!" << endl;
 
 	sec->joinThreads();
 	return EXIT_SUCCESS;

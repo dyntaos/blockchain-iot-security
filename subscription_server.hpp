@@ -22,12 +22,19 @@ class EventLogWaitManager {
 	private:
 		std::string contractAddress;
 		std::string clientAddress;
+
 		struct EventLogWaitElement {
+			std::mutex cvLockMtx;
 			std::unique_lock<std::mutex> cvLock;
 			std::condition_variable cv;
 			bool hasWaitingThread = false;
 			bool hasEventLog = false;
 			std::unique_ptr<std::unordered_map<std::string, std::string>> eventLog; //TODO: Should this be a pointer?
+
+			EventLogWaitElement() {
+				cvLock = std::unique_lock<std::mutex>(cvLockMtx);
+			}
+
 			std::string toString(void) {
 				std::string str = "{ ";
 				for (std::pair<std::string, std::string> kv : *eventLog.get()) {
@@ -38,6 +45,7 @@ class EventLogWaitManager {
 				return str;
 			}
 		};
+
 		std::mutex mtx;
 		std::unordered_map<std::string, std::unique_ptr<EventLogWaitElement>> eventLogMap;
 };
