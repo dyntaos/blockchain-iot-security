@@ -40,6 +40,9 @@ class BlockchainSecLib {
 		std::string getContractAddress(void);
 
 		bool is_admin(std::string clientAddress);
+		bool is_authd(uint32_t deviceID);
+		bool get_my_device_id(void);
+		std::string get_key(uint32_t deviceID);
 
 		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
 		bool add_gateway(std::string gatewayAddress, std::string name, std::string mac, std::string publicKey);

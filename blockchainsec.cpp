@@ -2,6 +2,7 @@
 #include <array>
 #include <iostream>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -169,7 +170,7 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
-	string data;
+	string data, funcName = "add_device";
 	unique_ptr<unordered_map<string, string>> eventLog;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
@@ -180,7 +181,7 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 
 	// Encode the contract's arguments
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " add_device"
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
 		" -p '" + deviceAddress +
 		"' -p '" + name +
 		"' -p '" + mac +
@@ -203,7 +204,8 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 	}
 	logStr = logStr.substr(0, logStr.length() - 2);
 	logStr += " }";
-	cout << "add_device() successful!"
+	cout << funcName
+		<< "() successful!"
 		<< endl
 		<< logStr
 		<< endl;
@@ -217,7 +219,7 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
-	string data;
+	string data, funcName = "add_gateway";
 	unique_ptr<unordered_map<string, string>> eventLog;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
@@ -227,7 +229,7 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 	}
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " add_gateway"
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
 		" -p '" + gatewayAddress +
 		"' -p '" + name +
 		"' -p '" + mac +
@@ -249,7 +251,8 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 	}
 	logStr = logStr.substr(0, logStr.length() - 2);
 	logStr += " }";
-	cout << "add_gateway() successful!"
+	cout << funcName
+		<< "() successful!"
 		<< endl
 		<< logStr
 		<< endl;
@@ -261,17 +264,65 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 
 
 // TODO: Change "clientAddress" to something more suitable
+// Throws ResourceRequestFailedException from ethabi()
 bool BlockchainSecLib::is_admin(string clientAddress) {
-	string data, result;
+	string data, result, funcName = "is_admin";
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " is_admin"
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
 		" -p '" + clientAddress + "'"
 	);
 
 	Json callJson = call_helper(data);
 	result = callJson["result"];
 	return stoi(result.substr(2)) == 1;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+bool BlockchainSecLib::is_authd(uint32_t deviceID) {
+	string data, result, funcName = "is_authd";
+
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
+		" -p '" + boost::lexical_cast<string>(deviceID) + "'"
+	);
+
+	Json callJson = call_helper(data);
+	result = callJson["result"];
+	return stoi(result.substr(2)) == 1;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+bool BlockchainSecLib::get_my_device_id(void) {
+	string data, result, funcName = "get_my_device_id";
+
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName
+	);
+
+	Json callJson = call_helper(data);
+	result = callJson["result"];
+	return stoi(result.substr(2));
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_key(uint32_t deviceID) {
+	string data, result, funcName = "get_key";
+
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
+		" -p '" + boost::lexical_cast<string>(deviceID) + "'"
+	);
+
+	Json callJson = call_helper(data);
+	result = callJson["result"];
+	return ethabi_decode_result(ETH_CONTRACT_ABI, funcName, result.substr(2));
 }
 
 
