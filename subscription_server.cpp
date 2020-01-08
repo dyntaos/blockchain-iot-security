@@ -14,9 +14,10 @@ namespace blockchainSec {
 
 
 
-EventLogWaitManager::EventLogWaitManager(string clientAddress, string contractAddress) {
+EventLogWaitManager::EventLogWaitManager(string clientAddress, string contractAddress, string ipcPath) {
 	this->clientAddress = clientAddress;
 	this->contractAddress = contractAddress;
+	this->ipcPath = ipcPath;
 }
 
 
@@ -94,8 +95,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 		"134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf",
 		"e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"
 	};
-	char recvbuff[4097];
-	int recvlen;
+	char receiveBuffer[4096]; //TODO: #define this
+	int receiveLength;
 
 	Json jsonData;
 	string data;
@@ -103,14 +104,13 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 	map<string, string> subscriptionToEventName;
 
 	boost::asio::io_service io_service;
-	boost::asio::local::stream_protocol::endpoint ep("/home/kale/.ethereum/geth.ipc"); //TODO: Remove hardcoded value
+	boost::asio::local::stream_protocol::endpoint ep(ipcPath);
 	boost::asio::local::stream_protocol::socket socket(io_service);
 
 #ifdef _DEBUG
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
-	//TODO: Setup separate subscriptions for each log and store subscription/event names
 restart:
 	socket.connect(ep);
 
@@ -130,12 +130,12 @@ restart:
 
 		socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
-		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
-		recvbuff[recvlen] = 0;
+		receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, 4095)); // TODO: What if the entire message is not received...
+		receiveBuffer[receiveLength] = 0;
 
 		// TODO URGENT: What if a subscription comes before this loop completes?!
 		// TODO: Should this be in a try catch? What to do if fails?
-		Json responce = Json::parse(recvbuff);
+		Json responce = Json::parse(receiveBuffer);
 		if (responce.count("error") > 0) {
 			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!");
 		}
@@ -149,15 +149,15 @@ restart:
 
 	// TODO: What if the connection is closed by the other end?
 	for (;;) {
-		recvlen = socket.receive(boost::asio::buffer(recvbuff, 4096)); // TODO: What if the entire message is not received...
-		recvbuff[recvlen] = 0;
+		receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, 4096)); // TODO: What if the entire message is not received...
+		receiveBuffer[receiveLength] = 0;
 
 		string method, subscription, data, transactionHash;
 		vector<string> topics;
 		Json resultJsonObject;
 
 		try {
-			jsonData = Json::parse(recvbuff); //TODO: Check for error? Try Catch?
+			jsonData = Json::parse(receiveBuffer); //TODO: Check for error? Try Catch?
 
 			method = jsonData["method"];
 			subscription = jsonData["params"]["subscription"];
@@ -175,7 +175,7 @@ restart:
 			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce:"
 				<< endl
 				<< "\t"
-				<< recvbuff
+				<< receiveBuffer
 				<< endl
 				<< e.what()
 				<< endl;
@@ -187,7 +187,7 @@ restart:
 			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscription\"!"
 				<< endl
 				<< "\t"
-				<< recvbuff
+				<< receiveBuffer
 				<< endl
 				<< endl;
 			continue;
@@ -198,7 +198,7 @@ restart:
 			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!"
 				<< endl
 				<< "\t"
-				<< recvbuff
+				<< receiveBuffer
 				<< endl
 				<< endl;
 
@@ -208,7 +208,7 @@ restart:
 		}
 
 		unordered_map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
-
+		log["EventName"] = subscriptionToEventName[subscription];
 		setEventLog(transactionHash, log);
 
 		mtx.lock();
@@ -222,7 +222,6 @@ restart:
 			<< eventLogMap[transactionHash].get()->toString()
 			<< endl << endl;
 		mtx.unlock();
-
 
 	}
 	socket.close();

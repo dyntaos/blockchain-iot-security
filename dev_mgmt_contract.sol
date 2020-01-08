@@ -157,7 +157,7 @@ contract DeviceMgmt {
 	 * @dev
 	 */
 	constructor() public {
-		next_device_id = 0;
+		next_device_id = 1; // A device_id of 0 indicates unassigned (ex: if addr_to_id[addr] == 0 : unassigned)
 		admin_mapping[msg.sender].isAdmin = true;
 		active_admin_users.push(msg.sender);
 		admin_mapping[msg.sender].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
@@ -271,7 +271,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function add_device(address clientAddr, string calldata name, string calldata mac, string calldata publicKey, bool gateway_managed) external _admin returns(uint32) {
-		require(gateway_managed || (!id_to_device[addr_to_id[clientAddr]].active));
+		require(gateway_managed || addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
 			device_id = free_device_id_stack[free_device_id_stack.length - 1];
@@ -315,7 +315,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function add_gateway(address clientAddr, string calldata name, string calldata mac, string calldata publicKey) external _admin returns(uint32) {
-		require(!id_to_device[addr_to_id[clientAddr]].active);
+		require(addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
 			device_id = free_device_id_stack[free_device_id_stack.length - 1];

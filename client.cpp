@@ -13,15 +13,15 @@ using namespace std;
 using namespace blockchainSec;
 
 //TODO: Globals are bad
-bool compile_flag = false;
-bool gateway_flag = false;
+bool compileFlag = false;
+bool gatewayFlag = false;
 
 BlockchainSecLib *sec;
 
 
 
-cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
-	bool help_flag;
+cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
+	bool helpFlag;
 	try {
 		cxxopts::Options options(argv[0], "");
 		options
@@ -31,13 +31,13 @@ cxxopts::ParseResult parse_flags(int argc, char* argv[]) {
 		options
 			.allow_unrecognised_options()
 			.add_options()
-			("h,help", "Display help", cxxopts::value<bool>(help_flag))
-			("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compile_flag))
-			("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gateway_flag));
+			("h,help", "Display help", cxxopts::value<bool>(helpFlag))
+			("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compileFlag))
+			("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gatewayFlag));
 
 		auto result = options.parse(argc, argv);
 
-		if (help_flag) {
+		if (helpFlag) {
 			cout << options.help({"", "Group"}) << endl;
 			exit(EXIT_SUCCESS);
 		}
@@ -80,16 +80,16 @@ int main(int argc, char *argv[]) {
 
 	cout << ".:Blockchain Security Framework Client:." << endl;
 
-	auto flags = parse_flags(argc, argv);;
+	auto flags = parseFlags(argc, argv);
 	(void) argc;
 	(void) argv;
 
 
-	if (compile_flag) {
+	if (compileFlag) {
 		cout << "Compiling smart contract..." << endl;
 	}
 
-	if (gateway_flag) {
+	if (gatewayFlag) {
 #ifdef LORA_GATEWAY
 		cout << "Started in gateway mode..." << endl;
 		trx = new LoraTrx();
@@ -100,14 +100,14 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
-	sec = new BlockchainSecLib(compile_flag);
+	sec = new BlockchainSecLib(compileFlag);
 
 #ifdef _DEBUG
 	sec->test();
 #endif //_DEBUG
 
 #ifdef LORA_GATEWAY
-	if (gateway_flag) {
+	if (gatewayFlag) {
 		thread send_thread(senderThread, std::ref(*trx));
 		string msg;
 
@@ -122,14 +122,19 @@ int main(int argc, char *argv[]) {
 
 	sleep(4);
 	cout << "Adding device..." << endl;
-	sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true);
-	cout << "Back in client!" << endl;
+	if (!sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true)) {
+		cout << "Failed to add device 1!" << endl;
+	} else {
+		cout << "Successfully added device 1!" << endl;
+	}
+
 
 	cout << "Adding device2..." << endl;
-	sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", "TEST   PUBKEY    2", true);
-	cout << "Back in client 2!" << endl;
-
+	if (!sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", "TEST   PUBKEY    2", false)) {
+		cout << "Failed to add device 2!" << endl;
+	} else {
+		cout << "Successfully added device 2!" << endl;
+	}
 	sec->joinThreads();
 	return EXIT_SUCCESS;
 }
-

@@ -39,8 +39,8 @@ class BlockchainSecLib {
 		std::string getClientAddress(void);
 		std::string getContractAddress(void);
 
-		void add_device(std::string client_addr, std::string name, std::string mac, std::string public_key, bool gateway_managed);
-		std::string add_gateway(std::string client_addr, std::string name, std::string mac, std::string public_key);
+		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
+		std::string add_gateway(std::string gatewayAddress, std::string name, std::string mac, std::string publicKey);
 
 		void joinThreads(void);
 #ifdef _DEBUG
@@ -48,23 +48,23 @@ class BlockchainSecLib {
 #endif //_DEBUG
 
 	private:
-		std::string ipc_path;
-		std::string eth_my_addr;
-		std::string eth_sec_contract_addr;
+		std::string ipcPath;
+		std::string clientAddress;
+		std::string contractAddress;
 		libconfig::Config cfg;
-		libconfig::Setting *cfg_root;
+		libconfig::Setting *cfgRoot;
 
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
 
 		void create_contract(void);
-		std::string getTransactionReceipt(std::string transaction_hash);
+		std::string getTransactionReceipt(std::string transactionHash);
 
-		std::string eth_ipc_request(std::string json_request);
-		std::string eth_call(std::string abi_data);
-		std::string eth_sendTransaction(std::string abi_data);
+		std::string eth_ipc_request(std::string jsonRequest);
+		std::string eth_call(std::string abiData);
+		std::string eth_sendTransaction(std::string abiData);
 		std::string eth_createContract(std::string data);
-		std::string eth_getTransactionReceipt(std::string transaction_hash);
+		std::string eth_getTransactionReceipt(std::string transactionHash);
 };
 
 }

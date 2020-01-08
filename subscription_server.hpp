@@ -12,7 +12,7 @@ namespace blockchainSec {
 
 class EventLogWaitManager {
 	public:
-		EventLogWaitManager(std::string clientAddress, std::string contractAddress);
+		EventLogWaitManager(std::string clientAddress, std::string contractAddress, std::string ipcPath);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> getEventLog(std::string logID);
 		void setEventLog(std::string logID, std::unordered_map<std::string, std::string> eventLog);
 
@@ -22,6 +22,7 @@ class EventLogWaitManager {
 	private:
 		std::string contractAddress;
 		std::string clientAddress;
+		std::string ipcPath;
 
 		struct EventLogWaitElement {
 			std::mutex cvLockMtx;
