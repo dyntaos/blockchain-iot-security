@@ -129,17 +129,9 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
-bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
-	string data, transactionHash, transactionReceipt;
+unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string data) {
+	string transactionHash, transactionReceipt;
 	Json transactionJsonData;
-
-	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
-		throw InvalidArgumentException("Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
-	}
-
-	// Encode the contract's arguments
-	data = ethabi("encode -l function " ETH_CONTRACT_ABI " add_device -p '" + deviceAddress + "' -p '" + name + "' -p '" + mac + "' -p '" + publicKey + "' -p " + (gatewayManaged ? "true" : "false"));
-
 
 	// Make an eth_call with the parameters first to check the contract will not fail
 	string callStr = eth_call(data);
@@ -147,64 +139,116 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 	string callResult = callJson["result"];
 	if (callResult.compare("0x") == 0) {
 		// The contract failed to execute (a require statement failed)
-		return false;
+		throw new CallFailedException("eth_call did not execute successfully!");
 	}
 
-
-	//TODO: If !gatewayManaged make sure clientAddr is valid
-
-	transactionHash = this->eth_sendTransaction(data);
-
+	transactionHash = eth_sendTransaction(data);
 	transactionJsonData = Json::parse(transactionHash);
 	auto findResult = transactionJsonData.find("result");
 
 	if (findResult == transactionJsonData.end()) {
-		throw TransactionFailedException("add_device(): Transaction hash was not present in responce to eth_sendTransaction!");
+		throw TransactionFailedException(
+			"Transaction hash was not present in responce to eth_sendTransaction!"
+		);
 	}
+
 	transactionHash = findResult.value();
+	transactionReceipt = getTransactionReceipt(transactionHash);
+	return eventLogWaitManager->getEventLog(transactionHash);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
+	string data;
+	unique_ptr<unordered_map<string, string>> eventLog;
+
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
+		throw InvalidArgumentException(
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
+		);
+	}
+
+	// Encode the contract's arguments
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " add_device"
+		" -p '" + deviceAddress +
+		"' -p '" + name +
+		"' -p '" + mac +
+		"' -p '" + publicKey +
+		"' -p " + (gatewayManaged ? "true" : "false")
+	);
 
 	try {
-		transactionReceipt = this->getTransactionReceipt(transactionHash);
-	} catch(const TransactionFailedException &e) {
-		//TODO: How to best handle this? Allow it to be passed up -- Append to what()?
-		throw e;
+		eventLog = contract_helper(data);
+	} catch (const CallFailedException &e) {
+		return false;
+	} catch (const TransactionFailedException &e) {
+		return false;
 	}
 
-	auto eventLog = eventLogWaitManager->getEventLog(transactionHash); // TODO URGENT: If the transaction fails this will hang!
+#ifdef _DEBUG
 	string logStr = "{ ";
 	for (std::pair<std::string, std::string> kv : *eventLog.get()) {
 		logStr += "\"" + kv.first + "\":\"" + kv.second + "\", ";
 	}
 	logStr = logStr.substr(0, logStr.length() - 2);
 	logStr += " }";
+	cout << "add_device() successful!"
+		<< endl
+		<< logStr
+		<< endl;
+#endif //_DEBUG
 
-	if ((*eventLog.get())["EventName"].compare("Fail") == 0) {
-		cout << "add_device() failed!"
-			<< endl
-			<< logStr
-			<< endl;
-		return false;
-	} else {
-		cout << "add_device() successful!"
-			<< endl
-			<< logStr
-			<< endl;
-		return true;
-	}
+	return true;
 }
 
 
 
-string BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
 	string data;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
-		throw InvalidArgumentException("Gateway name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
+		throw InvalidArgumentException(
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
+		);
 	}
-	//TODO: If !gatewayManaged make sure clientAddr is valid
 
-	data = ethabi("encode -l function " ETH_CONTRACT_ABI " add_gateway -p '" + gatewayAddress + "' -p '" + name + "' -p '" + mac + "' -p '" + publicKey + "'");
-	return this->eth_sendTransaction(data);
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " add_gateway"
+		" -p '" + gatewayAddress +
+		"' -p '" + name +
+		"' -p '" + mac +
+		"' -p '" + publicKey + "'"
+	);
+
+	try {
+		eventLog = contract_helper(data);
+	} catch (const CallFailedException &e) {
+		return false;
+	} catch (const TransactionFailedException &e) {
+		return false;
+	}
+
+#ifdef _DEBUG
+	string logStr = "{ ";
+	for (std::pair<std::string, std::string> kv : *eventLog.get()) {
+		logStr += "\"" + kv.first + "\":\"" + kv.second + "\", ";
+	}
+	logStr = logStr.substr(0, logStr.length() - 2);
+	logStr += " }";
+	cout << "add_gateway() successful!"
+		<< endl
+		<< logStr
+		<< endl;
+#endif //_DEBUG
+
+	return true;
 }
 
 

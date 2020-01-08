@@ -15,6 +15,11 @@ class TransactionException : public std::runtime_error {
 		TransactionException(const std::string& msg) : std::runtime_error(msg) {}
 };
 
+class CallFailedException : public TransactionException {
+	public:
+		CallFailedException(const char* msg) : TransactionException(msg) {}
+		CallFailedException(const std::string& msg) : TransactionException(msg) {}
+};
 
 class TransactionFailedException : public TransactionException {
 	public:
