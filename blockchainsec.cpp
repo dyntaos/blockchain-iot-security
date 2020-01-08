@@ -114,7 +114,7 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	cout << "Config contains contractAddress" << endl;
 	cfg.lookupValue("contractAddress", contractAddress);
 
-	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2));
+	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2), ipcPath);
 
 	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, eventLogWaitManager);
 }
