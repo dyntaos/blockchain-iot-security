@@ -135,6 +135,25 @@ int main(int argc, char *argv[]) {
 	} else {
 		cout << "Successfully added device 2!" << endl;
 	}
+
+
+	cout << "is_admin(a4528ce8f47845b3bbf842da92bae9359e23fa3b)..." << endl;
+	if (sec->is_admin("a4528ce8f47845b3bbf842da92bae9359e23fa3b")) {
+		cout << "TRUE" << endl;
+	} else {
+		cout << "FALSE" << endl;
+	}
+
+
+	cout << "is_admin(0000000000000000000000000000000000000000)..." << endl;
+	if (sec->is_admin("0000000000000000000000000000000000000000")) {
+		cout << "TRUE" << endl;
+	} else {
+		cout << "FALSE" << endl;
+	}
+
+
+
 	sec->joinThreads();
 	return EXIT_SUCCESS;
 }

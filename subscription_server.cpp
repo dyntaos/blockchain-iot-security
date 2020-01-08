@@ -211,6 +211,7 @@ restart:
 		log["EventName"] = subscriptionToEventName[subscription];
 		setEventLog(transactionHash, log);
 
+#ifdef _DEBUG
 		mtx.lock();
 		cout << "\t"
 			<< "Event log received:"
@@ -222,6 +223,7 @@ restart:
 			<< eventLogMap[transactionHash].get()->toString()
 			<< endl << endl;
 		mtx.unlock();
+#endif //_DEBUG
 
 	}
 	socket.close();

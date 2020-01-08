@@ -39,6 +39,8 @@ class BlockchainSecLib {
 		std::string getClientAddress(void);
 		std::string getContractAddress(void);
 
+		bool is_admin(std::string clientAddress);
+
 		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
 		bool add_gateway(std::string gatewayAddress, std::string name, std::string mac, std::string publicKey);
 
@@ -57,6 +59,7 @@ class BlockchainSecLib {
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
 
+		Json call_helper(std::string data);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string data);
 
 		void create_contract(void);

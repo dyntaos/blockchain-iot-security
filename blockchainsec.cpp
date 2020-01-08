@@ -129,11 +129,7 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
-unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string data) {
-	string transactionHash, transactionReceipt;
-	Json transactionJsonData;
-
-	// Make an eth_call with the parameters first to check the contract will not fail
+Json BlockchainSecLib::call_helper(string data) {
 	string callStr = eth_call(data);
 	Json callJson = Json::parse(callStr);
 	string callResult = callJson["result"];
@@ -141,6 +137,17 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 		// The contract failed to execute (a require statement failed)
 		throw new CallFailedException("eth_call did not execute successfully!");
 	}
+	return callJson;
+}
+
+
+
+unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string data) {
+	string transactionHash, transactionReceipt;
+	Json transactionJsonData;
+
+	// Make an eth_call with the parameters first to check the contract will not fail
+	call_helper(data);
 
 	transactionHash = eth_sendTransaction(data);
 	transactionJsonData = Json::parse(transactionHash);
@@ -249,6 +256,22 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 #endif //_DEBUG
 
 	return true;
+}
+
+
+
+// TODO: Change "clientAddress" to something more suitable
+bool BlockchainSecLib::is_admin(string clientAddress) {
+	string data, result;
+
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " is_admin"
+		" -p '" + clientAddress + "'"
+	);
+
+	Json callJson = call_helper(data);
+	result = callJson["result"];
+	return stoi(result.substr(2)) == 1;
 }
 
 
