@@ -196,11 +196,11 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function get_my_device_id() external view returns(int64) {
-		if (id_to_device[addr_to_id[msg.sender]].active) {
+	function get_my_device_id() external view returns(uint32) {
+		if (addr_to_id[msg.sender] != 0 && id_to_device[addr_to_id[msg.sender]].active) {
 			return addr_to_id[msg.sender];
 		} else {
-			return -1;
+			return 0;
 		}
 	}
 
