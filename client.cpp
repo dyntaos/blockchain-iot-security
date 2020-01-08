@@ -153,6 +153,19 @@ int main(int argc, char *argv[]) {
 	}
 
 
+	cout << "is_authd(1) = " << sec->is_authd(1) << endl;
+	cout << "is_authd(2) = " << sec->is_authd(2) << endl;
+	cout << "is_authd(3) = " << sec->is_authd(3) << endl;
+	cout << "is_authd(4) = " << sec->is_authd(4) << endl;
+
+
+	cout << "get_my_device_id() = " << sec->get_my_device_id() << endl;
+
+
+	cout << "get_key(1) = " << sec->get_key(1) << endl;
+	cout << "get_key(2) = " << sec->get_key(2) << endl;
+
+
 
 	sec->joinThreads();
 	return EXIT_SUCCESS;
