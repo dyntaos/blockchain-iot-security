@@ -78,4 +78,17 @@ unordered_map<string, string> ethabi_decode_log(string abi_file, string event_na
 
 
 
+// TODO: This returns one result -- is more than one ever needed?
+string ethabi_decode_result(string abi_file, string event_name, string data) {
+	string query, responce;
+
+	query = "decode function " + abi_file + " " + event_name + " " + data; //TODO: Check data does not have "0x"...
+	responce = ethabi(query);
+
+	//TODO: What if there is no space to sepatate key and value?
+	return responce.substr(responce.find_first_of(" ") + 1);
+}
+
+
+
 }
