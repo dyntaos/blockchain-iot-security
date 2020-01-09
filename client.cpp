@@ -126,52 +126,53 @@ int main(int argc, char *argv[]) {
 	}
 #endif //LORA_GATEWAY
 
-	sleep(4);
-	cout << "Adding device..." << endl;
+	sleep(3);
+
+	cout << endl << "Adding device..." << endl;
 	if (!sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true)) {
-		cout << "Failed to add device 1!" << endl;
+		cout << "Failed to add device 1!" << endl << endl;
 	} else {
-		cout << "Successfully added device 1!" << endl;
+		cout << "Successfully added device 1!" << endl << endl;
 	}
 
 
 	cout << "Adding device2..." << endl;
 	if (!sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", "TEST   PUBKEY    2", false)) {
-		cout << "Failed to add device 2!" << endl;
+		cout << "Failed to add device 2!" << endl << endl;
 	} else {
-		cout << "Successfully added device 2!" << endl;
+		cout << "Successfully added device 2!" << endl << endl;
 	}
 
 
-	cout << "is_admin(a4528ce8f47845b3bbf842da92bae9359e23fa3b)..." << endl;
+	cout << "is_admin(a4528ce8f47845b3bbf842da92bae9359e23fa3b) = ";
 	if (sec->is_admin("a4528ce8f47845b3bbf842da92bae9359e23fa3b")) {
-		cout << "TRUE" << endl;
+		cout << "TRUE" << endl << endl;
 	} else {
-		cout << "FALSE" << endl;
+		cout << "FALSE" << endl << endl;
 	}
 
 
-	cout << "is_admin(0000000000000000000000000000000000000000)..." << endl;
+	cout << "is_admin(0000000000000000000000000000000000000000) = ";
 	if (sec->is_admin("0000000000000000000000000000000000000000")) {
-		cout << "TRUE" << endl;
+		cout << "TRUE" << endl << endl;
 	} else {
-		cout << "FALSE" << endl;
+		cout << "FALSE" << endl << endl;
 	}
 
 
 	cout << "is_authd(1) = " << sec->is_authd(1) << endl;
 	cout << "is_authd(2) = " << sec->is_authd(2) << endl;
 	cout << "is_authd(3) = " << sec->is_authd(3) << endl;
-	cout << "is_authd(4) = " << sec->is_authd(4) << endl;
+	cout << "is_authd(4) = " << sec->is_authd(4) << endl << endl;
 
 
-	cout << "get_my_device_id() = " << sec->get_my_device_id() << endl;
+	cout << "get_my_device_id() = " << sec->get_my_device_id() << endl << endl;
 
 
 	cout << "get_key(1) = " << sec->get_key(1) << endl;
-	cout << "get_key(2) = " << sec->get_key(2) << endl;
+	cout << "get_key(2) = " << sec->get_key(2) << endl << endl;
 
-	cout << "authorize_admin(deadbeeff47845b3bbf842da92bae9359e23fa3b)" << endl;
+	cout << "authorize_admin(deadbeeff47845b3bbf842da92bae9359e23fa3b)" << endl << endl;
 	sec->authorize_admin("deadbeeff47845b3bbf842da92bae9359e23fa3b");
 
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
 	cout << "get admins..."<< endl;
 	printVector(sec->get_active_admins());
 
-	cout << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl;
+	cout << endl << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl << endl;
 	sec->authorize_admin("deadcafebabe51b3bbf842da92bae9359e23fa3b");
 
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
@@ -187,9 +188,11 @@ int main(int argc, char *argv[]) {
 	cout << "get admins..."<< endl;
 	printVector(sec->get_active_admins());
 
-	cout << "get authorized devices..."<< endl;
+	cout << endl << "get authorized devices..."<< endl;
 	printVector(sec->get_authorized_devices());
 
+
+	cout << "DONE!" << endl;
 
 	sec->joinThreads();
 	return EXIT_SUCCESS;
