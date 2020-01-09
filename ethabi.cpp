@@ -49,7 +49,7 @@ string ethabi(string args) {
 
 
 //TODO: Should I be using unique_ptr<unordered_map<...>> ?
-unordered_map<string, string> ethabi_decode_log(string abi_file, string event_name, vector<string> topics, string data) {
+unordered_map<string, string> ethabi_decode_log(string abiFile, string eventName, vector<string> topics, string data) {
 	string query, responce;
 	vector<string> lines;
 	unordered_map<string, string> parsedLog;
@@ -59,7 +59,7 @@ unordered_map<string, string> ethabi_decode_log(string abi_file, string event_na
 		topic_query += "-l " + *iter + " ";
 	}
 
-	query = "decode log " + abi_file + " " + event_name + " " + topic_query + data;
+	query = "decode log " + abiFile + " " + eventName + " " + topic_query + data;
 	responce = ethabi(query);
 
 	boost::split(lines, responce, boost::is_any_of("\n"));
@@ -79,10 +79,10 @@ unordered_map<string, string> ethabi_decode_log(string abi_file, string event_na
 
 
 // TODO: This returns one result -- is more than one ever needed?
-string ethabi_decode_result(string abi_file, string event_name, string data) {
+string ethabi_decode_result(string abiFile, string eventName, string data) {
 	string query, responce;
 
-	query = "decode function " + abi_file + " " + event_name + " " + data; //TODO: Check data does not have "0x"...
+	query = "decode function " + abiFile + " " + eventName + " " + data; //TODO: Check data does not have "0x"...
 	responce = ethabi(query);
 
 #ifdef _DEBUG
@@ -92,6 +92,20 @@ string ethabi_decode_result(string abi_file, string event_name, string data) {
 	//TODO: What if there is no space to sepatate key and value?
 	return responce.substr(responce.find_first_of(" ") + 1);
 }
+
+
+
+vector<string> ethabi_decode_array(string abiFile, string eventName, string data) {
+	vector<string> array;
+	string responce;
+
+	responce = boost::trim_copy(ethabi_decode_result(abiFile, eventName, data));
+	responce = responce.substr(1, responce.length() - 2);
+	boost::split(array, responce, boost::is_any_of(","));
+
+	return array;
+}
+
 
 
 
