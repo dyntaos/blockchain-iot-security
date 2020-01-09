@@ -377,25 +377,23 @@ uint16_t BlockchainSecLib::get_num_admin(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::get_active_admins(void) {
-	return ethabi_decode_result(
+vector<string> BlockchainSecLib::get_active_admins(void) {
+	return ethabi_decode_array(
 		ETH_CONTRACT_ABI,
 		"get_active_admins",
 		getArrayFromContract("get_active_admins")
 	);
-	//return getArrayFromContract("get_active_admins");
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::get_authorized_devices(void) {
-	return ethabi_decode_result(
+vector<string> BlockchainSecLib::get_authorized_devices(void) {
+	return ethabi_decode_array(
 		ETH_CONTRACT_ABI,
 		"get_authorized_devices",
 		getArrayFromContract("get_authorized_devices")
 	);
-	//return getArrayFromContract("get_authorized_devices");
 }
 
 
