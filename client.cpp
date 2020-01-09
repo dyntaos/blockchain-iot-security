@@ -191,8 +191,18 @@ int main(int argc, char *argv[]) {
 	cout << endl << "get authorized devices..."<< endl;
 	printVector(sec->get_authorized_devices());
 
+	cout << "remove_device(1)..." << endl;
+	if (sec->remove_device(1)) {
+		cout << "\tSuccess" << endl << endl;
+	} else {
+		cout << "\tFailure" << endl << endl;
+	}
 
-	cout << "DONE!" << endl;
+	cout << "get authorized devices..."<< endl;
+	printVector(sec->get_authorized_devices());
+
+
+	cout << endl << "DONE!" << endl;
 
 	sec->joinThreads();
 	return EXIT_SUCCESS;
