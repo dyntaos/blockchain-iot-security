@@ -1,6 +1,7 @@
 #include <string>
 #include <array>
 #include <iostream>
+#include <sstream>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -16,6 +17,7 @@
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 //TODO: Make function to see if "0x" needs to be prepended to function arguments
 //TODO: Make all stored addresses NOT store "0x"
+//TODO: Escape quotes in strings to ethabi
 
 using namespace std;
 using namespace libconfig;
@@ -32,6 +34,14 @@ string BlockchainSecLib::getClientAddress(void) {
 string BlockchainSecLib::getContractAddress(void) {
 	return contractAddress;
 }
+
+
+
+BlockchainSecLib::BlockchainSecLib(void) : BlockchainSecLib(false) {}
+
+
+
+BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
@@ -122,11 +132,74 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 
 
-BlockchainSecLib::BlockchainSecLib(void) : BlockchainSecLib(false) {}
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::getFrom(string funcName, string ethabiEncodeArgs) {
+	string data, result;
+
+	data = ethabi(
+		"encode -l function " ETH_CONTRACT_ABI " " +
+		funcName +
+		ethabiEncodeArgs
+	);
+
+	Json callJson = call_helper(data);
+	result = callJson["result"];
+	return result.substr(2);
+}
 
 
 
-BlockchainSecLib::~BlockchainSecLib() {}
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::getFromDeviceID(string funcName, uint32_t deviceID) {
+	return getFrom(funcName, " -p '" + boost::lexical_cast<string>(deviceID) + "'");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint64_t BlockchainSecLib::getIntFromContract(string funcName) {
+	stringstream ss;
+	uint64_t result;
+
+	ss << getFrom(funcName, "");
+	ss >> result;
+
+	return result;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint64_t BlockchainSecLib::getIntFromDeviceID(string funcName, uint32_t deviceID) {
+	stringstream ss;
+	uint64_t result;
+
+	ss << getFromDeviceID(funcName, deviceID);
+	ss >> result;
+
+	return result;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::getStringFromDeviceID(string funcName, uint32_t deviceID) {
+	return ethabi_decode_result(
+		ETH_CONTRACT_ABI,
+		funcName,
+		getFromDeviceID(funcName, deviceID)
+	);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::getArrayFromContract(string funcName) {
+	string arrayStr;
+	arrayStr = getFrom(funcName, "");
+	//cout << funcName << ":" << endl << arrayStr << endl;
+	return arrayStr;
+}
 
 
 
@@ -169,71 +242,12 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
-	string data, funcName = "add_device";
+bool BlockchainSecLib::callMutatorContract(string funcName, string ethabiEncodeArgs) {
 	unique_ptr<unordered_map<string, string>> eventLog;
-
-	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
-		throw InvalidArgumentException(
-			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
-		);
-	}
-
-	// Encode the contract's arguments
-	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
-		" -p '" + deviceAddress +
-		"' -p '" + name +
-		"' -p '" + mac +
-		"' -p '" + publicKey +
-		"' -p " + (gatewayManaged ? "true" : "false")
-	);
-
-	try {
-		eventLog = contract_helper(data);
-	} catch (const CallFailedException &e) {
-		return false;
-	} catch (const TransactionFailedException &e) {
-		return false;
-	}
-
-#ifdef _DEBUG
-	string logStr = "{ ";
-	for (std::pair<std::string, std::string> kv : *eventLog.get()) {
-		logStr += "\"" + kv.first + "\":\"" + kv.second + "\", ";
-	}
-	logStr = logStr.substr(0, logStr.length() - 2);
-	logStr += " }";
-	cout << funcName
-		<< "() successful!"
-		<< endl
-		<< logStr
-		<< endl;
-#endif //_DEBUG
-
-	return true;
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
-// Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
-	string data, funcName = "add_gateway";
-	unique_ptr<unordered_map<string, string>> eventLog;
-
-	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
-		throw InvalidArgumentException(
-			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
-		);
-	}
+	string data;
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
-		" -p '" + gatewayAddress +
-		"' -p '" + name +
-		"' -p '" + mac +
-		"' -p '" + publicKey + "'"
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs
 	);
 
 	try {
@@ -266,64 +280,246 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 // TODO: Change "clientAddress" to something more suitable
 // Throws ResourceRequestFailedException from ethabi()
 bool BlockchainSecLib::is_admin(string clientAddress) {
-	string data, result, funcName = "is_admin";
-
-	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
-		" -p '" + clientAddress + "'"
-	);
-
-	Json callJson = call_helper(data);
-	result = callJson["result"];
-	return stoi(result.substr(2)) == 1;
+	return stoi(getFrom("is_admin", " -p '" + clientAddress + "'")) == 1;
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
 bool BlockchainSecLib::is_authd(uint32_t deviceID) {
-	string data, result, funcName = "is_authd";
-
-	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
-		" -p '" + boost::lexical_cast<string>(deviceID) + "'"
-	);
-
-	Json callJson = call_helper(data);
-	result = callJson["result"];
-	return stoi(result.substr(2)) == 1;
+	return getIntFromDeviceID("is_authd", deviceID) != 0;
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
-bool BlockchainSecLib::get_my_device_id(void) {
-	string data, result, funcName = "get_my_device_id";
+bool BlockchainSecLib::is_device(uint32_t deviceID) {
+	return getIntFromDeviceID("is_device", deviceID) != 0;
+}
 
-	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName
-	);
 
-	Json callJson = call_helper(data);
-	result = callJson["result"];
-	return stoi(result.substr(2));
+
+// Throws ResourceRequestFailedException from ethabi()
+bool BlockchainSecLib::is_gateway(uint32_t deviceID) {
+	return getIntFromDeviceID("is_gateway", deviceID) != 0;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint32_t BlockchainSecLib::get_my_device_id(void) {
+	return getIntFromContract("get_my_device_id");
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
 string BlockchainSecLib::get_key(uint32_t deviceID) {
-	string data, result, funcName = "get_key";
-
-	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName +
-		" -p '" + boost::lexical_cast<string>(deviceID) + "'"
-	);
-
-	Json callJson = call_helper(data);
-	result = callJson["result"];
-	return ethabi_decode_result(ETH_CONTRACT_ABI, funcName, result.substr(2));
+	return getStringFromDeviceID("get_key", deviceID);
 }
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+BlockchainSecLib::AddrType BlockchainSecLib::get_addrtype(uint32_t deviceID) {
+	return BlockchainSecLib::AddrType(getIntFromDeviceID("get_addrType", deviceID));
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_addr(uint32_t deviceID) {
+	return getStringFromDeviceID("get_addr", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_name(uint32_t deviceID) {
+	return getStringFromDeviceID("get_name", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_mac(uint32_t deviceID) {
+	return getStringFromDeviceID("get_mac", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_data(uint32_t deviceID) {
+	return getStringFromDeviceID("get_data", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+time_t BlockchainSecLib::get_dataTimestamp(uint32_t deviceID) {
+	return getIntFromDeviceID("get_dataTimestamp", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+time_t BlockchainSecLib::get_creationTimestamp(uint32_t deviceID) {
+	return getIntFromDeviceID("get_creationTimestamp", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint16_t BlockchainSecLib::get_num_admin(void) {
+	return getIntFromContract("get_num_admin");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_active_admins(void) {
+	return ethabi_decode_result(
+		ETH_CONTRACT_ABI,
+		"get_active_admins",
+		getArrayFromContract("get_active_admins")
+	);
+	//return getArrayFromContract("get_active_admins");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string BlockchainSecLib::get_authorized_devices(void) {
+	return ethabi_decode_result(
+		ETH_CONTRACT_ABI,
+		"get_authorized_devices",
+		getArrayFromContract("get_authorized_devices")
+	);
+	//return getArrayFromContract("get_authorized_devices");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
+	string ethabiEncodeArgs;
+
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
+		throw InvalidArgumentException(
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
+		);
+	}
+
+	ethabiEncodeArgs = " -p '" + deviceAddress +
+						"' -p '" + name +
+						"' -p '" + mac +
+						"' -p '" + publicKey +
+						"' -p " + (gatewayManaged ? "true" : "false");
+
+	return callMutatorContract("add_device", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
+	string ethabiEncodeArgs;
+
+	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
+		throw InvalidArgumentException(
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
+		);
+	}
+
+	ethabiEncodeArgs = " -p '" + gatewayAddress +
+						"' -p '" + name +
+						"' -p '" + mac +
+						"' -p '" + publicKey + "'";
+
+	return callMutatorContract("add_gateway", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::remove_device(uint32_t deviceID) {
+	string ethabiEncodeArgs;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "'";
+
+	return callMutatorContract("remove_device", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::remove_gateway(uint32_t deviceID) {
+	string ethabiEncodeArgs;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "'";
+
+	return callMutatorContract("remove_gateway", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType addrType, string addr) {
+	string ethabiEncodeArgs;
+
+	//TODO: Escape quotes in strings? Or will the return value of ethabi handle invalid input?
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
+						"' -p '" + boost::lexical_cast<string>(addrType) +
+						"' -p '" + addr + "'";
+
+	return callMutatorContract("update_addr", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::push_data(uint32_t deviceID, string data) {
+	string ethabiEncodeArgs;
+
+	//TODO URGENT: Escape quotes in strings!!
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
+						"' -p '" + data + "'";
+
+	return callMutatorContract("push_data", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::authorize_admin(string adminAddr) {
+	string ethabiEncodeArgs;
+
+	//TODO URGENT: Escape quotes in strings!!
+	ethabiEncodeArgs = " -p '" + adminAddr + "'";
+
+	return callMutatorContract("authorize_admin", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::deauthorize_admin(string adminAddr) {
+	string ethabiEncodeArgs;
+
+	//TODO URGENT: Escape quotes in strings!!
+	ethabiEncodeArgs = " -p '" + adminAddr + "'";
+
+	return callMutatorContract("deauthorize_admin", ethabiEncodeArgs);
+}
+
 
 
 

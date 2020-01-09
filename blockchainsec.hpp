@@ -32,6 +32,9 @@ namespace blockchainSec {
 
 class BlockchainSecLib {
 	public:
+		enum AddrType_e {UNSET, IPV4, IPV6, LORA, ZIGBEE, BLUETOOTH, OTHER};
+		typedef AddrType_e AddrType;
+
 		BlockchainSecLib(bool compile);
 		BlockchainSecLib(void);
 		~BlockchainSecLib();
@@ -39,15 +42,38 @@ class BlockchainSecLib {
 		std::string getClientAddress(void);
 		std::string getContractAddress(void);
 
+		// Blockchain boolean methods
 		bool is_admin(std::string clientAddress);
 		bool is_authd(uint32_t deviceID);
-		bool get_my_device_id(void);
-		std::string get_key(uint32_t deviceID);
 
+		// Blockchain accessor methods
+		bool is_device(uint32_t deviceID);
+		bool is_gateway(uint32_t deviceID);
+		uint32_t get_my_device_id(void);
+		std::string get_key(uint32_t deviceID);
+		AddrType get_addrtype(uint32_t deviceID);
+		std::string get_addr(uint32_t deviceID);
+		std::string get_name(uint32_t deviceID);
+		std::string get_mac(uint32_t deviceID);
+		std::string get_data(uint32_t deviceID);
+		time_t get_dataTimestamp(uint32_t deviceID);
+		time_t get_creationTimestamp(uint32_t deviceID);
+		uint16_t get_num_admin(void);
+		std::string get_active_admins(void);
+		std::string get_authorized_devices(void);
+
+		// Blockchain mutator methods
 		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
 		bool add_gateway(std::string gatewayAddress, std::string name, std::string mac, std::string publicKey);
+		bool remove_device(uint32_t deviceID);
+		bool remove_gateway(uint32_t deviceID);
+		bool update_addr(uint32_t deviceID, AddrType addrType, std::string addr);
+		bool push_data(uint32_t deviceID, std::string data);
+		bool authorize_admin(std::string adminAddr);
+		bool deauthorize_admin(std::string adminAddr);
 
 		void joinThreads(void);
+
 #ifdef _DEBUG
 		void test(void);
 #endif //_DEBUG
@@ -62,8 +88,15 @@ class BlockchainSecLib {
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
 
+		std::string getFrom(std::string funcName, std::string ethabiEncodeArgs);
+		std::string getFromDeviceID(std::string funcName, uint32_t deviceID);
+		uint64_t getIntFromDeviceID(std::string funcName, uint32_t deviceID);
+		uint64_t getIntFromContract(std::string funcName);
+		std::string getStringFromDeviceID(std::string funcName, uint32_t deviceID);
+		std::string getArrayFromContract(std::string funcName);
 		Json call_helper(std::string data);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string data);
+		bool callMutatorContract(std::string funcName, std::string ethabiEncodeArgs);
 
 		void create_contract(void);
 		std::string getTransactionReceipt(std::string transactionHash);
@@ -73,6 +106,7 @@ class BlockchainSecLib {
 		std::string eth_sendTransaction(std::string abiData);
 		std::string eth_createContract(std::string data);
 		std::string eth_getTransactionReceipt(std::string transactionHash);
+
 };
 
 }
