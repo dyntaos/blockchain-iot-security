@@ -40,6 +40,7 @@ contract DeviceMgmt {
 
 		string publicKey;                       // Devices public encryption key
 		bool gateway_managed;                   // Is this deviced managed by the set of gateway accounts  (NEW)
+		uint32 authorizedDevicesIndex;          //
 	}
 
 
@@ -54,14 +55,14 @@ contract DeviceMgmt {
 	uint32 next_device_id;
 	uint32[] free_device_id_stack;
 	mapping (address => uint32) addr_to_id;
-	mapping (uint32 => Device) id_to_device;  // device_id => Device
+	mapping (uint32 => Device) id_to_device;    // device_id => Device
 
 	mapping (address => bool) gateway_pool;
 
 	mapping (address => AdminUser) admin_mapping;
 	address[] active_admin_users;
 
-	address[] authorized_devices;
+	uint32[] authorized_devices;
 
 
 
@@ -344,6 +345,8 @@ contract DeviceMgmt {
 		id_to_device[device_id].publicKey = publicKey;
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = gateway_managed;
+		authorized_devices.push(device_id);
+		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
 
 		if (gateway_managed) {
 			//id_to_device[device_id].eth_addr = clientAddr;
@@ -390,6 +393,8 @@ contract DeviceMgmt {
 		id_to_device[device_id].gateway_managed = false;
 		id_to_device[device_id].eth_addr = clientAddr;
 		id_to_device[device_id].has_eth_addr = true;
+		authorized_devices.push(device_id);
+		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
 
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
@@ -531,7 +536,7 @@ contract DeviceMgmt {
 	 * @dev
 	 * @return
 	 */
-	function get_authorized_devices() public view _admin returns(address[] memory) {
+	function get_authorized_devices() public view _admin returns(uint32[] memory) {
 		return authorized_devices;
 	}
 
