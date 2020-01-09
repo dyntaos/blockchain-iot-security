@@ -71,6 +71,12 @@ void senderThread(LoraTrx &trx) {
 #endif //LORA_GATEWAY
 
 
+void printVector(vector<string> v) {
+	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
+		cout << "\t" << *it << endl;
+	}
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -170,18 +176,19 @@ int main(int argc, char *argv[]) {
 
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
 
-	cout << "get admins..."<< endl << sec->get_active_admins() << endl << endl;
+	cout << "get admins..."<< endl;
+	printVector(sec->get_active_admins());
 
 	cout << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl;
 	sec->authorize_admin("deadcafebabe51b3bbf842da92bae9359e23fa3b");
 
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
 
-	cout << "get admins..."<< endl << sec->get_active_admins() << endl << endl;
+	cout << "get admins..."<< endl;
+	printVector(sec->get_active_admins());
 
-
-	cout << "get authorized devices..."<< endl << sec->get_authorized_devices() << endl << endl;
-
+	cout << "get authorized devices..."<< endl;
+	printVector(sec->get_authorized_devices());
 
 
 	sec->joinThreads();
