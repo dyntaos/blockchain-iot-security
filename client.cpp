@@ -165,6 +165,23 @@ int main(int argc, char *argv[]) {
 	cout << "get_key(1) = " << sec->get_key(1) << endl;
 	cout << "get_key(2) = " << sec->get_key(2) << endl;
 
+	cout << "authorize_admin(deadbeeff47845b3bbf842da92bae9359e23fa3b)" << endl;
+	sec->authorize_admin("deadbeeff47845b3bbf842da92bae9359e23fa3b");
+
+	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
+
+	cout << "get admins..."<< endl << sec->get_active_admins() << endl << endl;
+
+	cout << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl;
+	sec->authorize_admin("deadcafebabe51b3bbf842da92bae9359e23fa3b");
+
+	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
+
+	cout << "get admins..."<< endl << sec->get_active_admins() << endl << endl;
+
+
+	cout << "get authorized devices..."<< endl << sec->get_authorized_devices() << endl << endl;
+
 
 
 	sec->joinThreads();
