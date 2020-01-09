@@ -41,7 +41,7 @@ string ethabi(string args) {
 
 #ifdef _DEBUG
 	cout << "ethabi(): Call successful!" << endl;
-	cout << "ethabi(): Returning: " << trim(result) << endl;
+	cout << "ethabi(): Returning: " << boost::trim_copy(result) << endl;
 #endif //_DEBUG
 
 	return boost::trim_copy(result);;
@@ -84,6 +84,10 @@ string ethabi_decode_result(string abi_file, string event_name, string data) {
 
 	query = "decode function " + abi_file + " " + event_name + " " + data; //TODO: Check data does not have "0x"...
 	responce = ethabi(query);
+
+#ifdef _DEBUG
+	cout << "ethabi_decode_result() responce:" << responce << endl;
+#endif //_DEBUG
 
 	//TODO: What if there is no space to sepatate key and value?
 	return responce.substr(responce.find_first_of(" ") + 1);
