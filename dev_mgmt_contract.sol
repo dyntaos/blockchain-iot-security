@@ -17,7 +17,7 @@ pragma solidity >=0.6.0;
  */
 contract DeviceMgmt {
 
-	enum AddrType {NULL, IP, LORA, ZIGBEE, BLUETOOTH, OTHER} //TODO: Add other common protocols and custom values
+	enum AddrType {UNSET, IPV4, IPV6, LORA, ZIGBEE, BLUETOOTH, OTHER} //TODO: Add other common protocols and custom values
 
 
 	/*
@@ -40,7 +40,6 @@ contract DeviceMgmt {
 
 		string publicKey;                       // Devices public encryption key
 		bool gateway_managed;                   // Is this deviced managed by the set of gateway accounts  (NEW)
-		uint32 authorizedDevicesIndex;          // TODO: Remove?
 	}
 
 
@@ -196,12 +195,43 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
+	function is_device(uint32 device_id) external view _authorized returns(bool) {
+		return id_to_device[device_id].active && !id_to_device[device_id].is_gateway;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function is_gateway(uint32 device_id) external view _authorized returns(bool) {
+		return id_to_device[device_id].active && id_to_device[device_id].is_gateway;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
 	function get_my_device_id() external view returns(uint32) {
 		if (addr_to_id[msg.sender] != 0 && id_to_device[addr_to_id[msg.sender]].active) {
 			return addr_to_id[msg.sender];
 		} else {
 			return 0;
 		}
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function get_name(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].name;
 	}
 
 
@@ -221,9 +251,9 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function get_addrtype(uint32 device_id) external view _authorized returns(uint) {
+	function get_addrtype(uint32 device_id) external view _authorized returns(uint8) {
 		require(id_to_device[device_id].active);
-		return uint(id_to_device[device_id].addrType);
+		return uint8(id_to_device[device_id].addrType);
 	}
 
 
@@ -261,6 +291,29 @@ contract DeviceMgmt {
 	}
 
 
+	// TODO: Modifier should probably be _authorizedDeviceOrGateway
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function get_dataTimestamp(uint32 device_id) external view _authorized returns(uint256) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].dataTimestamp;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function get_creationTimestamp(uint32 device_id) external view _authorized returns(uint256) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].creationTimestamp;
+	}
+
+
 	/*
 	 * @dev
 	 * @param clientAddr
@@ -283,7 +336,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].name = name;
 		id_to_device[device_id].active = true;
 		id_to_device[device_id].is_gateway = false;
-		id_to_device[device_id].addrType = AddrType.NULL;
+		id_to_device[device_id].addrType = AddrType.UNSET;
 		id_to_device[device_id].addr = "";
 		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
@@ -327,7 +380,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].name = name;
 		id_to_device[device_id].active = true;
 		id_to_device[device_id].is_gateway = true;
-		id_to_device[device_id].addrType = AddrType.NULL;
+		id_to_device[device_id].addrType = AddrType.UNSET;
 		id_to_device[device_id].addr = "";
 		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
