@@ -63,6 +63,7 @@ contract DeviceMgmt {
 	address[] active_admin_users;
 
 	uint32[] authorized_devices;
+	uint32[] authorized_gateways;
 
 
 
@@ -345,6 +346,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].publicKey = publicKey;
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = gateway_managed;
+
 		authorized_devices.push(device_id);
 		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
 
@@ -393,8 +395,9 @@ contract DeviceMgmt {
 		id_to_device[device_id].gateway_managed = false;
 		id_to_device[device_id].eth_addr = clientAddr;
 		id_to_device[device_id].has_eth_addr = true;
-		authorized_devices.push(device_id);
-		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
+
+		authorized_gateways.push(device_id);
+		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_gateways.length - 1);
 
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
@@ -409,8 +412,16 @@ contract DeviceMgmt {
 	 * @param clientAddr
 	 * @return
 	 */
-	function remove_device(uint32 device_id) external _admin returns(bool) {
+	function remove_device(uint32 device_id) external _admin returns(bool) { // TODO URGENT: REMOVE device_id from authorized_devices[]!
 		require(id_to_device[device_id].active);
+
+		// TODO: Leave or remove these memory variables?
+		uint32 authorizedDevicesIndex = uint32(id_to_device[device_id].authorizedDevicesIndex);
+		uint32 lastAuthorizedDevicesIndex = uint32(authorized_devices.length - 1);
+		uint32 lastAuthorizedDevice = uint32(authorized_devices[lastAuthorizedDevicesIndex]);
+		authorized_devices[authorizedDevicesIndex] = authorized_devices[lastAuthorizedDevicesIndex];
+		id_to_device[lastAuthorizedDevice].authorizedDevicesIndex = authorizedDevicesIndex;
+		authorized_devices.pop();
 
 		free_device_id_stack.push(device_id);
 		if (id_to_device[device_id].has_eth_addr) {
@@ -428,9 +439,17 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function remove_gateway(uint32 device_id) external _admin returns(bool) {
+	function remove_gateway(uint32 device_id) external _admin returns(bool) { // TODO URGENT: REMOVE device_id from authorized_devices[]!
 		address gateway_addr = id_to_device[device_id].eth_addr;
 		require(gateway_pool[gateway_addr]);
+
+		// TODO: Leave or remove these memory variables?
+		uint32 authorizedDevicesIndex = uint32(id_to_device[device_id].authorizedDevicesIndex);
+		uint32 lastAuthorizedDevicesIndex = uint32(authorized_gateways.length - 1);
+		uint32 lastAuthorizedDevice = uint32(authorized_gateways[lastAuthorizedDevicesIndex]);
+		authorized_gateways[authorizedDevicesIndex] = authorized_gateways[lastAuthorizedDevicesIndex];
+		id_to_device[lastAuthorizedDevice].authorizedDevicesIndex = authorizedDevicesIndex;
+		authorized_gateways.pop();
 
 		free_device_id_stack.push(device_id);
 		delete gateway_pool[gateway_addr];
@@ -518,8 +537,8 @@ contract DeviceMgmt {
 	 * @dev
 	 * @return
 	 */
-	function get_num_admin() external view _admin returns(uint16) {
-		return uint16(active_admin_users.length);
+	function get_num_admin() external view _admin returns(uint32) {
+		return uint32(active_admin_users.length);
 	}
 
 
@@ -538,6 +557,15 @@ contract DeviceMgmt {
 	 */
 	function get_authorized_devices() public view _admin returns(uint32[] memory) {
 		return authorized_devices;
+	}
+
+
+	/*
+	 * @dev
+	 * @return
+	 */
+	function get_authorized_gateways() public view _admin returns(uint32[] memory) {
+		return authorized_gateways;
 	}
 
 }
