@@ -370,8 +370,22 @@ time_t BlockchainSecLib::get_creationTimestamp(uint32_t deviceID) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-uint16_t BlockchainSecLib::get_num_admin(void) {
+uint32_t BlockchainSecLib::get_num_admin(void) {
 	return getIntFromContract("get_num_admin");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint32_t BlockchainSecLib::get_num_devices(void) {
+	return getIntFromContract("get_num_devices");
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint32_t BlockchainSecLib::get_num_gateways(void) {
+	return getIntFromContract("get_num_gateways");
 }
 
 
@@ -393,6 +407,17 @@ vector<string> BlockchainSecLib::get_authorized_devices(void) {
 		ETH_CONTRACT_ABI,
 		"get_authorized_devices",
 		getArrayFromContract("get_authorized_devices")
+	);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+vector<string> BlockchainSecLib::get_authorized_gateways(void) {
+	return ethabi_decode_array(
+		ETH_CONTRACT_ABI,
+		"get_authorized_gateways",
+		getArrayFromContract("get_authorized_gateways")
 	);
 }
 

@@ -58,9 +58,12 @@ class BlockchainSecLib {
 		std::string get_data(uint32_t deviceID);
 		time_t get_dataTimestamp(uint32_t deviceID);
 		time_t get_creationTimestamp(uint32_t deviceID);
-		uint16_t get_num_admin(void);
+		uint32_t get_num_admin(void);
+		uint32_t get_num_devices(void);
+		uint32_t get_num_gateways(void);
 		std::vector<std::string> get_active_admins(void);
 		std::vector<std::string> get_authorized_devices(void);
+		std::vector<std::string> get_authorized_gateways(void);
 
 		// Blockchain mutator methods
 		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
