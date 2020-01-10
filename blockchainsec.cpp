@@ -663,7 +663,7 @@ string BlockchainSecLib::getTransactionReceipt(string transactionHash) {
 string BlockchainSecLib::eth_ipc_request(string jsonRequest) {
 	int ipcFdFlags, ipcFd;
 	string json;
-	array<char, PIPE_BUFFER_LENGTH> ipcBuffer;
+	array<char, IPC_BUFFER_LENGTH> ipcBuffer;
 
 #ifdef _DEBUG
 	cout << "eth_ipc_request(): " << jsonRequest << endl;
@@ -677,7 +677,7 @@ string BlockchainSecLib::eth_ipc_request(string jsonRequest) {
 
 	ipcFd = fileno(ipc);
 
-	if (fgets(ipcBuffer.data(), PIPE_BUFFER_LENGTH, ipc) == NULL) {
+	if (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) == NULL) {
 		throw ResourceRequestFailedException("eth_ipc_request(): Error: Failed to read from IPC!");
 	}
 
@@ -687,7 +687,7 @@ string BlockchainSecLib::eth_ipc_request(string jsonRequest) {
 	ipcFdFlags |= O_NONBLOCK;
 	fcntl(ipcFd, F_SETFL, ipcFdFlags);
 
-	while (fgets(ipcBuffer.data(), PIPE_BUFFER_LENGTH, ipc) != NULL) {
+	while (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) != NULL) {
 #ifdef _DEBUG
 		cout << "eth_ipc_request(): Read: ''" << ipcBuffer.data() << "'" << endl;
 #endif //_DEBUG

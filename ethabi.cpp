@@ -21,7 +21,7 @@ namespace blockchainSec {
 
 string ethabi(string args) {
 	string result;
-	array<char, PIPE_BUFFER_LENGTH> pipe_buffer;
+	array<char, IPC_BUFFER_LENGTH> pipe_buffer;
 
 #ifdef _DEBUG
 	cout << "ethabi(): Requested '" << args << "'" << endl;
@@ -32,7 +32,7 @@ string ethabi(string args) {
 		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
 		throw ResourceRequestFailedException("ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?");
 	}
-	while (fgets(pipe_buffer.data(), PIPE_BUFFER_LENGTH, ethabi_pipe) != NULL) {
+	while (fgets(pipe_buffer.data(), IPC_BUFFER_LENGTH, ethabi_pipe) != NULL) {
 		result += pipe_buffer.data();
 	}
 	if (pclose(ethabi_pipe) != 0) {
