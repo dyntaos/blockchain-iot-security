@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <boost/asio.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <blockchainsec.hpp>
 #include <ethabi.hpp>
@@ -95,12 +96,13 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 		"134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf",
 		"e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"
 	};
-	char receiveBuffer[4096]; //TODO: #define this
+	char receiveBuffer[IPC_BUFFER_LENGTH];
 	int receiveLength;
+	uint16_t i;
 
-	Json jsonData;
-	string data;
-
+	Json jsonData, resultJsonObject, jsonResponce;
+	string subscribeParse, receiveParse, data, message, method, subscription, transactionHash;
+	vector<string> topics;
 	map<string, string> subscriptionToEventName;
 
 	boost::asio::io_service io_service;
@@ -111,10 +113,11 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
-restart:
+restart: // TODO: Get rid of this
+
 	socket.connect(ep);
 
-	for (uint16_t i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
@@ -130,52 +133,96 @@ restart:
 
 		socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
-		receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, 4095)); // TODO: What if the entire message is not received...
-		receiveBuffer[receiveLength] = 0;
+subscribeReceive: // TODO: Get rid of this
 
-		// TODO URGENT: What if a subscription comes before this loop completes?!
+		while (subscribeParse.find_first_of('\n', 0) == string::npos) {
+			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			if (receiveLength == 0) {
+				// Socket was closed by other end
+				goto restart;
+			}
+			receiveBuffer[receiveLength] = 0;
+			subscribeParse += receiveBuffer;
+		}
+
+subParse:  // TODO: Get rid of this
+
+		message = subscribeParse.substr(0, subscribeParse.find_first_of('\n', 0));
+		subscribeParse = subscribeParse.substr(subscribeParse.find_first_of('\n', 0) + 1);
+
 		// TODO: Should this be in a try catch? What to do if fails?
-		Json responce = Json::parse(receiveBuffer);
-		if (responce.count("error") > 0) {
+		try {
+			jsonResponce = Json::parse(message);
+		} catch (const Json::exception &e) {
+			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce while subscribing:"
+				<< endl
+				<< "\t"
+				<< message
+				<< endl
+				<< e.what()
+				<< endl;
+			goto restart; // TODO: Remove this
+		}
+
+		if (jsonResponce.count("error") > 0) {
 			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!");
 		}
-		if (!responce["result"].is_string()) {
+
+		if (jsonResponce.contains("method") > 0) {
+			receiveParse += message + "\n";
+			goto subscribeReceive;
+		}
+
+		if (jsonResponce.count("result") == 0 || !jsonResponce["result"].is_string()) {
 			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Unexpected responce to eth_subscribe received!");
 		}
-		string result = responce["result"];
+		string result = jsonResponce["result"];
 
 		subscriptionToEventName[result] = events[i];
 	}
 
-	// TODO: What if the connection is closed by the other end?
-	for (;;) {
-		receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, 4096)); // TODO: What if the entire message is not received...
-		receiveBuffer[receiveLength] = 0;
+	boost::trim(subscribeParse);
+	if (subscribeParse.length() > 0) goto subParse;
 
-		string method, subscription, data, transactionHash;
-		vector<string> topics;
-		Json resultJsonObject;
+	for (;;) {
+		while (receiveParse.find_first_of('\n', 0) == string::npos) {
+			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			if (receiveLength == 0) {
+				// Socket was closed by other end
+				socket.close(); // TODO: What happens if this socket is already closed?
+				subscriptionToEventName.clear();
+				goto restart;
+			}
+			receiveBuffer[receiveLength] = 0;
+			receiveParse += receiveBuffer;
+		}
+
+		message = receiveParse.substr(0, receiveParse.find_first_of('\n', 0));
+		receiveParse = receiveParse.substr(receiveParse.find_first_of('\n', 0) + 1);
 
 		try {
-			jsonData = Json::parse(receiveBuffer); //TODO: Check for error? Try Catch?
+			jsonData = Json::parse(message);
 
 			method = jsonData["method"];
 			subscription = jsonData["params"]["subscription"];
 			resultJsonObject = jsonData["params"]["result"];
+
+			topics.clear();
+
 			for (Json::iterator iter = resultJsonObject["topics"].begin(); iter != resultJsonObject["topics"].end(); ++iter) {
 				string iterStr = *iter;
 				iterStr = iterStr.substr(2);
 				topics.push_back(iterStr);
 			}
+
 			data = resultJsonObject["data"];
 			transactionHash = resultJsonObject["transactionHash"];
 
 		} catch (const Json::exception &e) {
-			//TODO: More granularity?
 			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce:"
 				<< endl
 				<< "\t"
-				<< receiveBuffer
+				<< message
 				<< endl
 				<< e.what()
 				<< endl;
@@ -187,18 +234,18 @@ restart:
 			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscription\"!"
 				<< endl
 				<< "\t"
-				<< receiveBuffer
+				<< message
 				<< endl
 				<< endl;
 			continue;
 		}
 
-		if (subscriptionToEventName.count(subscription) <= 0) {
+		if (subscriptionToEventName.count(subscription) <= 0) {cout << "Count topics2: " << topics.size() << endl;
 			//TODO: The subscription does not exist! Something is out of sync! -- Unsubscribe and start again?
 			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!"
 				<< endl
 				<< "\t"
-				<< receiveBuffer
+				<< message
 				<< endl
 				<< endl;
 
