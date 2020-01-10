@@ -561,6 +561,8 @@ void BlockchainSecLib::test(void) {
 
 
 
+// Throws TransactionFailedException from eth_sendTransaction() and locally
+// Throws ResourceRequestFailedException
 void BlockchainSecLib::create_contract(void) {
 	string contractBin,
 			transactionJsonStr,
@@ -569,10 +571,12 @@ void BlockchainSecLib::create_contract(void) {
 			contractAddress;
 	Json transactionJsonData, receiptJsonData;
 
-	// TODO: When project is complete we dont need to recompile this everytime
-	system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'");
-	system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'");
-	//TODO: Check for success
+	if (system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'") != 0) {
+		throw ResourceRequestFailedException("solc failed to compile contract to binary format!");
+	}
+	if (system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'") != 0) {
+		throw ResourceRequestFailedException("solc failed to compile contract to abi format!");
+	}
 
 	contractBin = boost::trim_copy(readFile2(ETH_CONTRACT_BIN));
 
@@ -592,12 +596,7 @@ void BlockchainSecLib::create_contract(void) {
 	cout << "Parsed contract creation transaction hash: " <<
 		transactionHash << endl;
 
-	try {
-		transactionReceipt = this->getTransactionReceipt(transactionHash);
-	} catch(const TransactionFailedException &e) {
-		//TODO: How to best handle this?
-		throw e;
-	}
+	transactionReceipt = this->getTransactionReceipt(transactionHash);
 
 	receiptJsonData = Json::parse(transactionReceipt);
 	jsonFindResult = receiptJsonData.find("result");
