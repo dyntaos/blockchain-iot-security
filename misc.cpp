@@ -26,4 +26,19 @@ string readFile2(const string &fileName) {
 
 
 
+bool isHex(string str) {
+	for (char *s = (char*) str.c_str(); *s != 0; s++) {
+		if ((*s < 48) || (*s > 70 && *s < 97) || (*s > 102)) return false;
+	}
+	return true;
+}
+
+
+
+bool isEthereumAddress(string str) {
+	return isHex(str) && str.length() > 0 && str.length() <= 40;
+}
+
+
+
 }
