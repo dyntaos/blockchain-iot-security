@@ -1,6 +1,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <misc.hpp>
 
@@ -12,7 +13,7 @@ namespace blockchainSec {
 
 
 // https://stackoverflow.com/questions/116038/how-do-i-read-an-entire-file-into-a-stdstring-in-c
-string readFile2(const string &fileName) {
+string readFile2(string const& fileName) {
 	ifstream ifs(fileName.c_str(), ios::in | ios::binary | ios::ate);
 
 	ifstream::pos_type fileSize = ifs.tellg();
@@ -26,7 +27,7 @@ string readFile2(const string &fileName) {
 
 
 
-bool isHex(string str) {
+bool isHex(string const& str) {
 	for (char *s = (char*) str.c_str(); *s != 0; s++) {
 		if ((*s < 48) || (*s > 70 && *s < 97) || (*s > 102)) return false;
 	}
@@ -35,8 +36,14 @@ bool isHex(string str) {
 
 
 
-bool isEthereumAddress(string str) {
+bool isEthereumAddress(string const& str) {
 	return isHex(str) && str.length() > 0 && str.length() <= 40;
+}
+
+
+
+string escapeSingleQuotes(string const& str) {
+	return boost::replace_all_copy(str, "'", "'\\''");
 }
 
 

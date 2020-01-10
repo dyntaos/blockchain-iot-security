@@ -19,7 +19,7 @@ namespace blockchainSec {
 
 
 
-string ethabi(string args) {
+string ethabi(string const& args) {
 	string result;
 	array<char, IPC_BUFFER_LENGTH> pipe_buffer;
 
@@ -49,7 +49,7 @@ string ethabi(string args) {
 
 
 //TODO: Should I be using unique_ptr<unordered_map<...>> ?
-unordered_map<string, string> ethabi_decode_log(string abiFile, string eventName, vector<string> topics, string data) {
+unordered_map<string, string> ethabi_decode_log(string const& abiFile, string const& eventName, vector<string> & topics, string const& data) {
 	string query, responce;
 	vector<string> lines;
 	unordered_map<string, string> parsedLog;
@@ -79,7 +79,7 @@ unordered_map<string, string> ethabi_decode_log(string abiFile, string eventName
 
 
 // TODO: This returns one result -- is more than one ever needed?
-string ethabi_decode_result(string abiFile, string eventName, string data) {
+string ethabi_decode_result(string const& abiFile, string const& eventName, string const& data) {
 	string query, responce;
 
 	query = "decode function " + abiFile + " " + eventName + " " + data; //TODO: Check data does not have "0x"...
@@ -95,7 +95,7 @@ string ethabi_decode_result(string abiFile, string eventName, string data) {
 
 
 
-vector<string> ethabi_decode_array(string abiFile, string eventName, string data) {
+vector<string> ethabi_decode_array(string const& abiFile, string const& eventName, string const& data) {
 	vector<string> array;
 	string responce;
 

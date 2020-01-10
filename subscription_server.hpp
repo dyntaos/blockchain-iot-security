@@ -12,9 +12,9 @@ namespace blockchainSec {
 
 class EventLogWaitManager {
 	public:
-		EventLogWaitManager(std::string clientAddress, std::string contractAddress, std::string ipcPath);
-		std::unique_ptr<std::unordered_map<std::string, std::string>> getEventLog(std::string logID);
-		void setEventLog(std::string logID, std::unordered_map<std::string, std::string> eventLog);
+		EventLogWaitManager(std::string const& clientAddress, std::string const& contractAddress, std::string const& ipcPath);
+		std::unique_ptr<std::unordered_map<std::string, std::string>> getEventLog(std::string const& logID);
+		void setEventLog(std::string const& logID, std::unordered_map<std::string, std::string> const& eventLog);
 
 		// Thread main function for geth log monitor thread
 		void ipc_subscription_listener_thread(void);

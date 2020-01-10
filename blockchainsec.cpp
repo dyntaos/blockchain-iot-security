@@ -133,7 +133,7 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::getFrom(string funcName, string ethabiEncodeArgs) {
+string BlockchainSecLib::getFrom(string const& funcName, string const& ethabiEncodeArgs) {
 	string data, result;
 
 	data = ethabi(
@@ -150,14 +150,14 @@ string BlockchainSecLib::getFrom(string funcName, string ethabiEncodeArgs) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::getFromDeviceID(string funcName, uint32_t deviceID) {
+string BlockchainSecLib::getFromDeviceID(string const& funcName, uint32_t deviceID) {
 	return getFrom(funcName, " -p '" + boost::lexical_cast<string>(deviceID) + "'");
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
-uint64_t BlockchainSecLib::getIntFromContract(string funcName) {
+uint64_t BlockchainSecLib::getIntFromContract(string const& funcName) {
 	stringstream ss;
 	uint64_t result;
 
@@ -170,7 +170,7 @@ uint64_t BlockchainSecLib::getIntFromContract(string funcName) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-uint64_t BlockchainSecLib::getIntFromDeviceID(string funcName, uint32_t deviceID) {
+uint64_t BlockchainSecLib::getIntFromDeviceID(string const& funcName, uint32_t deviceID) {
 	stringstream ss;
 	uint64_t result;
 
@@ -183,7 +183,7 @@ uint64_t BlockchainSecLib::getIntFromDeviceID(string funcName, uint32_t deviceID
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::getStringFromDeviceID(string funcName, uint32_t deviceID) {
+string BlockchainSecLib::getStringFromDeviceID(string const& funcName, uint32_t deviceID) {
 	return ethabi_decode_result(
 		ETH_CONTRACT_ABI,
 		funcName,
@@ -194,16 +194,15 @@ string BlockchainSecLib::getStringFromDeviceID(string funcName, uint32_t deviceI
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::getArrayFromContract(string funcName) {
+string BlockchainSecLib::getArrayFromContract(string const& funcName) {
 	string arrayStr;
 	arrayStr = getFrom(funcName, "");
-	//cout << funcName << ":" << endl << arrayStr << endl;
 	return arrayStr;
 }
 
 
 
-Json BlockchainSecLib::call_helper(string data) {
+Json BlockchainSecLib::call_helper(string const& data) {
 	string callStr = eth_call(data);
 	Json callJson = Json::parse(callStr);
 	string callResult = callJson["result"];
@@ -216,7 +215,7 @@ Json BlockchainSecLib::call_helper(string data) {
 
 
 
-unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string data) {
+unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string const& data) {
 	string transactionHash, transactionReceipt;
 	Json transactionJsonData;
 
@@ -242,7 +241,7 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::callMutatorContract(string funcName, string ethabiEncodeArgs) {
+bool BlockchainSecLib::callMutatorContract(string const& funcName, string const& ethabiEncodeArgs) {
 	unique_ptr<unordered_map<string, string>> eventLog;
 	string data;
 
@@ -277,10 +276,13 @@ bool BlockchainSecLib::callMutatorContract(string funcName, string ethabiEncodeA
 
 
 
-// TODO: Change "clientAddress" to something more suitable
 // Throws ResourceRequestFailedException from ethabi()
-bool BlockchainSecLib::is_admin(string clientAddress) {
-	return stoi(getFrom("is_admin", " -p '" + clientAddress + "'")) == 1;
+// Throws InvalidArgumentException
+bool BlockchainSecLib::is_admin(string const& isAdminAddress) {
+	if (!isEthereumAddress(isAdminAddress)) {
+		throw InvalidArgumentException("Address is an invalid format!");
+	}
+	return stoi(getFrom("is_admin", " -p '" + isAdminAddress + "'")) == 1;
 }
 
 
@@ -425,8 +427,12 @@ vector<string> BlockchainSecLib::get_authorized_gateways(void) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac, string publicKey, bool gatewayManaged) {
+bool BlockchainSecLib::add_device(string const& deviceAddress, string const& name, string const& mac, string const& publicKey, bool gatewayManaged) {
 	string ethabiEncodeArgs;
+
+	if (!isEthereumAddress(deviceAddress)) {
+		throw InvalidArgumentException("Address is an invalid format!");
+	}
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
 		throw InvalidArgumentException(
@@ -435,9 +441,9 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 	}
 
 	ethabiEncodeArgs = " -p '" + deviceAddress +
-						"' -p '" + name +
-						"' -p '" + mac +
-						"' -p '" + publicKey +
+						"' -p '" + escapeSingleQuotes(name) +
+						"' -p '" + escapeSingleQuotes(mac) +
+						"' -p '" + escapeSingleQuotes(publicKey) +
 						"' -p " + (gatewayManaged ? "true" : "false");
 
 	return callMutatorContract("add_device", ethabiEncodeArgs);
@@ -447,7 +453,7 @@ bool BlockchainSecLib::add_device(string deviceAddress, string name, string mac,
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string mac, string publicKey) {
+bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac, string const& publicKey) {
 	string ethabiEncodeArgs;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
@@ -457,9 +463,9 @@ bool BlockchainSecLib::add_gateway(string gatewayAddress, string name, string ma
 	}
 
 	ethabiEncodeArgs = " -p '" + gatewayAddress +
-						"' -p '" + name +
-						"' -p '" + mac +
-						"' -p '" + publicKey + "'";
+						"' -p '" + escapeSingleQuotes(name) +
+						"' -p '" + escapeSingleQuotes(mac) +
+						"' -p '" + escapeSingleQuotes(publicKey) + "'";
 
 	return callMutatorContract("add_gateway", ethabiEncodeArgs);
 }
@@ -492,13 +498,12 @@ bool BlockchainSecLib::remove_gateway(uint32_t deviceID) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType addrType, string addr) {
+bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType addrType, string const& addr) {
 	string ethabiEncodeArgs;
 
-	//TODO: Escape quotes in strings? Or will the return value of ethabi handle invalid input?
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
 						"' -p '" + boost::lexical_cast<string>(addrType) +
-						"' -p '" + addr + "'";
+						"' -p '" + escapeSingleQuotes(addr) + "'";
 
 	return callMutatorContract("update_addr", ethabiEncodeArgs);
 }
@@ -507,12 +512,12 @@ bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::push_data(uint32_t deviceID, string data) {
+bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data) {
 	string ethabiEncodeArgs;
 
-	//TODO URGENT: Escape quotes in strings!!
+	// TODO: Is this appropriate for binary data?
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + data + "'";
+						"' -p '" + escapeSingleQuotes(data) + "'";
 
 	return callMutatorContract("push_data", ethabiEncodeArgs);
 }
@@ -521,11 +526,12 @@ bool BlockchainSecLib::push_data(uint32_t deviceID, string data) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::authorize_admin(string adminAddr) {
+bool BlockchainSecLib::authorize_admin(string const& adminAddress) {
 	string ethabiEncodeArgs;
-
-	//TODO URGENT: Escape quotes in strings!!
-	ethabiEncodeArgs = " -p '" + adminAddr + "'";
+	if (!isEthereumAddress(adminAddress)) {
+		throw InvalidArgumentException("Address is an invalid format!");
+	}
+	ethabiEncodeArgs = " -p '" + adminAddress + "'";
 
 	return callMutatorContract("authorize_admin", ethabiEncodeArgs);
 }
@@ -534,11 +540,12 @@ bool BlockchainSecLib::authorize_admin(string adminAddr) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::deauthorize_admin(string adminAddr) {
+bool BlockchainSecLib::deauthorize_admin(string const& adminAddress) {
 	string ethabiEncodeArgs;
-
-	//TODO URGENT: Escape quotes in strings!!
-	ethabiEncodeArgs = " -p '" + adminAddr + "'";
+	if (!isEthereumAddress(adminAddress)) {
+		throw InvalidArgumentException("Address is an invalid format!");
+	}
+	ethabiEncodeArgs = " -p '" + adminAddress + "'";
 
 	return callMutatorContract("deauthorize_admin", ethabiEncodeArgs);
 }
@@ -622,7 +629,7 @@ void BlockchainSecLib::create_contract(void) {
 
 
 
-string BlockchainSecLib::getTransactionReceipt(string transactionHash) {
+string BlockchainSecLib::getTransactionReceipt(string const& transactionHash) {
 	int retries = 0;
 	string transactionReceipt, result;
 	Json jsonData;
@@ -660,7 +667,7 @@ string BlockchainSecLib::getTransactionReceipt(string transactionHash) {
 
 // TODO: Should this be ported to Unix Domain Sockets?
 // TODO: At the very least, replace cerr/return with exceptions
-string BlockchainSecLib::eth_ipc_request(string jsonRequest) {
+string BlockchainSecLib::eth_ipc_request(string const& jsonRequest) {
 	int ipcFdFlags, ipcFd;
 	string json;
 	array<char, IPC_BUFFER_LENGTH> ipcBuffer;
@@ -707,7 +714,7 @@ string BlockchainSecLib::eth_ipc_request(string jsonRequest) {
 
 
 
-string BlockchainSecLib::eth_call(string abiData) {
+string BlockchainSecLib::eth_call(string const& abiData) {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_call\","
 								"\"params\":[{"
@@ -725,7 +732,7 @@ string BlockchainSecLib::eth_call(string abiData) {
 
 
 
-string BlockchainSecLib::eth_sendTransaction(string abiData) {
+string BlockchainSecLib::eth_sendTransaction(string const& abiData) {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_sendTransaction\""
 								",\"params\":[{"
@@ -746,7 +753,7 @@ string BlockchainSecLib::eth_sendTransaction(string abiData) {
 
 
 
-string BlockchainSecLib::eth_createContract(string data) {
+string BlockchainSecLib::eth_createContract(string const& data) {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_sendTransaction\""
 								",\"params\":[{"
@@ -766,7 +773,7 @@ string BlockchainSecLib::eth_createContract(string data) {
 
 
 
-string BlockchainSecLib::eth_getTransactionReceipt(string transactionHash) {
+string BlockchainSecLib::eth_getTransactionReceipt(string const& transactionHash) {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 								"\"method\":\"eth_getTransactionReceipt\","
 								"\"params\":["

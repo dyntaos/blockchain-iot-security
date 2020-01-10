@@ -43,7 +43,7 @@ class BlockchainSecLib {
 		std::string getContractAddress(void);
 
 		// Blockchain boolean methods
-		bool is_admin(std::string clientAddress);
+		bool is_admin(std::string const& isAdminAddress);
 		bool is_authd(uint32_t deviceID);
 
 		// Blockchain accessor methods
@@ -66,14 +66,14 @@ class BlockchainSecLib {
 		std::vector<std::string> get_authorized_gateways(void);
 
 		// Blockchain mutator methods
-		bool add_device(std::string deviceAddress, std::string name, std::string mac, std::string publicKey, bool gatewayManaged);
-		bool add_gateway(std::string gatewayAddress, std::string name, std::string mac, std::string publicKey);
+		bool add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, std::string const& publicKey, bool gatewayManaged);
+		bool add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac, std::string const& publicKey);
 		bool remove_device(uint32_t deviceID);
 		bool remove_gateway(uint32_t deviceID);
-		bool update_addr(uint32_t deviceID, AddrType addrType, std::string addr);
-		bool push_data(uint32_t deviceID, std::string data);
-		bool authorize_admin(std::string adminAddr);
-		bool deauthorize_admin(std::string adminAddr);
+		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
+		bool push_data(uint32_t deviceID, std::string const& data);
+		bool authorize_admin(std::string const& adminAddr);
+		bool deauthorize_admin(std::string const& adminAddr);
 
 		void joinThreads(void);
 
@@ -91,24 +91,24 @@ class BlockchainSecLib {
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
 
-		std::string getFrom(std::string funcName, std::string ethabiEncodeArgs);
-		std::string getFromDeviceID(std::string funcName, uint32_t deviceID);
-		uint64_t getIntFromDeviceID(std::string funcName, uint32_t deviceID);
-		uint64_t getIntFromContract(std::string funcName);
-		std::string getStringFromDeviceID(std::string funcName, uint32_t deviceID);
-		std::string getArrayFromContract(std::string funcName);
-		Json call_helper(std::string data);
-		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string data);
-		bool callMutatorContract(std::string funcName, std::string ethabiEncodeArgs);
+		std::string getFrom(std::string const& funcName, std::string const& ethabiEncodeArgs);
+		std::string getFromDeviceID(std::string const& funcName, uint32_t deviceID);
+		uint64_t getIntFromDeviceID(std::string const& funcName, uint32_t deviceID);
+		uint64_t getIntFromContract(std::string const& funcName);
+		std::string getStringFromDeviceID(std::string const& funcName, uint32_t deviceID);
+		std::string getArrayFromContract(std::string const& funcName);
+		Json call_helper(std::string const& data);
+		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string const& data);
+		bool callMutatorContract(std::string const& funcName, std::string const& ethabiEncodeArgs);
 
 		void create_contract(void);
-		std::string getTransactionReceipt(std::string transactionHash);
+		std::string getTransactionReceipt(std::string const& transactionHash);
 
-		std::string eth_ipc_request(std::string jsonRequest);
-		std::string eth_call(std::string abiData);
-		std::string eth_sendTransaction(std::string abiData);
-		std::string eth_createContract(std::string data);
-		std::string eth_getTransactionReceipt(std::string transactionHash);
+		std::string eth_ipc_request(std::string const& jsonRequest);
+		std::string eth_call(std::string const& abiData);
+		std::string eth_sendTransaction(std::string const& abiData);
+		std::string eth_createContract(std::string const& data);
+		std::string eth_getTransactionReceipt(std::string const& transactionHash);
 
 };
 

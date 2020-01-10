@@ -15,14 +15,14 @@ namespace blockchainSec {
 
 
 
-EventLogWaitManager::EventLogWaitManager(string clientAddress, string contractAddress, string ipcPath) {
+EventLogWaitManager::EventLogWaitManager(string const& clientAddress, string const& contractAddress, string const& ipcPath) {
 	this->clientAddress = clientAddress;
 	this->contractAddress = contractAddress;
 	this->ipcPath = ipcPath;
 }
 
 
-unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string logID) {
+unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string const& logID) {
 	unordered_map<string, string> *element;
 	mtx.lock();
 
@@ -51,7 +51,7 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 
 
 
-void EventLogWaitManager::setEventLog(string logID, unordered_map<string, string> eventLog) {
+void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string, string> const& eventLog) {
 	mtx.lock();
 
 	if (eventLogMap.count(logID) == 0) {
