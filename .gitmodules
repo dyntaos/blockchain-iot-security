@@ -4,9 +4,6 @@
 [submodule "libconfig"]
 	path = libconfig
 	url = https://github.com/hyperrealm/libconfig.git
-[submodule "libhydrogen"]
-	path = libhydrogen
-	url = https://github.com/jedisct1/libhydrogen.git
 [submodule "WiringPi"]
 	path = WiringPi
 	url = https://github.com/WiringPi/WiringPi.git
