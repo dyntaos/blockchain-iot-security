@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 	sleep(3);
 
 	cout << endl << "Adding device..." << endl;
-	if (!sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", "TEST   PUBKEY1", true)) {
+	if (!sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", true)) {
 		cout << "Failed to add device 1!" << endl << endl;
 	} else {
 		cout << "Successfully added device 1!" << endl << endl;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
 
 	cout << "Adding device2..." << endl;
-	if (!sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", "TEST   PUBKEY    2", false)) {
+	if (!sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", false)) {
 		cout << "Failed to add device 2!" << endl << endl;
 	} else {
 		cout << "Successfully added device 2!" << endl << endl;

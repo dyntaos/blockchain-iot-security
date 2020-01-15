@@ -83,16 +83,18 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 		"Remove_Gateway",
 		"Push_Data",
 		"Update_Addr",
+		"Update_PublicKey",
 		"Authorize_Admin",
 		"Deauthorize_Admin"
 	};
 	const string signatures[] = {
-		"6d8b1348ac9490868dcf5de10f66764c3fd6abf3274c6d36fbf877fc9f6e798f",
-		"3288eeac8a88a024bc145e835dbfecbe5095e00c717c48986f19943367e9fa20",
+		"91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01",
+		"ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671",
 		"c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363",
 		"0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9",
 		"0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51",
 		"8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80",
+		"9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f",
 		"134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf",
 		"e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"
 	};

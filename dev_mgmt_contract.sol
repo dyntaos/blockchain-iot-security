@@ -69,11 +69,11 @@ contract DeviceMgmt {
 
 	// TODO: Should we index any of these event topics?
 
-	// Keccak256 Signature: 6d8b1348ac9490868dcf5de10f66764c3fd6abf3274c6d36fbf877fc9f6e798f
-	event Add_Device		(address indexed msgSender, address clientAddr, string name, string mac, string publicKey, bool gateway_managed, uint32 device_id);
+	// Keccak256 Signature: 91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01
+	event Add_Device		(address indexed msgSender, address clientAddr, string name, string mac, bool gateway_managed, uint32 device_id);
 
-	// Keccak256 Signature: 3288eeac8a88a024bc145e835dbfecbe5095e00c717c48986f19943367e9fa20
-	event Add_Gateway		(address indexed msgSender, address clientAddr, string name, string mac, string publicKey, uint32 device_id);
+	// Keccak256 Signature: ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671
+	event Add_Gateway		(address indexed msgSender, address clientAddr, string name, string mac, uint32 device_id);
 
 	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
 	event Remove_Device		(address indexed msgSender, uint32 device_id);
@@ -86,6 +86,9 @@ contract DeviceMgmt {
 
 	// Keccak256 Signature: 8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80
 	event Update_Addr		(address indexed msgSender, uint32 device_id, uint addrType, string addr);
+
+	// Keccak256 Signature: 9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f
+	event Update_PublicKey	(address indexed msgSender, uint32 device_id, string newPublicKey);
 
 	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
 	event Authorize_Admin	(address indexed msgSender, address newAdminAddr);
@@ -325,7 +328,7 @@ contract DeviceMgmt {
 	 * @param gateway_managed
 	 * @return
 	 */
-	function add_device(address clientAddr, string calldata name, string calldata mac, string calldata publicKey, bool gateway_managed) external _admin returns(uint32) {
+	function add_device(address clientAddr, string calldata name, string calldata mac, bool gateway_managed) external _admin returns(uint32) {
 		require(gateway_managed || addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
@@ -343,7 +346,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
 		id_to_device[device_id].dataTimestamp = 0;
-		id_to_device[device_id].publicKey = publicKey;
+		id_to_device[device_id].publicKey = "";
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = gateway_managed;
 
@@ -359,7 +362,7 @@ contract DeviceMgmt {
 			id_to_device[device_id].has_eth_addr = false;
 		}
 
-		emit Add_Device(msg.sender, clientAddr, name, mac, publicKey, gateway_managed, device_id);
+		emit Add_Device(msg.sender, clientAddr, name, mac, gateway_managed, device_id);
 		return device_id;
 	}
 
@@ -372,7 +375,7 @@ contract DeviceMgmt {
 	 * @param publicKey
 	 * @return
 	 */
-	function add_gateway(address clientAddr, string calldata name, string calldata mac, string calldata publicKey) external _admin returns(uint32) {
+	function add_gateway(address clientAddr, string calldata name, string calldata mac) external _admin returns(uint32) {
 		require(addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
@@ -402,7 +405,7 @@ contract DeviceMgmt {
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
 
-		emit Add_Gateway(msg.sender, clientAddr, name, mac, publicKey, device_id);
+		emit Add_Gateway(msg.sender, clientAddr, name, mac, device_id);
 		return device_id;
 	}
 
@@ -472,6 +475,19 @@ contract DeviceMgmt {
 		id_to_device[device_id].addr = addr;
 
 		emit Update_Addr(msg.sender, device_id, addrType, addr);
+		return true;
+	}
+
+
+	/*
+	 * @dev
+	 * @param newPublicKey
+	 * @return
+	 */
+	function update_publickey(uint32 device_id, string calldata newPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
+		id_to_device[device_id].publicKey = newPublicKey;
+
+		emit Update_Publickey(msg.sender, device_id, newPublicKey);
 		return true;
 	}
 

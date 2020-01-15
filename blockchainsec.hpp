@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <libconfig.h++>
+#include <sodium.h>
 #include "json/include/nlohmann/json.hpp"
 
 #include <subscription_server.hpp>
@@ -66,8 +67,8 @@ class BlockchainSecLib {
 		std::vector<std::string> get_authorized_gateways(void);
 
 		// Blockchain mutator methods
-		bool add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, std::string const& publicKey, bool gatewayManaged);
-		bool add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac, std::string const& publicKey);
+		bool add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, bool gatewayManaged);
+		bool add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac);
 		bool remove_device(uint32_t deviceID);
 		bool remove_gateway(uint32_t deviceID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
@@ -85,8 +86,13 @@ class BlockchainSecLib {
 		std::string ipcPath;
 		std::string clientAddress;
 		std::string contractAddress;
+		uint32_t localDeviceID;
+
 		libconfig::Config cfg;
 		libconfig::Setting *cfgRoot;
+
+		unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
+		unsigned char client_rx[crypto_kx_SESSIONKEYBYTES + 1], client_tx[crypto_kx_SESSIONKEYBYTES + 1];
 
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
@@ -110,6 +116,9 @@ class BlockchainSecLib {
 		std::string eth_createContract(std::string const& data);
 		std::string eth_getTransactionReceipt(std::string const& transactionHash);
 
+		bool update_publickey(uint32_t deviceID, std::string const& publicKey);
+
+		bool updateLocalKeys(void);
 };
 
 }

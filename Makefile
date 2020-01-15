@@ -86,7 +86,7 @@ $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
 		$(OBJ)/client.o \
 		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread -lboost_system $(LINK_LORA)
+		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
 

@@ -79,14 +79,14 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 		exit(EXIT_FAILURE);
 	}
 
-	cfg.lookupValue("ipcPath", ipcPath); //TODO Check for reasonableness
+	cfg.lookupValue("ipcPath", ipcPath); // TODO Check return value
 
 	if (!cfg.exists("clientAddress")) {
 		cerr << "Configuration file does not contain 'clientAddress'!" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	cfg.lookupValue("clientAddress", clientAddress); //TODO Check for reasonableness
+	cfg.lookupValue("clientAddress", clientAddress); // TODO Check return value
 
 	if (!compile && !cfg.exists("contractAddress")) {
 		cerr << "Config doesnt have contractAddress"
@@ -123,11 +123,54 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	}
 
 	cout << "Config contains contractAddress" << endl;
-	cfg.lookupValue("contractAddress", contractAddress);
+	cfg.lookupValue("contractAddress", contractAddress); // TODO Check return value
 
 	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2), ipcPath);
-
 	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, eventLogWaitManager);
+
+	// TODO: try catch ?
+	localDeviceID = get_my_device_id();
+
+	if (localDeviceID != 0) {
+		// This client has a device ID -- verify it has proper keys
+		string publicKey = boost::trim_copy(get_key(localDeviceID)); // TODO: What makes a valid public key?
+
+		if (cfgRoot->exists("privateKey") && publicKey == "") {
+			cerr << "Client has private key, but no public key exists on the blockchain for device ID " << localDeviceID << endl;
+			// TODO: Throw?
+			// TODO: CLI Flag to force generate new keys?
+			exit(EXIT_FAILURE);
+		}
+		if (!cfgRoot->exists("privateKey") && publicKey != "") {
+			cerr << "Client has public key on the blockchain, but no private key exists locally!" << endl;
+			// TODO: Throw?
+			// TODO: CLI Flag to force generate new keys?
+			exit(EXIT_FAILURE);
+		}
+
+		if (!cfgRoot->exists("privateKey") && publicKey == "") {
+			if (updateLocalKeys()) {
+				cout << "Successfully generated keypair for local client (device ID " << localDeviceID << ")..." << endl;
+			} else {
+				cerr << "Failed to create keys for local client (device ID " << localDeviceID << ")..." << endl;
+			}
+
+		} else {
+			string hexSk;
+			vector<char> byteVector;
+
+			cfg.lookupValue("privateKey", hexSk); // TODO Check return value
+			byteVector = hexToBytes(hexSk);
+			memcpy(client_sk, byteVector.data(), crypto_kx_SECRETKEYBYTES);
+			client_sk[crypto_kx_SECRETKEYBYTES] = 0;
+			cout << "Loaded private key..." << endl;
+
+			byteVector = hexToBytes(publicKey);
+			memcpy(client_sk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+			client_sk[crypto_kx_PUBLICKEYBYTES] = 0;
+			cout << "Loaded public key..." << endl;
+		}
+	}
 }
 
 
@@ -427,7 +470,7 @@ vector<string> BlockchainSecLib::get_authorized_gateways(void) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_device(string const& deviceAddress, string const& name, string const& mac, string const& publicKey, bool gatewayManaged) {
+bool BlockchainSecLib::add_device(string const& deviceAddress, string const& name, string const& mac, bool gatewayManaged) {
 	string ethabiEncodeArgs;
 
 	if (!isEthereumAddress(deviceAddress)) {
@@ -443,7 +486,6 @@ bool BlockchainSecLib::add_device(string const& deviceAddress, string const& nam
 	ethabiEncodeArgs = " -p '" + deviceAddress +
 						"' -p '" + escapeSingleQuotes(name) +
 						"' -p '" + escapeSingleQuotes(mac) +
-						"' -p '" + escapeSingleQuotes(publicKey) +
 						"' -p " + (gatewayManaged ? "true" : "false");
 
 	return callMutatorContract("add_device", ethabiEncodeArgs);
@@ -453,7 +495,7 @@ bool BlockchainSecLib::add_device(string const& deviceAddress, string const& nam
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac, string const& publicKey) {
+bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac) {
 	string ethabiEncodeArgs;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
@@ -464,8 +506,7 @@ bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& n
 
 	ethabiEncodeArgs = " -p '" + gatewayAddress +
 						"' -p '" + escapeSingleQuotes(name) +
-						"' -p '" + escapeSingleQuotes(mac) +
-						"' -p '" + escapeSingleQuotes(publicKey) + "'";
+						"' -p '" + escapeSingleQuotes(mac) + "'";
 
 	return callMutatorContract("add_gateway", ethabiEncodeArgs);
 }
@@ -506,6 +547,17 @@ bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType
 						"' -p '" + escapeSingleQuotes(addr) + "'";
 
 	return callMutatorContract("update_addr", ethabiEncodeArgs);
+}
+
+
+
+bool BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicKey) {
+	string ethabiEncodeArgs;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
+						"' -p '" + escapeSingleQuotes(publicKey) + "'";
+
+	return callMutatorContract("update_publickey", ethabiEncodeArgs);
 }
 
 
@@ -790,6 +842,36 @@ string BlockchainSecLib::eth_getTransactionReceipt(string const& transactionHash
 
 void BlockchainSecLib::joinThreads(void) {
 	subscriptionListener->join();
+}
+
+
+
+bool BlockchainSecLib::updateLocalKeys(void) {
+	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1], sk[crypto_kx_SECRETKEYBYTES + 1];
+	//unsigned char rx[crypto_kx_SESSIONKEYBYTES + 1], tx[crypto_kx_SESSIONKEYBYTES + 1];
+	stringstream skHex;
+
+	crypto_kx_keypair(pk, sk);
+
+	pk[crypto_kx_PUBLICKEYBYTES] =
+		sk[crypto_kx_SECRETKEYBYTES] = 0;
+	//	rx[crypto_kx_SESSIONKEYBYTES] =
+	//	tx[crypto_kx_SESSIONKEYBYTES] = 0;
+
+	skHex << sk;
+
+	if (update_publickey(localDeviceID, skHex.str())) {
+		memcpy(client_pk, pk, crypto_kx_PUBLICKEYBYTES + 1);
+		memcpy(client_sk, sk, crypto_kx_SECRETKEYBYTES + 1);
+
+		if (cfgRoot->exists("privateKey")) cfgRoot->remove("privateKey");
+		cfgRoot->add("privateKey", Setting::TypeString) = skHex.str();
+
+		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
+
+		return true;
+	}
+	return false;
 }
 
 
