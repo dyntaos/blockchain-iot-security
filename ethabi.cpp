@@ -36,7 +36,11 @@ string ethabi(string const& args) {
 		result += pipe_buffer.data();
 	}
 	if (pclose(ethabi_pipe) != 0) {
-		throw ResourceRequestFailedException("ethabi(): ethabi binary exited with a failure status!");
+		throw ResourceRequestFailedException(
+			"ethabi(): ethabi binary exited with a failure status!\n"
+			"Args: " + args + "\n"
+			"Output: " + result + "\n"
+		);
 	}
 
 #ifdef _DEBUG
@@ -89,7 +93,10 @@ string ethabi_decode_result(string const& abiFile, string const& eventName, stri
 	cout << "ethabi_decode_result() responce:" << responce << endl;
 #endif //_DEBUG
 
-	//TODO: What if there is no space to sepatate key and value?
+	//TODO: What if there is no space to sepatate key and value? -- IT'S AN EMPTY STRING THEN!
+	if (responce.find_first_of(" ") == string::npos) {
+		return "";
+	}
 	return responce.substr(responce.find_first_of(" ") + 1);
 }
 

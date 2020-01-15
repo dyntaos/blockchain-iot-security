@@ -68,8 +68,8 @@ class BlockchainSecLib {
 		std::vector<std::string> get_authorized_gateways(void);
 
 		// Blockchain mutator methods
-		bool add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, bool gatewayManaged);
-		bool add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac);
+		uint32_t add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, bool gatewayManaged);
+		uint32_t add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac);
 		bool remove_device(uint32_t deviceID);
 		bool remove_gateway(uint32_t deviceID);
 		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
@@ -77,6 +77,9 @@ class BlockchainSecLib {
 		bool push_data(uint32_t deviceID, std::string const& data);
 		bool authorize_admin(std::string const& adminAddr);
 		bool deauthorize_admin(std::string const& adminAddr);
+
+		bool updateLocalKeys(void);
+		void loadLocalDeviceParameters(void);
 
 		void joinThreads(void);
 
@@ -107,7 +110,7 @@ class BlockchainSecLib {
 		std::string getArrayFromContract(std::string const& funcName);
 		Json call_helper(std::string const& data);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string const& data);
-		bool callMutatorContract(std::string const& funcName, std::string const& ethabiEncodeArgs);
+		bool callMutatorContract(std::string const& funcName, std::string const& ethabiEncodeArgs, std::unique_ptr<std::unordered_map<std::string, std::string>> & eventLog);
 
 		void create_contract(void);
 		std::string getTransactionReceipt(std::string const& transactionHash);
@@ -120,7 +123,7 @@ class BlockchainSecLib {
 
 		bool update_publickey(uint32_t deviceID, std::string const& publicKey);
 
-		bool updateLocalKeys(void);
+
 };
 
 }

@@ -1,6 +1,8 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 #include <boost/algorithm/string/replace.hpp>
 
 #include <misc.hpp>
@@ -58,6 +60,19 @@ vector<char> hexToBytes(string const& hex) {
 		bytes.push_back(byte);
 	}
 	return bytes;
+}
+
+
+
+// https://stackoverflow.com/questions/14050452/how-to-convert-byte-array-to-hex-string-in-visual-c#14051107
+string hexStr(unsigned char *data, uint16_t len) {
+	std::stringstream ss;
+	ss << std::hex;
+
+	for (int i(0); i < len; ++i) {
+		ss << std::setw(2) << std::setfill('0') << (int)data[i];
+	}
+	return ss.str();
 }
 
 

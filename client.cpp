@@ -128,19 +128,23 @@ int main(int argc, char *argv[]) {
 
 	sleep(3);
 
+	uint32_t dev;
+
 	cout << endl << "Adding device..." << endl;
-	if (!sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", true)) {
-		cout << "Failed to add device 1!" << endl << endl;
+	dev = sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", true);
+	if (dev == 0) {
+		cout << "Failed to add device!" << endl << endl;
 	} else {
-		cout << "Successfully added device 1!" << endl << endl;
+		cout << "Successfully added device as deviceID " << dev << "!" << endl << endl;
 	}
 
 
-	cout << "Adding device2..." << endl;
-	if (!sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", false)) {
-		cout << "Failed to add device 2!" << endl << endl;
+	cout << endl << "Adding device..." << endl;
+	dev = sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", false);
+	if (dev == 0) {
+		cout << "Failed to add device!" << endl << endl;
 	} else {
-		cout << "Successfully added device 2!" << endl << endl;
+		cout << "Successfully added device as deviceID " << dev << "!" << endl << endl;
 	}
 
 
@@ -200,6 +204,21 @@ int main(int argc, char *argv[]) {
 
 	cout << "get authorized devices..."<< endl;
 	printVector(sec->get_authorized_devices());
+
+
+	cout << endl << "Adding this address as a device..." << endl;
+	dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", "LOCAL MAC 1", false);
+	if (dev == 0) {
+		cout << "Failed to add local device!" << endl << endl;
+	} else {
+		cout << "Successfully added local device as deviceID " << dev << "!" << endl << endl;
+	}
+
+	sec->updateLocalKeys();
+
+	uint32_t my_dev = sec->get_my_device_id();
+	cout << "My device_id = " << my_dev << endl;
+	cout << "My public key: " << sec->get_key(my_dev) << endl;
 
 
 	cout << endl << "DONE!" << endl;

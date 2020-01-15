@@ -128,6 +128,12 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2), ipcPath);
 	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, eventLogWaitManager);
 
+	loadLocalDeviceParameters();
+}
+
+
+
+void BlockchainSecLib::loadLocalDeviceParameters(void) {
 	// TODO: try catch ?
 	localDeviceID = get_my_device_id();
 
@@ -251,7 +257,7 @@ Json BlockchainSecLib::call_helper(string const& data) {
 	string callResult = callJson["result"];
 	if (callResult.compare("0x") == 0) {
 		// The contract failed to execute (a require statement failed)
-		throw new CallFailedException("eth_call did not execute successfully!");
+		throw CallFailedException("eth_call did not execute successfully!");
 	}
 	return callJson;
 }
@@ -277,6 +283,9 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 
 	transactionHash = findResult.value();
 	transactionReceipt = getTransactionReceipt(transactionHash);
+#ifdef _DEBUG
+	cout << "contract_helper(): Calling eventLogWaitManager->getEventLog()..." << endl << endl;
+#endif //_DEBUG
 	return eventLogWaitManager->getEventLog(transactionHash);
 }
 
@@ -284,8 +293,8 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::callMutatorContract(string const& funcName, string const& ethabiEncodeArgs) {
-	unique_ptr<unordered_map<string, string>> eventLog;
+bool BlockchainSecLib::callMutatorContract(string const& funcName, string const& ethabiEncodeArgs, unique_ptr<unordered_map<string, string>> & eventLog) {
+	//unique_ptr<unordered_map<string, string>> eventLog;
 	string data;
 
 	data = ethabi(
@@ -477,8 +486,9 @@ vector<string> BlockchainSecLib::get_authorized_gateways(void) {
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_device(string const& deviceAddress, string const& name, string const& mac, bool gatewayManaged) {
+uint32_t BlockchainSecLib::add_device(string const& deviceAddress, string const& name, string const& mac, bool gatewayManaged) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	if (!isEthereumAddress(deviceAddress)) {
 		throw InvalidArgumentException("Address is an invalid format!");
@@ -495,15 +505,20 @@ bool BlockchainSecLib::add_device(string const& deviceAddress, string const& nam
 						"' -p '" + escapeSingleQuotes(mac) +
 						"' -p " + (gatewayManaged ? "true" : "false");
 
-	return callMutatorContract("add_device", ethabiEncodeArgs);
+	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog)) {
+		return stoi((*eventLog.get())["device_id"]); // TODO: What id [device_id] doesn't exist? try catch
+	} else {
+		return 0;
+	}
 }
 
 
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac) {
+uint32_t BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME) {
 		throw InvalidArgumentException(
@@ -515,7 +530,11 @@ bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& n
 						"' -p '" + escapeSingleQuotes(name) +
 						"' -p '" + escapeSingleQuotes(mac) + "'";
 
-	return callMutatorContract("add_gateway", ethabiEncodeArgs);
+	if (callMutatorContract("add_gateway", ethabiEncodeArgs, eventLog)) {
+		return stoi((*eventLog.get())["device_id"]); // TODO: What id [device_id] doesn't exist? try catch
+	} else {
+		return 0;
+	}
 }
 
 
@@ -524,10 +543,11 @@ bool BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& n
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::remove_device(uint32_t deviceID) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "'";
 
-	return callMutatorContract("remove_device", ethabiEncodeArgs);
+	return callMutatorContract("remove_device", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -536,10 +556,11 @@ bool BlockchainSecLib::remove_device(uint32_t deviceID) {
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::remove_gateway(uint32_t deviceID) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "'";
 
-	return callMutatorContract("remove_gateway", ethabiEncodeArgs);
+	return callMutatorContract("remove_gateway", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -548,11 +569,12 @@ bool BlockchainSecLib::remove_gateway(uint32_t deviceID) {
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
 						"' -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
 
-	return callMutatorContract("update_datareceiver", ethabiEncodeArgs);
+	return callMutatorContract("update_datareceiver", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -561,23 +583,25 @@ bool BlockchainSecLib::update_datareceiver(uint32_t deviceID, uint32_t dataRecei
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::update_addr(uint32_t deviceID, BlockchainSecLib::AddrType addrType, string const& addr) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
 						"' -p '" + boost::lexical_cast<string>(addrType) +
 						"' -p '" + escapeSingleQuotes(addr) + "'";
 
-	return callMutatorContract("update_addr", ethabiEncodeArgs);
+	return callMutatorContract("update_addr", ethabiEncodeArgs, eventLog);
 }
 
 
 
 bool BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicKey) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
 						"' -p '" + escapeSingleQuotes(publicKey) + "'";
 
-	return callMutatorContract("update_publickey", ethabiEncodeArgs);
+	return callMutatorContract("update_publickey", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -586,12 +610,13 @@ bool BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicK
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
 
 	// TODO: Is this appropriate for binary data?
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
 						"' -p '" + escapeSingleQuotes(data) + "'";
 
-	return callMutatorContract("push_data", ethabiEncodeArgs);
+	return callMutatorContract("push_data", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -600,12 +625,14 @@ bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data) {
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::authorize_admin(string const& adminAddress) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
+
 	if (!isEthereumAddress(adminAddress)) {
 		throw InvalidArgumentException("Address is an invalid format!");
 	}
 	ethabiEncodeArgs = " -p '" + adminAddress + "'";
 
-	return callMutatorContract("authorize_admin", ethabiEncodeArgs);
+	return callMutatorContract("authorize_admin", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -614,12 +641,14 @@ bool BlockchainSecLib::authorize_admin(string const& adminAddress) {
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::deauthorize_admin(string const& adminAddress) {
 	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
+
 	if (!isEthereumAddress(adminAddress)) {
 		throw InvalidArgumentException("Address is an invalid format!");
 	}
 	ethabiEncodeArgs = " -p '" + adminAddress + "'";
 
-	return callMutatorContract("deauthorize_admin", ethabiEncodeArgs);
+	return callMutatorContract("deauthorize_admin", ethabiEncodeArgs, eventLog);
 }
 
 
@@ -723,6 +752,10 @@ string BlockchainSecLib::getTransactionReceipt(string const& transactionHash) {
 			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
 			continue;
 		}
+
+#ifdef _DEBUG
+		cout << "getTransactionReceipt(): returning..." << endl << endl;
+#endif //_DEBUG
 
 		return transactionReceipt;
 	}
@@ -869,7 +902,7 @@ void BlockchainSecLib::joinThreads(void) {
 bool BlockchainSecLib::updateLocalKeys(void) {
 	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1], sk[crypto_kx_SECRETKEYBYTES + 1];
 	//unsigned char rx[crypto_kx_SESSIONKEYBYTES + 1], tx[crypto_kx_SESSIONKEYBYTES + 1];
-	stringstream skHex;
+	string pkHex, skHex;
 
 	crypto_kx_keypair(pk, sk);
 
@@ -878,19 +911,33 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 	//	rx[crypto_kx_SESSIONKEYBYTES] =
 	//	tx[crypto_kx_SESSIONKEYBYTES] = 0;
 
-	skHex << sk;
+	pkHex = hexStr(pk, crypto_kx_PUBLICKEYBYTES);
+	skHex = hexStr(sk, crypto_kx_SECRETKEYBYTES);
 
-	if (update_publickey(localDeviceID, skHex.str())) {
+#ifdef _DEBUG
+	cout << "updateLocalKeys(): public key = " << pkHex << endl;
+	cout << "updateLocalKeys(): private key = " << skHex << endl;
+#endif //_DEBUG
+
+	if (update_publickey(get_my_device_id(), pkHex)) {
+
+#ifdef _DEBUG
+	cout << "updateLocalKeys(): update_publickey() returned TRUE." << endl;
+#endif //_DEBUG
+
 		memcpy(client_pk, pk, crypto_kx_PUBLICKEYBYTES + 1);
 		memcpy(client_sk, sk, crypto_kx_SECRETKEYBYTES + 1);
 
 		if (cfgRoot->exists("privateKey")) cfgRoot->remove("privateKey");
-		cfgRoot->add("privateKey", Setting::TypeString) = skHex.str();
+		cfgRoot->add("privateKey", Setting::TypeString) = skHex;
 
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 
 		return true;
 	}
+#ifdef _DEBUG
+	cout << "updateLocalKeys(): update_publickey() returned FALSE." << endl;
+#endif //_DEBUG
 	return false;
 }
 

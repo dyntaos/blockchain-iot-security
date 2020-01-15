@@ -225,11 +225,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function get_my_device_id() external view returns(uint32) {
-		if (addr_to_id[msg.sender] != 0 && id_to_device[addr_to_id[msg.sender]].active) {
-			return addr_to_id[msg.sender];
-		} else {
-			return 0;
-		}
+		return addr_to_id[msg.sender];
 	}
 
 
@@ -353,6 +349,7 @@ contract DeviceMgmt {
 			device_id = next_device_id++; //TODO: What to do if this overflows.
 		}
 
+		id_to_device[device_id].device_id = device_id;
 		id_to_device[device_id].name = name;
 		id_to_device[device_id].active = true;
 		id_to_device[device_id].is_gateway = false;
@@ -374,7 +371,8 @@ contract DeviceMgmt {
 			id_to_device[device_id].eth_addr = 0x0000000000000000000000000000000000000000;
 			id_to_device[device_id].has_eth_addr = true;
 		} else {
-			addr_to_id[clientAddr] = id_to_device[device_id].device_id;
+			id_to_device[device_id].eth_addr = clientAddr;
+			addr_to_id[clientAddr] = device_id;
 			id_to_device[device_id].has_eth_addr = false;
 		}
 
@@ -401,6 +399,7 @@ contract DeviceMgmt {
 			device_id = next_device_id++; //TODO: What to do if this overflows.
 		}
 
+		id_to_device[device_id].device_id = device_id;
 		id_to_device[device_id].name = name;
 		id_to_device[device_id].active = true;
 		id_to_device[device_id].is_gateway = true;
@@ -420,7 +419,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_gateways.length - 1);
 
 		gateway_pool[clientAddr] = true;
-		addr_to_id[clientAddr] = id_to_device[device_id].device_id;
+		addr_to_id[clientAddr] = device_id;
 
 		emit Add_Gateway(msg.sender, clientAddr, name, mac, device_id);
 		return device_id;
@@ -486,11 +485,11 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function update_datareceiver(uint32 device_id, uint32 dataReceiver) external _admin returns(bool) {
-		require(id_to_device[dataReceiver].active);
+	function update_datareceiver(uint32 device_id, uint32 dataReceiverID) external _admin returns(bool) {
+		require(id_to_device[dataReceiverID].active);
 		id_to_device[device_id].dataReceiverID = dataReceiverID;
 
-		emit Update_DataReceiver(msg.sender, device_id, dataReceiver);
+		emit Update_DataReceiver(msg.sender, device_id, dataReceiverID);
 		return true;
 	}
 
@@ -520,7 +519,7 @@ contract DeviceMgmt {
 	function update_publickey(uint32 device_id, string calldata newPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
 		id_to_device[device_id].publicKey = newPublicKey;
 
-		emit Update_Publickey(msg.sender, device_id, newPublicKey);
+		emit Update_PublicKey(msg.sender, device_id, newPublicKey);
 		return true;
 	}
 
@@ -546,6 +545,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function authorize_admin(address newAdminAddr) external _admin returns(bool) {
+		require(!admin_mapping[newAdminAddr].isAdmin);
 		admin_mapping[newAdminAddr].isAdmin = true;
 		active_admin_users.push(newAdminAddr);
 		admin_mapping[newAdminAddr].authorizedAdminUsersIndex = uint32(active_admin_users.length - 1);
@@ -561,6 +561,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function deauthorize_admin(address adminAddr) external _admin returns(bool) {
+		require(admin_mapping[adminAddr].isAdmin);
 		require(active_admin_users.length > 1);
 
 		if (active_admin_users.length - 1 == admin_mapping[adminAddr].authorizedAdminUsersIndex) {

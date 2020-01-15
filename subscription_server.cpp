@@ -24,7 +24,16 @@ EventLogWaitManager::EventLogWaitManager(string const& clientAddress, string con
 
 unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string const& logID) {
 	unordered_map<string, string> *element;
+
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::getEventLog(): Acquiring mutex..." << endl << endl;
+#endif //_DEBUG
+
 	mtx.lock();
+
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::getEventLog(): Mutex acquired..." << endl << endl;
+#endif //_DEBUG
 
 	if (eventLogMap.count(logID) == 0) {
 		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
@@ -37,6 +46,10 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 	eventLogMap[logID].get()->hasWaitingThread = true;
 
 	if (!eventLogMap[logID].get()->hasEventLog) {
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::getEventLog(): Releasing mutex and waiting on condition variable \""
+		<< logID << "\"..." << endl << endl;
+#endif //_DEBUG
 		mtx.unlock();
 		while (!eventLogMap[logID].get()->hasEventLog) eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock);
 		mtx.lock();
@@ -45,6 +58,10 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 	element = new unordered_map<string, string>(*eventLogMap[logID].get()->eventLog.get());
 	eventLogMap.erase(logID);
 	mtx.unlock();
+
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::getEventLog(): Mutex released and returning..." << endl << endl;
+#endif //_DEBUG
 
 	return unique_ptr<unordered_map<string, string>>(element);
 }
@@ -55,8 +72,21 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 	mtx.lock();
 
 	if (eventLogMap.count(logID) == 0) {
+
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::setEventLog(): Create EventLogWaitElement \""
+		<< logID << "\"..." << endl << endl;
+#endif //_DEBUG
+
 		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
 	}
+#ifdef _DEBUG
+	 else {
+		 cout << "EventLogWaitManager::setEventLog(): EventLogWaitElement \""
+			<< logID << "\" already exists..." << endl << endl;
+	 }
+#endif //_DEBUG
+
 
 	if (eventLogMap[logID].get()->hasEventLog) {
 		mtx.unlock();
@@ -67,6 +97,12 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 	eventLogMap[logID].get()->hasEventLog = true;
 
 	if (eventLogMap[logID].get()->hasWaitingThread) {
+
+#ifdef _DEBUG
+	cout << "EventLogWaitManager::setEventLog(): Notfiy condition variable \""
+		<< logID << "\"..." << endl << endl;
+#endif //_DEBUG
+
 		eventLogMap[logID].get()->cv.notify_all();
 	}
 
@@ -121,7 +157,7 @@ restart: // TODO: Get rid of this
 
 	socket.connect(ep);
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 10; i++) { // TODO URGENT: Dynamically set upper bound****
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
@@ -169,7 +205,13 @@ subParse:  // TODO: Get rid of this
 		}
 
 		if (jsonResponce.count("error") > 0) {
-			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!");
+			cerr << "\ti = " << i << endl << endl; //TODO: REMOVE!
+			throw ResourceRequestFailedException(
+				"ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!\n"
+				"Signature: " + signatures[i] + "\n"
+ 				"Request: " + data + "\n"
+				"Responce: " + message + "\n"
+			);
 		}
 
 		if (jsonResponce.contains("method") > 0) {
