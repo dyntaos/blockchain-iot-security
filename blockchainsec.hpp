@@ -51,6 +51,7 @@ class BlockchainSecLib {
 		bool is_device(uint32_t deviceID);
 		bool is_gateway(uint32_t deviceID);
 		uint32_t get_my_device_id(void);
+		uint32_t get_datareceiver(uint32_t deviceID);
 		std::string get_key(uint32_t deviceID);
 		AddrType get_addrtype(uint32_t deviceID);
 		std::string get_addr(uint32_t deviceID);
@@ -71,6 +72,7 @@ class BlockchainSecLib {
 		bool add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac);
 		bool remove_device(uint32_t deviceID);
 		bool remove_gateway(uint32_t deviceID);
+		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
 		bool push_data(uint32_t deviceID, std::string const& data);
 		bool authorize_admin(std::string const& adminAddr);

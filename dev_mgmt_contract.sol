@@ -29,7 +29,7 @@ contract DeviceMgmt {
 		string name;                            // Arbitrary, admin assigned, human readable name
 		bool active;
 		bool is_gateway;                        //
-		uint32 device_id;                       // Integer ID of this device (NEW)
+		uint32 device_id;                       // Integer ID of this device
 		uint creationTimestamp;                 // Time this device was first created
 		uint dataTimestamp;                     // NEW
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
@@ -39,7 +39,8 @@ contract DeviceMgmt {
 		string mac;                             // MAC address for further identification
 
 		string publicKey;                       // Devices public encryption key
-		bool gateway_managed;                   // Is this deviced managed by the set of gateway accounts  (NEW)
+		uint32 dataReceiverID;                  //
+		bool gateway_managed;                   // Is this deviced managed by the set of gateway accounts
 		uint32 authorizedDevicesIndex;          //
 	}
 
@@ -70,31 +71,34 @@ contract DeviceMgmt {
 	// TODO: Should we index any of these event topics?
 
 	// Keccak256 Signature: 91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01
-	event Add_Device		(address indexed msgSender, address clientAddr, string name, string mac, bool gateway_managed, uint32 device_id);
+	event Add_Device			(address indexed msgSender, address clientAddr, string name, string mac, bool gateway_managed, uint32 device_id);
 
 	// Keccak256 Signature: ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671
-	event Add_Gateway		(address indexed msgSender, address clientAddr, string name, string mac, uint32 device_id);
+	event Add_Gateway			(address indexed msgSender, address clientAddr, string name, string mac, uint32 device_id);
 
 	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
-	event Remove_Device		(address indexed msgSender, uint32 device_id);
+	event Remove_Device			(address indexed msgSender, uint32 device_id);
 
 	// Keccak256 Signature: 0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9
-	event Remove_Gateway	(address indexed msgSender, address gateway_addr, uint32 device_id);
+	event Remove_Gateway		(address indexed msgSender, address gateway_addr, uint32 device_id);
 
 	// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
-	event Push_Data			(address indexed msgSender, uint32 device_id, uint timestamp, string data);
+	event Push_Data				(address indexed msgSender, uint32 device_id, uint timestamp, string data);
+
+	// Keccak256 Signature: e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf
+	event Update_DataReceiver	(address indexed msgSender, uint32 device_id, uint32 dataReceiver);
 
 	// Keccak256 Signature: 8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80
-	event Update_Addr		(address indexed msgSender, uint32 device_id, uint addrType, string addr);
+	event Update_Addr			(address indexed msgSender, uint32 device_id, uint addrType, string addr);
 
 	// Keccak256 Signature: 9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f
-	event Update_PublicKey	(address indexed msgSender, uint32 device_id, string newPublicKey);
+	event Update_PublicKey		(address indexed msgSender, uint32 device_id, string newPublicKey);
 
 	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
-	event Authorize_Admin	(address indexed msgSender, address newAdminAddr);
+	event Authorize_Admin		(address indexed msgSender, address newAdminAddr);
 
 	// Keccak256 Signature: e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160
-	event Deauthorize_Admin	(address indexed msgSender, address adminAddr);
+	event Deauthorize_Admin		(address indexed msgSender, address adminAddr);
 
 
 
@@ -256,6 +260,17 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
+	function get_datareceiver(uint32 device_id) external view _authorized returns(uint32) { // TODO: Modifiers might need adjusting here
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].dataReceiverID;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
 	function get_addrtype(uint32 device_id) external view _authorized returns(uint8) {
 		require(id_to_device[device_id].active);
 		return uint8(id_to_device[device_id].addrType);
@@ -347,6 +362,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].data = "";
 		id_to_device[device_id].dataTimestamp = 0;
 		id_to_device[device_id].publicKey = "";
+		id_to_device[device_id].dataReceiverID = 0;
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = gateway_managed;
 
@@ -393,7 +409,8 @@ contract DeviceMgmt {
 		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
 		id_to_device[device_id].dataTimestamp = 0;
-		id_to_device[device_id].publicKey = publicKey;
+		id_to_device[device_id].publicKey = "";
+		id_to_device[device_id].dataReceiverID = 0;
 		id_to_device[device_id].creationTimestamp = now;
 		id_to_device[device_id].gateway_managed = false;
 		id_to_device[device_id].eth_addr = clientAddr;
@@ -466,6 +483,21 @@ contract DeviceMgmt {
 
 	/*
 	 * @dev
+	 * @param
+	 * @return
+	 */
+	function update_datareceiver(uint32 device_id, uint32 dataReceiver) external _admin returns(bool) {
+		require(id_to_device[dataReceiver].active);
+		id_to_device[device_id].dataReceiverID = dataReceiverID;
+
+		emit Update_DataReceiver(msg.sender, device_id, dataReceiver);
+		return true;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
 	 * @param addrType
 	 * @param addr
 	 * @return
@@ -481,6 +513,7 @@ contract DeviceMgmt {
 
 	/*
 	 * @dev
+	 * @param
 	 * @param newPublicKey
 	 * @return
 	 */

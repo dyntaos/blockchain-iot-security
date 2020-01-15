@@ -359,6 +359,13 @@ uint32_t BlockchainSecLib::get_my_device_id(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
+uint32_t BlockchainSecLib::get_datareceiver(uint32_t deviceID) {
+	return getIntFromDeviceID("get_datareceiver", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
 string BlockchainSecLib::get_key(uint32_t deviceID) {
 	return getStringFromDeviceID("get_key", deviceID);
 }
@@ -533,6 +540,19 @@ bool BlockchainSecLib::remove_gateway(uint32_t deviceID) {
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "'";
 
 	return callMutatorContract("remove_gateway", ethabiEncodeArgs);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID) {
+	string ethabiEncodeArgs;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
+						"' -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
+
+	return callMutatorContract("update_datareceiver", ethabiEncodeArgs);
 }
 
 
