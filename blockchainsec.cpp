@@ -177,6 +177,31 @@ void BlockchainSecLib::loadLocalDeviceParameters(void) {
 			cout << "Loaded public key..." << endl;
 		}
 	}
+	loadDataReceiverPublicKey(localDeviceID);
+}
+
+
+
+bool BlockchainSecLib::loadDataReceiverPublicKey(uint32_t deviceID) {
+	uint32_t dataReceiver;
+	string dataReceiverPublicKey;
+	vector<char> byteVector;
+
+	try {
+		dataReceiver = get_datareceiver(deviceID);
+		if (dataReceiver == 0) {
+			return false;
+		}
+		dataReceiverPublicKey = get_key(dataReceiver);
+	} catch (runtime_error &e) {
+		return false;
+	}
+
+	byteVector = hexToBytes(dataReceiverPublicKey);
+	memcpy(dataReceiver_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+	dataReceiver_pk[crypto_kx_PUBLICKEYBYTES] = 0;
+
+	return true;
 }
 
 
@@ -190,6 +215,10 @@ string BlockchainSecLib::getFrom(string const& funcName, string const& ethabiEnc
 		funcName +
 		ethabiEncodeArgs
 	);
+
+#ifdef _DEBUG
+	cout << "getFrom(): " << funcName << "  " << ethabiEncodeArgs << endl;
+#endif //_DEBUG
 
 	Json callJson = call_helper(data);
 	result = callJson["result"];
@@ -267,6 +296,10 @@ Json BlockchainSecLib::call_helper(string const& data) {
 unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(string const& data) {
 	string transactionHash, transactionReceipt;
 	Json transactionJsonData;
+
+#ifdef _DEBUG
+	cout << "contract_helper(): Before call_helper()" << endl;
+#endif //_DEBUG
 
 	// Make an eth_call with the parameters first to check the contract will not fail
 	call_helper(data);
@@ -370,6 +403,13 @@ uint32_t BlockchainSecLib::get_my_device_id(void) {
 // Throws ResourceRequestFailedException from ethabi()
 uint32_t BlockchainSecLib::get_datareceiver(uint32_t deviceID) {
 	return getIntFromDeviceID("get_datareceiver", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+uint32_t BlockchainSecLib::get_default_datareceiver() {
+	return getIntFromContract("get_default_datareceiver");
 }
 
 
@@ -575,6 +615,19 @@ bool BlockchainSecLib::update_datareceiver(uint32_t deviceID, uint32_t dataRecei
 						"' -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
 
 	return callMutatorContract("update_datareceiver", ethabiEncodeArgs, eventLog);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+// Throws TransactionFailedException from eth_sendTransaction()
+bool BlockchainSecLib::set_default_datareceiver(uint32_t dataReceiverID) {
+	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
+
+	return callMutatorContract("set_default_datareceiver", ethabiEncodeArgs, eventLog);
 }
 
 

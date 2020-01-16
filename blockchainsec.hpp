@@ -52,6 +52,7 @@ class BlockchainSecLib {
 		bool is_gateway(uint32_t deviceID);
 		uint32_t get_my_device_id(void);
 		uint32_t get_datareceiver(uint32_t deviceID);
+		uint32_t get_default_datareceiver();
 		std::string get_key(uint32_t deviceID);
 		AddrType get_addrtype(uint32_t deviceID);
 		std::string get_addr(uint32_t deviceID);
@@ -73,6 +74,7 @@ class BlockchainSecLib {
 		bool remove_device(uint32_t deviceID);
 		bool remove_gateway(uint32_t deviceID);
 		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
+		bool set_default_datareceiver(uint32_t dataReceiverID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
 		bool push_data(uint32_t deviceID, std::string const& data);
 		bool authorize_admin(std::string const& adminAddr);
@@ -80,6 +82,7 @@ class BlockchainSecLib {
 
 		bool updateLocalKeys(void);
 		void loadLocalDeviceParameters(void);
+		bool loadDataReceiverPublicKey(uint32_t deviceID);
 
 		void joinThreads(void);
 
@@ -96,6 +99,7 @@ class BlockchainSecLib {
 		libconfig::Config cfg;
 		libconfig::Setting *cfgRoot;
 
+		unsigned char dataReceiver_pk[crypto_kx_PUBLICKEYBYTES + 1];
 		unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
 		unsigned char client_rx[crypto_kx_SESSIONKEYBYTES + 1], client_tx[crypto_kx_SESSIONKEYBYTES + 1];
 

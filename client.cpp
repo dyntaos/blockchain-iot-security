@@ -220,6 +220,23 @@ int main(int argc, char *argv[]) {
 	cout << "My device_id = " << my_dev << endl;
 	cout << "My public key: " << sec->get_key(my_dev) << endl;
 
+	cout << "Default data receiver: " << sec->get_default_datareceiver() << endl;
+
+	cout << "Set default data receiver to 2..." << endl;
+	sec->set_default_datareceiver(2);
+
+	cout << "Default data receiver: " << sec->get_default_datareceiver() << endl;
+
+	cout << "get_datareceiver(1): " << sec->get_datareceiver(1) << endl;
+	cout << "update_datareceiver(1, 2)..." << endl;
+
+	if (sec->update_datareceiver(1, 2)) {
+		cout << "\tSuccess..." << endl;
+	} else {
+		cout << "\tFailed!" << endl;
+	}
+
+	cout << "get_datareceiver(1): " << sec->get_datareceiver(1) << endl;
 
 	cout << endl << "DONE!" << endl;
 
