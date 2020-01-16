@@ -71,6 +71,7 @@ void senderThread(LoraTrx &trx) {
 #endif //LORA_GATEWAY
 
 
+
 void printVector(vector<string> v) {
 	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
 		cout << "\t" << *it << endl;
@@ -78,167 +79,150 @@ void printVector(vector<string> v) {
 }
 
 
+
+string runBinary(string cmd) {
+	string result;
+	FILE *inFd;
+	array<char, SENSOR_PIPE_BUFFER_LEN> pipeBuffer;
+
+	inFd = popen(cmd.c_str(), "r");
+
+	if (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) == NULL) {
+		throw ResourceRequestFailedException("runBinary(\"" + cmd + "\"): Error: Failed to read from pipe!");
+	}
+
+	result += pipeBuffer.data();
+
+	while (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) != NULL) {
+		result += pipeBuffer.data();
+	}
+
+	if (pclose(inFd) < 0) {
+		throw ResourceRequestFailedException("runBinary(\"" + cmd + "\"): Failed to pclose()!");
+	}
+	return result;
+}
+
+
+string querySensor(void) {
+	string data;
+
+	data = "uname -a\n";
+
+	try {
+		data += runBinary("uname -a");
+	} catch (ResourceRequestFailedException &e) {
+		data += e.what();
+	}
+
+	data += "\nnproc\n";
+
+	try {
+		data += runBinary("nproc");
+	} catch (ResourceRequestFailedException &e) {
+		data += e.what();
+	}
+
+	data += "\nuptime\n";
+
+	try {
+		data += runBinary("uptime");
+	} catch (ResourceRequestFailedException &e) {
+		data += e.what();
+	}
+
+	data += "\nfree -h\n";
+
+	try {
+		data += runBinary("free -h");
+	} catch (ResourceRequestFailedException &e) {
+		data += e.what();
+	}
+	return data;
+}
+
+
 int main(int argc, char *argv[]) {
 
-#ifdef LORA_GATEWAY
-	LoraTrx *trx;
-#endif //LORA_GATEWAY
-
-	cout << ".:Blockchain Security Framework Client:." << endl;
-
 	auto flags = parseFlags(argc, argv);
-	(void) argc;
-	(void) argv;
 
+	cout << "\t.:Blockchain Security Framework Client:." << endl << endl;
 
 	if (compileFlag) {
 		cout << "Compiling smart contract..." << endl;
 	}
-
-	if (gatewayFlag) {
-#ifdef LORA_GATEWAY
-		cout << "Started in gateway mode..." << endl;
-		trx = new LoraTrx();
-		trx->server_init();
-#else
-		cout << "This architecture does not support running as a LoRa gateway!" << endl;
-		exit(EXIT_FAILURE);
-#endif //LORA_GATEWAY
-	}
-
 	sec = new BlockchainSecLib(compileFlag);
 
-#ifdef _DEBUG
-	sec->test();
-#endif //_DEBUG
-
-#ifdef LORA_GATEWAY
 	if (gatewayFlag) {
-		thread send_thread(senderThread, std::ref(*trx));
-		string msg;
+		cout << "This binary does not support running as a LoRa gateway!" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	for (;;) {
+
+		while (sec->get_my_device_id() == 0) {
+			uint32_t dev;
+
+			cerr << "This device does not have an associated device ID..." << endl << "Creating device..." << endl;
+
+			cout << endl << "Adding this address as a device..." << endl;
+			dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", "LOCAL MAC 1", false);
+			if (dev == 0) {
+				cout << "Failed to add local device!" << endl << endl;
+			} else {
+				cout << "Successfully added local device as deviceID " << dev << "!" << endl << endl;
+			}
+
+			sec->updateLocalKeys();
+
+			//cerr << "This device does not have an associated device ID... Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds..." << endl;
+			//sleep(INVALID_DEVICE_TRY_INTERVAL);
+		}
+		sec->loadLocalDeviceParameters();
+
+		cout << "Found device ID #" << sec->get_my_device_id() << endl << endl;
+
 
 		for (;;) {
-			msg = trx->readMessage();
-			cout << "readMessage(): " << msg << endl;
+			string data = querySensor();
+			uint32_t myDeviceID = sec->get_my_device_id();
+
+			if (myDeviceID == 0) {
+				cerr << "This device does not have a registered device ID! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
+				sleep(INVALID_DEVICE_TRY_INTERVAL);
+				break;
+			}
+
+			cout << "Attempting to push data to the blockchain..." << endl;
+
+			if (!sec->push_data(myDeviceID, data)) {
+				cerr << "Failed to push data to the blockchain! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
+				sleep(INVALID_DEVICE_TRY_INTERVAL);
+				break;
+			}
+
+			cout << "Successfully pushed data to the blockchain..." << endl;
+
+			string chainData;
+			uint64_t dataTimestamp;
+
+			try {
+				chainData = sec->get_data(myDeviceID);
+				dataTimestamp = sec->get_dataTimestamp(myDeviceID);
+
+			} catch (runtime_error &e) {
+				cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl;
+				sleep(INVALID_DEVICE_TRY_INTERVAL);
+				break;
+			}
+
+			cout << "Got data timestamped as " << dataTimestamp << ":" << endl << endl << chainData << endl;
+
+			sleep(DATA_PUSH_INTERVAL);
 		}
 
-		trx->close_server();
-	}
-#endif //LORA_GATEWAY
-
-	sleep(3);
-
-	uint32_t dev;
-
-	cout << endl << "Adding device..." << endl;
-	dev = sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", true);
-	if (dev == 0) {
-		cout << "Failed to add device!" << endl << endl;
-	} else {
-		cout << "Successfully added device as deviceID " << dev << "!" << endl << endl;
 	}
 
-
-	cout << endl << "Adding device..." << endl;
-	dev = sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", false);
-	if (dev == 0) {
-		cout << "Failed to add device!" << endl << endl;
-	} else {
-		cout << "Successfully added device as deviceID " << dev << "!" << endl << endl;
-	}
-
-
-	cout << "is_admin(a4528ce8f47845b3bbf842da92bae9359e23fa3b) = ";
-	if (sec->is_admin("a4528ce8f47845b3bbf842da92bae9359e23fa3b")) {
-		cout << "TRUE" << endl << endl;
-	} else {
-		cout << "FALSE" << endl << endl;
-	}
-
-
-	cout << "is_admin(0000000000000000000000000000000000000000) = ";
-	if (sec->is_admin("0000000000000000000000000000000000000000")) {
-		cout << "TRUE" << endl << endl;
-	} else {
-		cout << "FALSE" << endl << endl;
-	}
-
-
-	cout << "is_authd(1) = " << sec->is_authd(1) << endl;
-	cout << "is_authd(2) = " << sec->is_authd(2) << endl;
-	cout << "is_authd(3) = " << sec->is_authd(3) << endl;
-	cout << "is_authd(4) = " << sec->is_authd(4) << endl << endl;
-
-
-	cout << "get_my_device_id() = " << sec->get_my_device_id() << endl << endl;
-
-
-	cout << "get_key(1) = " << sec->get_key(1) << endl;
-	cout << "get_key(2) = " << sec->get_key(2) << endl << endl;
-
-	cout << "authorize_admin(deadbeeff47845b3bbf842da92bae9359e23fa3b)" << endl << endl;
-	sec->authorize_admin("deadbeeff47845b3bbf842da92bae9359e23fa3b");
-
-	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
-
-	cout << "get admins..."<< endl;
-	printVector(sec->get_active_admins());
-
-	cout << endl << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl << endl;
-	sec->authorize_admin("deadcafebabe51b3bbf842da92bae9359e23fa3b");
-
-	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
-
-	cout << "get admins..."<< endl;
-	printVector(sec->get_active_admins());
-
-	cout << endl << "get authorized devices..."<< endl;
-	printVector(sec->get_authorized_devices());
-
-	cout << "remove_device(1)..." << endl;
-	if (sec->remove_device(1)) {
-		cout << "\tSuccess" << endl << endl;
-	} else {
-		cout << "\tFailure" << endl << endl;
-	}
-
-	cout << "get authorized devices..."<< endl;
-	printVector(sec->get_authorized_devices());
-
-
-	cout << endl << "Adding this address as a device..." << endl;
-	dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", "LOCAL MAC 1", false);
-	if (dev == 0) {
-		cout << "Failed to add local device!" << endl << endl;
-	} else {
-		cout << "Successfully added local device as deviceID " << dev << "!" << endl << endl;
-	}
-
-	sec->updateLocalKeys();
-
-	uint32_t my_dev = sec->get_my_device_id();
-	cout << "My device_id = " << my_dev << endl;
-	cout << "My public key: " << sec->get_key(my_dev) << endl;
-
-	cout << "Default data receiver: " << sec->get_default_datareceiver() << endl;
-
-	cout << "Set default data receiver to 2..." << endl;
-	sec->set_default_datareceiver(2);
-
-	cout << "Default data receiver: " << sec->get_default_datareceiver() << endl;
-
-	cout << "get_datareceiver(1): " << sec->get_datareceiver(1) << endl;
-	cout << "update_datareceiver(1, 2)..." << endl;
-
-	if (sec->update_datareceiver(1, 2)) {
-		cout << "\tSuccess..." << endl;
-	} else {
-		cout << "\tFailed!" << endl;
-	}
-
-	cout << "get_datareceiver(1): " << sec->get_datareceiver(1) << endl;
-
-	cout << endl << "DONE!" << endl;
 
 	sec->joinThreads();
 	return EXIT_SUCCESS;

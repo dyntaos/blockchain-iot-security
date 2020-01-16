@@ -130,7 +130,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 		"ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671",
 		"c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363",
 		"0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9",
-		"0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51",
+		//"0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51",
+		"bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9",
 		"e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf",
 		"adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287",
 		"8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80",
@@ -159,7 +160,7 @@ restart: // TODO: Get rid of this
 
 	socket.connect(ep);
 
-	for (i = 0; i < 10; i++) { // TODO URGENT: Dynamically set upper bound****
+	for (i = 0; i < 11; i++) { // TODO URGENT: Dynamically set upper bound****
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["

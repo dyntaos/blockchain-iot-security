@@ -32,7 +32,7 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean
 
-all: mkdirs $(BIN)/client
+all: mkdirs $(BIN)/client $(BIN)/client_test
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -43,7 +43,7 @@ debug_flag:
 	$(eval DEBUG = -D_DEBUG)
 
 clean:
-	rm -rf ./build ./client
+	rm -rf ./build ./client ./client_test
 
 lora: _lora mkdirs $(OBJ)/lora_trx.o $(BIN)/client
 
@@ -79,6 +79,17 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $
 
 ### Client Binary ###
 
+$(OBJ)/client_test.o: client_test.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(BIN)/client_test: $(OBJ)/client_test.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+		$(OBJ)/client_test.o \
+		-L $(LIB) \
+		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+	cp ./*.sol ./*.conf $(BIN)/
+	ln -fs $@ ./client_test
+
 $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
@@ -89,4 +100,3 @@ $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
-

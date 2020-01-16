@@ -84,8 +84,10 @@ contract DeviceMgmt {
 	// Keccak256 Signature: 0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9
 	event Remove_Gateway			(address indexed msgSender, address gateway_addr, uint32 device_id);
 
-	// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
-	event Push_Data					(address indexed msgSender, uint32 device_id, uint timestamp, string data);
+	//// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
+	//event Push_Data					(address indexed msgSender, uint32 device_id, uint timestamp, string data);
+	// Keccak256 Signature: bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9
+	event Push_Data					(address indexed msgSender, uint32 device_id);
 
 	// Keccak256 Signature: e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf
 	event Update_DataReceiver		(address indexed msgSender, uint32 device_id, uint32 dataReceiver);
@@ -555,9 +557,10 @@ contract DeviceMgmt {
 	 */
 	function push_data(uint32 device_id, string calldata data) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].data = data;
-		id_to_device[device_id].dataTimestamp = now; //TODO: Is using 'now' bad?
+		id_to_device[device_id].dataTimestamp = block.timestamp; //TODO: Is using 'now' bad?
 
-		emit Push_Data(msg.sender, device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
+		//emit Push_Data(msg.sender, device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
+		emit Push_Data(msg.sender, device_id);
 		return true;
 	}
 

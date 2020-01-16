@@ -1,5 +1,6 @@
 build
 .vscode
 client
+client_test
 dev_mgmt_contract.abi
 dev_mgmt_contract.bin
