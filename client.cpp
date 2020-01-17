@@ -1,4 +1,6 @@
 #include <iostream>
+#include <ctime>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
 
 	auto flags = parseFlags(argc, argv);
 
-	cout << "\t.:Blockchain Security Framework Client:." << endl << endl;
+	cout << endl << "\t.:Blockchain Security Framework Client:." << endl << endl;
 
 	if (compileFlag) {
 		cout << "Compiling smart contract..." << endl;
@@ -173,6 +175,8 @@ int main(int argc, char *argv[]) {
 				cout << "Successfully added local device as deviceID " << dev << "!" << endl << endl;
 			}
 
+			sec->update_datareceiver(dev, dev);
+
 			sec->updateLocalKeys();
 
 			//cerr << "This device does not have an associated device ID... Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds..." << endl;
@@ -195,7 +199,7 @@ int main(int argc, char *argv[]) {
 
 			cout << "Attempting to push data to the blockchain..." << endl;
 
-			if (!sec->push_data(myDeviceID, data)) {
+			if (!sec->encryptAndPushData(data)) {
 				cerr << "Failed to push data to the blockchain! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;
@@ -204,10 +208,10 @@ int main(int argc, char *argv[]) {
 			cout << "Successfully pushed data to the blockchain..." << endl;
 
 			string chainData;
-			uint64_t dataTimestamp;
+			time_t dataTimestamp;
 
 			try {
-				chainData = sec->get_data(myDeviceID);
+				chainData = sec->getDataAndDecrypt(myDeviceID);
 				dataTimestamp = sec->get_dataTimestamp(myDeviceID);
 
 			} catch (runtime_error &e) {
@@ -216,7 +220,10 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
-			cout << "Got data timestamped as " << dataTimestamp << ":" << endl << endl << chainData << endl;
+			string timestamp = asctime(localtime(&dataTimestamp));
+			boost::trim(timestamp);
+
+			cout << "Got data timestamped as " << timestamp << ":" << endl << endl << chainData << endl;
 
 			sleep(DATA_PUSH_INTERVAL);
 		}

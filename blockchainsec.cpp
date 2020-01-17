@@ -12,6 +12,7 @@
 #include <blockchainsec.hpp>
 #include <ethabi.hpp>
 #include <misc.hpp>
+#include <cpp-base64/base64.h>
 
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
@@ -46,6 +47,10 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 BlockchainSecLib::BlockchainSecLib(bool compile) {
+
+	if (sodium_init() < 0) {
+		throw CryptographicFailureException("Could not initialize libSodium!");
+	}
 
 	cfg.setOptions(Config::OptionFsync
 				 | Config::OptionSemicolonSeparators
@@ -222,6 +227,7 @@ string BlockchainSecLib::getFrom(string const& funcName, string const& ethabiEnc
 
 	Json callJson = call_helper(data);
 	result = callJson["result"];
+
 	return result.substr(2);
 }
 
@@ -249,13 +255,10 @@ uint64_t BlockchainSecLib::getIntFromContract(string const& funcName) {
 
 // Throws ResourceRequestFailedException from ethabi()
 uint64_t BlockchainSecLib::getIntFromDeviceID(string const& funcName, uint32_t deviceID) {
-	stringstream ss;
-	uint64_t result;
+	string value;
 
-	ss << getFromDeviceID(funcName, deviceID);
-	ss >> result;
-
-	return result;
+	value = getFromDeviceID(funcName, deviceID);
+	return stoul(value, nullptr, 16);
 }
 
 
@@ -263,6 +266,17 @@ uint64_t BlockchainSecLib::getIntFromDeviceID(string const& funcName, uint32_t d
 // Throws ResourceRequestFailedException from ethabi()
 string BlockchainSecLib::getStringFromDeviceID(string const& funcName, uint32_t deviceID) {
 	return ethabi_decode_result(
+		ETH_CONTRACT_ABI,
+		funcName,
+		getFromDeviceID(funcName, deviceID)
+	);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+vector<string> BlockchainSecLib::getStringsFromDeviceID(string const& funcName, uint32_t deviceID) {
+	return ethabi_decode_results(
 		ETH_CONTRACT_ABI,
 		funcName,
 		getFromDeviceID(funcName, deviceID)
@@ -327,7 +341,7 @@ unique_ptr<unordered_map<string, string>> BlockchainSecLib::contract_helper(stri
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
 bool BlockchainSecLib::callMutatorContract(string const& funcName, string const& ethabiEncodeArgs, unique_ptr<unordered_map<string, string>> & eventLog) {
-	//unique_ptr<unordered_map<string, string>> eventLog;
+	//unique_ptr<unordered_map<string, string>> eventLog;  // TODO
 	string data;
 
 	data = ethabi(
@@ -450,8 +464,8 @@ string BlockchainSecLib::get_mac(uint32_t deviceID) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string BlockchainSecLib::get_data(uint32_t deviceID) {
-	return getStringFromDeviceID("get_data", deviceID);
+vector<string> BlockchainSecLib::get_data(uint32_t deviceID) {
+	return getStringsFromDeviceID("get_data", deviceID);
 }
 
 
@@ -661,13 +675,14 @@ bool BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicK
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data) {
+bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data, string const& nonce) {
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
 	// TODO: Is this appropriate for binary data?
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + escapeSingleQuotes(data) + "'";
+						"' -p '" + base64_encode((unsigned char*) data.c_str(), data.length()) +
+						"' -p '" + base64_encode((unsigned char*) nonce.c_str(), nonce.length()) +"'";
 
 	return callMutatorContract("push_data", ethabiEncodeArgs, eventLog);
 }
@@ -992,6 +1007,75 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 	cout << "updateLocalKeys(): update_publickey() returned FALSE." << endl;
 #endif //_DEBUG
 	return false;
+}
+
+
+
+bool BlockchainSecLib::encryptAndPushData(string const& data) {
+	unsigned char nonce[crypto_secretbox_NONCEBYTES + 1];
+	unsigned char *cipher = new unsigned char[data.length() + 5];
+	string cipherStr, nonceStr;
+
+	if (derriveSharedSecret) {
+		if (crypto_kx_client_session_keys(rxSharedKey, txSharedKey, client_pk, client_sk, dataReceiver_pk) != 0) {
+			// dataReceiver public key is suspicious
+			throw CryptographicFailureException("Suspicious cryptographic key");
+		}
+		derriveSharedSecret = false;
+	}
+
+	randombytes_buf(nonce, crypto_secretbox_NONCEBYTES);
+	crypto_secretbox_easy(cipher, (unsigned char*) data.c_str(), data.length(), nonce, txSharedKey);
+	cipher[data.length() + 4] = 0;
+	nonce[crypto_secretbox_NONCEBYTES] = 0;
+
+	cipherStr = string((char*) cipher);
+	nonceStr = string((char*) nonce);
+
+	push_data(localDeviceID, cipherStr, nonceStr);
+
+	delete cipher;
+	return true;
+}
+
+
+
+string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
+	unsigned char rxKey[crypto_kx_SESSIONKEYBYTES + 1], txKey[crypto_kx_SESSIONKEYBYTES + 1];
+	string nodePublicKey;
+	vector<string> chainData;
+
+	if (get_my_device_id() != get_datareceiver(deviceID)) {
+		throw CryptographicKeyMissmatchException("Cannot decrypt the requested data with current keys");
+	}
+
+	nodePublicKey = get_key(deviceID);
+
+	if (crypto_kx_server_session_keys(rxKey, txKey, client_pk, client_sk, (unsigned char*) nodePublicKey.c_str()) != 0) {
+		throw CryptographicFailureException("Suspicious cryptographic key");
+	}
+
+	chainData = get_data(deviceID);
+
+	unsigned char *message = new unsigned char[chainData[0].length() - 4];
+	message[chainData[0].length() - 3] = 0;
+
+	string messageStr = base64_decode(chainData[0]);
+	string nonce = base64_decode(chainData[1]);
+
+	if (crypto_secretbox_open_easy(
+			message,
+			(unsigned char*) chainData[0].c_str(),
+			chainData[0].length(),
+			(unsigned char*) nonce.c_str(),
+			rxKey
+	) != 0) {
+		// Message was forged
+		throw CryptographicFailureException("Message forged");
+	}
+
+	delete message;
+	return string((char*) message);
 }
 
 

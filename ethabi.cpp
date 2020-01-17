@@ -82,7 +82,6 @@ unordered_map<string, string> ethabi_decode_log(string const& abiFile, string co
 
 
 
-// TODO: This returns one result -- is more than one ever needed?
 string ethabi_decode_result(string const& abiFile, string const& eventName, string const& data) {
 	string query, responce;
 
@@ -93,11 +92,35 @@ string ethabi_decode_result(string const& abiFile, string const& eventName, stri
 	cout << "ethabi_decode_result() responce:" << responce << endl;
 #endif //_DEBUG
 
-	//TODO: What if there is no space to sepatate key and value? -- IT'S AN EMPTY STRING THEN!
 	if (responce.find_first_of(" ") == string::npos) {
 		return "";
 	}
 	return responce.substr(responce.find_first_of(" ") + 1);
+}
+
+
+
+vector<string> ethabi_decode_results(string const& abiFile, string const& eventName, string const& data) {
+	vector<string> array;
+	string query, responce;
+
+	query = "decode function " + abiFile + " " + eventName + " " + data; //TODO: Check data does not have "0x"...
+	responce = ethabi(query);
+
+#ifdef _DEBUG
+	cout << "ethabi_decode_results() responce:" << responce << endl;
+#endif //_DEBUG
+
+	boost::split(array, responce, boost::is_any_of("\n"));
+
+	for (vector<string>::iterator it = array.begin(); it != array.end(); ++it) {
+		if (responce.find_first_of(" ") == string::npos) {
+			*it = "";
+		} else {
+			*it = (*it).substr((*it).find_first_of(" ") + 1);
+		}
+	}
+	return array;
 }
 
 

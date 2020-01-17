@@ -8,11 +8,18 @@
 namespace blockchainSec {
 
 
-
-class TransactionException : public std::runtime_error {
+class BlockchainSecLibException : public std::runtime_error {
 	public:
-		TransactionException(const char* msg) : std::runtime_error(msg) {}
-		TransactionException(const std::string& msg) : std::runtime_error(msg) {}
+		BlockchainSecLibException(const char* msg) : std::runtime_error(msg) {}
+		BlockchainSecLibException(const std::string& msg) : std::runtime_error(msg) {}
+};
+
+
+
+class TransactionException : public BlockchainSecLibException {
+	public:
+		TransactionException(const char* msg) : BlockchainSecLibException(msg) {}
+		TransactionException(const std::string& msg) : BlockchainSecLibException(msg) {}
 };
 
 class CallFailedException : public TransactionException {
@@ -29,19 +36,38 @@ class TransactionFailedException : public TransactionException {
 
 
 
-
-class InvalidArgumentException : public std::runtime_error {
+class InvalidArgumentException : public BlockchainSecLibException {
 	public:
-		InvalidArgumentException (const char* msg) : std::runtime_error(msg) {}
-		InvalidArgumentException (const std::string& msg) : std::runtime_error(msg) {}
+		InvalidArgumentException (const char* msg) : BlockchainSecLibException(msg) {}
+		InvalidArgumentException (const std::string& msg) : BlockchainSecLibException(msg) {}
 };
 
 
 
-class ResourceRequestFailedException : public std::runtime_error {
+class ResourceRequestFailedException : public BlockchainSecLibException {
 	public:
-		ResourceRequestFailedException (const char* msg) : std::runtime_error(msg) {}
-		ResourceRequestFailedException (const std::string& msg) : std::runtime_error(msg) {}
+		ResourceRequestFailedException (const char* msg) : BlockchainSecLibException(msg) {}
+		ResourceRequestFailedException (const std::string& msg) : BlockchainSecLibException(msg) {}
+};
+
+
+
+class CryptographicException : public BlockchainSecLibException {
+	public:
+		CryptographicException (const char* msg) : BlockchainSecLibException(msg) {}
+		CryptographicException (const std::string& msg) : BlockchainSecLibException(msg) {}
+};
+
+class CryptographicFailureException : public CryptographicException {
+	public:
+		CryptographicFailureException (const char* msg) : CryptographicException(msg) {}
+		CryptographicFailureException (const std::string& msg) : CryptographicException(msg) {}
+};
+
+class CryptographicKeyMissmatchException : public CryptographicException {
+	public:
+		CryptographicKeyMissmatchException (const char* msg) : CryptographicException(msg) {}
+		CryptographicKeyMissmatchException (const std::string& msg) : CryptographicException(msg) {}
 };
 
 

@@ -58,7 +58,7 @@ class BlockchainSecLib {
 		std::string get_addr(uint32_t deviceID);
 		std::string get_name(uint32_t deviceID);
 		std::string get_mac(uint32_t deviceID);
-		std::string get_data(uint32_t deviceID);
+		std::vector<std::string> get_data(uint32_t deviceID);
 		time_t get_dataTimestamp(uint32_t deviceID);
 		time_t get_creationTimestamp(uint32_t deviceID);
 		uint32_t get_num_admin(void);
@@ -76,13 +76,15 @@ class BlockchainSecLib {
 		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
 		bool set_default_datareceiver(uint32_t dataReceiverID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
-		bool push_data(uint32_t deviceID, std::string const& data);
+		bool push_data(uint32_t deviceID, std::string const& data, std::string const& nonce);
 		bool authorize_admin(std::string const& adminAddr);
 		bool deauthorize_admin(std::string const& adminAddr);
 
 		bool updateLocalKeys(void);
 		void loadLocalDeviceParameters(void);
 		bool loadDataReceiverPublicKey(uint32_t deviceID);
+		bool encryptAndPushData(std::string const& data);
+		std::string getDataAndDecrypt(uint32_t const deviceID);
 
 		void joinThreads(void);
 
@@ -99,9 +101,10 @@ class BlockchainSecLib {
 		libconfig::Config cfg;
 		libconfig::Setting *cfgRoot;
 
+		bool derriveSharedSecret = true; // Only recalculate the shared key if the keys have changed
 		unsigned char dataReceiver_pk[crypto_kx_PUBLICKEYBYTES + 1];
 		unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
-		unsigned char client_rx[crypto_kx_SESSIONKEYBYTES + 1], client_tx[crypto_kx_SESSIONKEYBYTES + 1];
+		unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES + 1], txSharedKey[crypto_kx_SESSIONKEYBYTES + 1];
 
 		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
@@ -111,6 +114,7 @@ class BlockchainSecLib {
 		uint64_t getIntFromDeviceID(std::string const& funcName, uint32_t deviceID);
 		uint64_t getIntFromContract(std::string const& funcName);
 		std::string getStringFromDeviceID(std::string const& funcName, uint32_t deviceID);
+		std::vector<std::string> getStringsFromDeviceID(std::string const& funcName, uint32_t deviceID);
 		std::string getArrayFromContract(std::string const& funcName);
 		Json call_helper(std::string const& data);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string const& data);

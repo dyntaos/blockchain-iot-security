@@ -17,8 +17,7 @@ pragma solidity >=0.6.0;
  */
 contract DeviceMgmt {
 
-	enum AddrType {UNSET, IPV4, IPV6, LORA, ZIGBEE, BLUETOOTH, OTHER} //TODO: Add other common protocols and custom values
-
+	enum AddrType {UNSET, IPV4, IPV6, LORA}
 
 	/*
 	 *
@@ -31,8 +30,9 @@ contract DeviceMgmt {
 		bool is_gateway;                        //
 		uint32 device_id;                       // Integer ID of this device
 		uint creationTimestamp;                 // Time this device was first created
-		uint dataTimestamp;                     // NEW
+		uint dataTimestamp;                     //
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
+		string nonce;
 
 		AddrType addrType;                      // How the device connects to the network (IP (ethernet, WiFi, GSM/LTE), LoRa, etc.)
 		string addr;                            // Device is to maintain its current IP (v4/v6) address
@@ -320,9 +320,9 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function get_data(uint32 device_id) external view _authorized returns(string memory) {
+	function get_data(uint32 device_id) external view _authorized returns(string memory, string memory) {
 		require(id_to_device[device_id].active);
-		return id_to_device[device_id].data;
+		return (id_to_device[device_id].data, id_to_device[device_id].nonce);
 	}
 
 
@@ -555,9 +555,10 @@ contract DeviceMgmt {
 	 * @param addr
 	 * @return
 	 */
-	function push_data(uint32 device_id, string calldata data) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
+	function push_data(uint32 device_id, string calldata data, string calldata nonce) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].data = data;
-		id_to_device[device_id].dataTimestamp = block.timestamp; //TODO: Is using 'now' bad?
+		id_to_device[device_id].nonce = nonce;
+		id_to_device[device_id].dataTimestamp = now;
 
 		//emit Push_Data(msg.sender, device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
 		emit Push_Data(msg.sender, device_id);
