@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
-			cout << "Successfully pushed data to the blockchain..." << endl;
+			cout << "Successfully pushed data to the blockchain..." << endl << endl;
 
 			string chainData;
 			time_t dataTimestamp;

@@ -71,7 +71,7 @@ $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/base64.o: cpp-base64/base64.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -o $@ -I ./cpp-base64/ $<
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
 $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
 	ar rcs $@ $^

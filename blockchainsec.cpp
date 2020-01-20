@@ -177,12 +177,13 @@ void BlockchainSecLib::loadLocalDeviceParameters(void) {
 			cout << "Loaded private key..." << endl;
 
 			byteVector = hexToBytes(publicKey);
-			memcpy(client_sk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
-			client_sk[crypto_kx_PUBLICKEYBYTES] = 0;
+			memcpy(client_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+			client_pk[crypto_kx_PUBLICKEYBYTES] = 0;
 			cout << "Loaded public key..." << endl;
 		}
 	}
 	loadDataReceiverPublicKey(localDeviceID);
+
 }
 
 
@@ -465,7 +466,11 @@ string BlockchainSecLib::get_mac(uint32_t deviceID) {
 
 // Throws ResourceRequestFailedException from ethabi()
 vector<string> BlockchainSecLib::get_data(uint32_t deviceID) {
-	return getStringsFromDeviceID("get_data", deviceID);
+	vector <string> result = getStringsFromDeviceID("get_data", deviceID);
+	//result[0] = result[0].substr(1, result[0].length() - 2);
+	result[1] = to_string(strtol(result[1].c_str(), nullptr, 16));
+	//result[2] = result[2].substr(1, result[2].length() - 2);
+	return result;
 }
 
 
@@ -675,14 +680,18 @@ bool BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicK
 
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
-bool BlockchainSecLib::push_data(uint32_t deviceID, string const& data, string const& nonce) {
+bool BlockchainSecLib::push_data(uint32_t deviceID, string & data, uint16_t dataLen, string & nonce) {
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
-	// TODO: Is this appropriate for binary data?
-	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + base64_encode((unsigned char*) data.c_str(), data.length()) +
-						"' -p '" + base64_encode((unsigned char*) nonce.c_str(), nonce.length()) +"'";
+	string dataAscii = base64_encode((unsigned char*) data.c_str(), data.length());
+	string nonceAscii = base64_encode((unsigned char*) nonce.c_str(), nonce.length());
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '";
+	ethabiEncodeArgs += dataAscii;
+	ethabiEncodeArgs +=  "' -p '" + boost::lexical_cast<string>(dataLen) + "' -p '";
+	ethabiEncodeArgs +=  nonceAscii;
+	ethabiEncodeArgs += "'";
 
 	return callMutatorContract("push_data", ethabiEncodeArgs, eventLog);
 }
@@ -1012,8 +1021,9 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 
 
 bool BlockchainSecLib::encryptAndPushData(string const& data) {
+	const uint16_t cipherLen = data.length()  + crypto_secretbox_MACBYTES;
 	unsigned char nonce[crypto_secretbox_NONCEBYTES + 1];
-	unsigned char *cipher = new unsigned char[data.length() + 5];
+	unsigned char *cipher{new unsigned char[cipherLen]{}};
 	string cipherStr, nonceStr;
 
 	if (derriveSharedSecret) {
@@ -1025,16 +1035,15 @@ bool BlockchainSecLib::encryptAndPushData(string const& data) {
 	}
 
 	randombytes_buf(nonce, crypto_secretbox_NONCEBYTES);
-	crypto_secretbox_easy(cipher, (unsigned char*) data.c_str(), data.length(), nonce, txSharedKey);
-	cipher[data.length() + 4] = 0;
 	nonce[crypto_secretbox_NONCEBYTES] = 0;
+	crypto_secretbox_easy(cipher, (unsigned char*) data.c_str(), data.length(), nonce, txSharedKey);
 
-	cipherStr = string((char*) cipher);
-	nonceStr = string((char*) nonce);
+	cipherStr = string((char*) cipher, cipherLen);
+	nonceStr = string((char*) nonce, crypto_secretbox_NONCEBYTES);
 
-	push_data(localDeviceID, cipherStr, nonceStr);
+	push_data(localDeviceID, cipherStr, data.length(), nonceStr);
 
-	delete cipher;
+	delete[] cipher;
 	return true;
 }
 
@@ -1042,40 +1051,49 @@ bool BlockchainSecLib::encryptAndPushData(string const& data) {
 
 string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
 	unsigned char rxKey[crypto_kx_SESSIONKEYBYTES + 1], txKey[crypto_kx_SESSIONKEYBYTES + 1];
-	string nodePublicKey;
+	string nodePublicKeyStr;
 	vector<string> chainData;
+	uint16_t msgLen;
 
 	if (get_my_device_id() != get_datareceiver(deviceID)) {
 		throw CryptographicKeyMissmatchException("Cannot decrypt the requested data with current keys");
 	}
 
-	nodePublicKey = get_key(deviceID);
+	nodePublicKeyStr = get_key(deviceID);
 
-	if (crypto_kx_server_session_keys(rxKey, txKey, client_pk, client_sk, (unsigned char*) nodePublicKey.c_str()) != 0) {
+	unsigned char nodePublicKey[crypto_kx_PUBLICKEYBYTES + 1];
+	vector<char> byteVector = hexToBytes(nodePublicKeyStr);
+	memcpy(nodePublicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+	nodePublicKey[crypto_kx_PUBLICKEYBYTES] = 0;
+
+	if (crypto_kx_server_session_keys(rxKey, txKey, client_pk, client_sk, nodePublicKey) != 0) {
 		throw CryptographicFailureException("Suspicious cryptographic key");
 	}
 
 	chainData = get_data(deviceID);
+	msgLen = stoi(chainData[1]);
 
-	unsigned char *message = new unsigned char[chainData[0].length() - 4];
-	message[chainData[0].length() - 3] = 0;
+	unsigned char *message{new unsigned char[msgLen + 1]{}};
+	message[msgLen] = 0;
 
-	string messageStr = base64_decode(chainData[0]);
-	string nonce = base64_decode(chainData[1]);
+	string cipherStr = base64_decode(chainData[0]);
+	string nonceStr = base64_decode(chainData[2]);
 
 	if (crypto_secretbox_open_easy(
 			message,
-			(unsigned char*) chainData[0].c_str(),
-			chainData[0].length(),
-			(unsigned char*) nonce.c_str(),
+			(unsigned char*) cipherStr.c_str(),
+			cipherStr.length(),
+			(unsigned char*) nonceStr.c_str(),
 			rxKey
 	) != 0) {
 		// Message was forged
 		throw CryptographicFailureException("Message forged");
 	}
 
-	delete message;
-	return string((char*) message);
+	string result = string((char*) message, msgLen);
+	delete[] message;
+
+	return result;
 }
 
 

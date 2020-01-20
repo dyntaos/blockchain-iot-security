@@ -76,7 +76,7 @@ class BlockchainSecLib {
 		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
 		bool set_default_datareceiver(uint32_t dataReceiverID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
-		bool push_data(uint32_t deviceID, std::string const& data, std::string const& nonce);
+		bool push_data(uint32_t deviceID, std::string & data, uint16_t dataLen, std::string & nonce);
 		bool authorize_admin(std::string const& adminAddr);
 		bool deauthorize_admin(std::string const& adminAddr);
 

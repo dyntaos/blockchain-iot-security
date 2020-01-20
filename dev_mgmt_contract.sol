@@ -31,7 +31,9 @@ contract DeviceMgmt {
 		uint32 device_id;                       // Integer ID of this device
 		uint creationTimestamp;                 // Time this device was first created
 		uint dataTimestamp;                     //
+
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
+		uint16 dataLen;
 		string nonce;
 
 		AddrType addrType;                      // How the device connects to the network (IP (ethernet, WiFi, GSM/LTE), LoRa, etc.)
@@ -320,9 +322,9 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function get_data(uint32 device_id) external view _authorized returns(string memory, string memory) {
+	function get_data(uint32 device_id) external view _authorized returns(string memory, uint16, string memory) {
 		require(id_to_device[device_id].active);
-		return (id_to_device[device_id].data, id_to_device[device_id].nonce);
+		return (id_to_device[device_id].data, id_to_device[device_id].dataLen, id_to_device[device_id].nonce);
 	}
 
 
@@ -555,8 +557,9 @@ contract DeviceMgmt {
 	 * @param addr
 	 * @return
 	 */
-	function push_data(uint32 device_id, string calldata data, string calldata nonce) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
+	function push_data(uint32 device_id, string calldata data, uint16 dataLen, string calldata nonce) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].data = data;
+		id_to_device[device_id].dataLen = dataLen;
 		id_to_device[device_id].nonce = nonce;
 		id_to_device[device_id].dataTimestamp = now;
 
