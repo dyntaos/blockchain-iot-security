@@ -53,12 +53,8 @@ lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
 	$(eval LINK_LORA=-lwiringPi)
-	@echo LORA OBJECT
-	@echo $(LORA_OBJ)
 	$(eval LORA_OBJ=$(OBJ)/lora_trx.o)
 	$(eval LORA_GATEWAY=-DLORA_GATEWAY)
-	@echo LORA OBJECT2
-	@echo $(LORA_OBJ)
 
 ### Static Library ###
 
@@ -80,10 +76,8 @@ $(OBJ)/misc.o: misc.cpp
 $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
-	@echo LORA OBJECT LIB
-	@echo $(LORA_OBJ)
-	ar rcs $@ $^
+$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
+	ar rcs $@ $(LORA_OBJ) $^
 
 
 
