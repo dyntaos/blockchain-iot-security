@@ -58,22 +58,22 @@ _lora:
 ### Static Library ###
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/subscription_server.o: subscription_server.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/ethabi.o: ethabi.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/misc.o: misc.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/base64.o: cpp-base64/base64.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
 $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
 	ar rcs $@ $^
@@ -85,7 +85,7 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $
 ### Client Binary ###
 
 $(OBJ)/client_test.o: client_test.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client_test: $(OBJ)/client_test.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
@@ -96,7 +96,7 @@ $(BIN)/client_test: $(OBJ)/client_test.o $(LIB)/libblockchainsec.a
 	ln -fs $@ ./client_test
 
 $(OBJ)/client.o: client.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
@@ -107,7 +107,7 @@ $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	ln -fs $@ ./client
 
 $(OBJ)/client_test_self.o: client_test_self.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client_test_self: $(OBJ)/client_test_self.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
@@ -118,7 +118,7 @@ $(BIN)/client_test_self: $(OBJ)/client_test_self.o $(LIB)/libblockchainsec.a
 	ln -fs $@ ./client_test_self
 
 $(OBJ)/client_receiver.o: client_receiver.cpp
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(BIN)/client_receiver: $(OBJ)/client_receiver.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
