@@ -87,32 +87,89 @@ void LoraTrx::opmodeLora(void) {
 
 void LoraTrx::SetupLoRa(void) {
 	digitalWrite(RST, HIGH);
-	delay(100);
+	delay(80);
 	digitalWrite(RST, LOW);
-	delay(100);
+	delay(80);
 
 	byte version = readReg(REG_VERSION);
 
 	if (version == 0x22) {
 		// sx1272
-		//printf("SX1272 detected, starting.\n"); // TODO
+		printf("SX1272 detected, starting.\n");
 		sx1272 = true;
 	} else {
 		// sx1276?
 		digitalWrite(RST, LOW);
-		delay(100);
+		delay(80);
 		digitalWrite(RST, HIGH);
-		delay(100);
+		delay(80);
+
 		version = readReg(REG_VERSION);
 		if (version == 0x12) {
 			// sx1276
-			//printf("SX1276 detected, starting.\n"); // TODO
+			printf("SX1276 detected, starting.\n");
 			sx1272 = false;
 		} else {
 			printf("Unrecognized transceiver.\n");
-			//printf("Version: 0x%x\n",version);
+			printf("Version: 0x%x\n",version);
 			exit(1);
 		}
+	}
+
+	opmode(OPMODE_SLEEP);
+
+	// set frequency
+	uint64_t frf = ((uint64_t)freq << 19) / 32000000;
+	writeReg(REG_FRF_MSB, (uint8_t)(frf>>16) );
+	writeReg(REG_FRF_MID, (uint8_t)(frf>> 8) );
+	writeReg(REG_FRF_LSB, (uint8_t)(frf>> 0) );
+
+	writeReg(REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
+
+	if (sx1272) {
+		if (sf == SF11 || sf == SF12) {
+			writeReg(REG_MODEM_CONFIG,0x0B);
+		} else {
+			writeReg(REG_MODEM_CONFIG,0x0A);
+		}
+		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
+	} else {
+		if (sf == SF11 || sf == SF12) {
+			writeReg(REG_MODEM_CONFIG3,0x0C);
+		} else {
+			writeReg(REG_MODEM_CONFIG3,0x04);
+		}
+		writeReg(REG_MODEM_CONFIG,0x72);
+		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
+	}
+
+	if (sf == SF10 || sf == SF11 || sf == SF12) {
+		writeReg(REG_SYMB_TIMEOUT_LSB,0x05);
+	} else {
+		writeReg(REG_SYMB_TIMEOUT_LSB,0x08);
+	}
+	writeReg(REG_MAX_PAYLOAD_LENGTH,0x80);
+	writeReg(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
+	writeReg(REG_HOP_PERIOD,0xFF);
+	writeReg(REG_FIFO_ADDR_PTR, readReg(REG_FIFO_RX_BASE_AD));
+
+	writeReg(REG_LNA, LNA_MAX_GAIN);
+}
+
+
+
+void LoraTrx::ModeReInit(void) {
+	if (version == 0x22) {
+		// sx1272?
+		digitalWrite(RST, HIGH);
+		delay(60);
+		digitalWrite(RST, LOW);
+		delay(60);
+	} else {
+		digitalWrite(RST, LOW);
+		delay(60);
+		digitalWrite(RST, HIGH);
+		delay(60);
 	}
 
 	opmode(OPMODE_SLEEP);
@@ -170,9 +227,6 @@ LoraTrx::LoraTrx(void) {
 
 	opmodeLora();
 	opmode(OPMODE_STANDBY);
-
-	//writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
-	//configPower(23);
 }
 
 
@@ -332,7 +386,7 @@ void LoraTrx::close_server(void) {
 
 
 void LoraTrx::SwitchModeRx(void) {
-	SetupLoRa();
+	ModeReInit();
 	opmodeLora();
 	opmode(OPMODE_STANDBY);
 	opmode(OPMODE_RX);
@@ -341,10 +395,9 @@ void LoraTrx::SwitchModeRx(void) {
 
 
 void LoraTrx::SwitchModeTx(void) {
-	SetupLoRa();
+	ModeReInit();
 	opmodeLora();
 	opmode(OPMODE_STANDBY);
-	//opmode(OPMODE_TX);
 	writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
 	configPower(23);
 }
@@ -356,28 +409,20 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
-	//trx.opmode(OPMODE_RX);
-
 	while (!halt_server) {
 
 		if (msg_buffer == NULL) {
 			msg_buffer = new lora_msg;
-			//cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
 		}
 
 		if (tx_mode) {
 			trx.SwitchModeRx();
 			tx_mode = false;
 		}
-		//trx.opmode(OPMODE_RX);
-
-		//delay(100); // TODO: Temporary test to see if this fixes issues
 
 		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
 			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
 			msg_buffer->msg[msg_buffer->len] = 0;
-			//cout << "rx_queue.push()[" << (int)msg_buffer->len << "]: " << msg_buffer->msg << endl;
-			//cout << "rx_queue.push()[" << (int)msg_buffer->len << "]" << endl;
 
 			rx_queue_mutex.lock();
 			rx_queue.push(msg_buffer);
@@ -397,11 +442,12 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				trx.SwitchModeTx();
 				tx_mode = true;
 
-				//cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
+			
+				delay(tx_buffer->len * 1.5); // TODO: Change constant?
+
 				delete tx_buffer;
 				tx_buffer = NULL;
-				delay(100); // TODO: Temporary test to see if this fixes issues
 			} else tx_queue_mutex.unlock();
 		}
 		delay(1);
