@@ -64,7 +64,7 @@ void senderThread(LoraTrx &trx) {
 		r = rand() % 140;
 		strncpy(output, d, r);
 		output[r] = 0;
-		cout << "Send[" << r << "]: " << output << endl;
+		cout << "Send[" << r << "]: " << output << endl << endl;
 		trx.sendMessage(output);
 	}
 }
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 		for (;;) {
 			msg = trx->readMessage();
-			cout << "readMessage(): " << msg << endl;
+			cout << "Receive[" << strlen(msg) << "]: " << msg << endl << endl;
 		}
 
 		trx->close_server();
