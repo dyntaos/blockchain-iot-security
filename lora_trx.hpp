@@ -158,6 +158,7 @@ class LoraTrx {
 		bool sx1272 = true;
 		byte receivedbytes;
 		enum sf_t { SF7=7, SF8, SF9, SF10, SF11, SF12 };
+		byte version;
 
 		// SX1272 - Raspberry connections
 		int ssPin = 6;
@@ -178,6 +179,7 @@ class LoraTrx {
 		bool halt_server = true;
 
 		void SetupLoRa(void);
+		void ModeReInit(void);
 		void selectreceiver(void);
 		void unselectreceiver(void);
 		byte readReg(byte addr);
