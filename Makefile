@@ -18,8 +18,9 @@ JSONINC = ./json/include
 CXXOPTSINC = ./cxxopts/include
 WIRINGPIINC = ./WiringPi/wiringPi
 LIBCONFIGINC = ./libconfig/lib
+SODIUMINC = ./libsodium/src/libsodium/include
 
-INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
+INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC) -I $(SODIUMINC)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
