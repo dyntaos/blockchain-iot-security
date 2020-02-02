@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 			cerr << "This device does not have an associated device ID..." << endl << "Creating device..." << endl;
 
 			cout << endl << "Adding this address as a device..." << endl;
-			dev = sec->add_device(sec->getClientAddress(), "Local Device 1", "LOCAL MAC 1", false);
+			dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", "LOCAL MAC 1", false);
 			if (dev == 0) {
 				cout << "Failed to add local device!" << endl << endl;
 			} else {

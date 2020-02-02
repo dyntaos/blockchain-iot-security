@@ -64,9 +64,9 @@ class BlockchainSecLib {
 		uint32_t get_num_admin(void);
 		uint32_t get_num_devices(void);
 		uint32_t get_num_gateways(void);
-		std::vector<std::string> get_active_admins(void);
-		std::vector<std::string> get_authorized_devices(void);
-		std::vector<std::string> get_authorized_gateways(void);
+		std::vector<uint32_t> get_active_admins(void);
+		std::vector<uint32_t> get_authorized_devices(void);
+		std::vector<uint32_t> get_authorized_gateways(void);
 
 		// Blockchain mutator methods
 		uint32_t add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, bool gatewayManaged);
@@ -85,6 +85,7 @@ class BlockchainSecLib {
 		bool loadDataReceiverPublicKey(uint32_t deviceID);
 		bool encryptAndPushData(std::string const& data);
 		std::string getDataAndDecrypt(uint32_t const deviceID);
+		std::vector<uint32_t> getReceivedDevices(uint32_t deviceID);
 
 		void joinThreads(void);
 

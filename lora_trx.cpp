@@ -84,15 +84,7 @@ void LoraTrx::opmodeLora(void) {
 
 
 
-LoraTrx::LoraTrx(void) {
-
-	wiringPiSetup () ;
-	pinMode(ssPin, OUTPUT);
-	pinMode(dio0, INPUT);
-	pinMode(RST, OUTPUT);
-
-	wiringPiSPISetup(CHANNEL, 500000);
-
+void LoraTrx::SetupLoRa(void) {
 	digitalWrite(RST, HIGH);
 	delay(100);
 	digitalWrite(RST, LOW);
@@ -102,7 +94,7 @@ LoraTrx::LoraTrx(void) {
 
 	if (version == 0x22) {
 		// sx1272
-		cout << "SX1272 detected, starting." << endl;
+		printf("SX1272 detected, starting.\n");
 		sx1272 = true;
 	} else {
 		// sx1276?
@@ -113,11 +105,12 @@ LoraTrx::LoraTrx(void) {
 		version = readReg(REG_VERSION);
 		if (version == 0x12) {
 			// sx1276
-			cout << "SX1276 detected, starting." << endl;
+			printf("SX1276 detected, starting.\n");
 			sx1272 = false;
 		} else {
-			cerr << "Unrecognized transceiver [version " << version << "]" << endl;
-			exit(EXIT_FAILURE);
+			printf("Unrecognized transceiver.\n");
+			//printf("Version: 0x%x\n",version);
+			exit(1);
 		}
 	}
 
@@ -159,12 +152,26 @@ LoraTrx::LoraTrx(void) {
 	writeReg(REG_FIFO_ADDR_PTR, readReg(REG_FIFO_RX_BASE_AD));
 
 	writeReg(REG_LNA, LNA_MAX_GAIN);
+}
+
+
+
+LoraTrx::LoraTrx(void) {
+
+	wiringPiSetup();
+	pinMode(ssPin, OUTPUT);
+	pinMode(dio0, INPUT);
+	pinMode(RST, OUTPUT);
+
+	wiringPiSPISetup(CHANNEL, 500000);
+
+	SetupLoRa();
 
 	opmodeLora();
 	opmode(OPMODE_STANDBY);
 
-	writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
-	configPower(23);
+	//writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
+	//configPower(23);
 }
 
 
@@ -323,11 +330,32 @@ void LoraTrx::close_server(void) {
 
 
 
+void LoraTrx::SwitchModeRx(void) {
+	SetupLoRa();
+	opmodeLora();
+	opmode(OPMODE_STANDBY);
+	opmode(OPMODE_RX);
+}
+
+
+
+void LoraTrx::SwitchModeTx(void) {
+	SetupLoRa();
+	opmodeLora();
+	opmode(OPMODE_STANDBY);
+	//opmode(OPMODE_TX);
+	writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
+	configPower(23);
+}
+
+
+
 void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
+	bool tx_mode = false;
 
-	trx.opmode(OPMODE_RX);
+	//trx.opmode(OPMODE_RX);
 
 	while (!halt_server) {
 
@@ -336,8 +364,13 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
 		}
 
-		trx.opmode(OPMODE_RX);
-		delay(100); // TODO: Temporary test to see if this fixes issues
+		if (tx_mode) {
+			trx.SwitchModeRx();
+			tx_mode = false;
+		}
+		//trx.opmode(OPMODE_RX);
+
+		//delay(100); // TODO: Temporary test to see if this fixes issues
 
 		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
 			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
@@ -360,7 +393,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_queue.pop();
 				tx_queue_mutex.unlock();
 
-				trx.opmode(OPMODE_TX);
+				trx.SwitchModeTx();
+				tx_mode = true;
 
 				cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
@@ -371,7 +405,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		}
 		delay(1);
 	}
-	
+
 	halt_server = true;
 }
 

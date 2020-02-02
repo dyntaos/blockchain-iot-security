@@ -32,7 +32,7 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean
 
-all: mkdirs $(BIN)/client $(BIN)/client_test
+all: mkdirs $(BIN)/client $(BIN)/client_test $(BIN)/client_receiver $(BIN)/client_test_self
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -103,3 +103,25 @@ $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
+
+$(OBJ)/client_test_self.o: client_test_self.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(BIN)/client_test_self: $(OBJ)/client_test_self.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+		$(OBJ)/client_test_self.o \
+		-L $(LIB) \
+		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+	cp ./*.sol ./*.conf $(BIN)/
+	ln -fs $@ ./client_test_self
+
+$(OBJ)/client_receiver.o: client_receiver.cpp
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(BIN)/client_receiver: $(OBJ)/client_receiver.o $(LIB)/libblockchainsec.a
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+		$(OBJ)/client_receiver.o \
+		-L $(LIB) \
+		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+	cp ./*.sol ./*.conf $(BIN)/
+	ln -fs $@ ./client_receiver

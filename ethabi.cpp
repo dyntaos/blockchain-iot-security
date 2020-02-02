@@ -125,7 +125,7 @@ vector<string> ethabi_decode_results(string const& abiFile, string const& eventN
 
 
 
-vector<string> ethabi_decode_array(string const& abiFile, string const& eventName, string const& data) {
+vector<string> ethabi_decode_string_array(string const& abiFile, string const& eventName, string const& data) {
 	vector<string> array;
 	string responce;
 
@@ -136,6 +136,22 @@ vector<string> ethabi_decode_array(string const& abiFile, string const& eventNam
 	return array;
 }
 
+
+
+vector<uint32_t> ethabi_decode_uint32_array(string const& abiFile, string const& eventName, string const& data) {
+	vector<string> arrayStr;
+	vector<uint32_t> arrayUInt32;
+	string responce;
+
+	responce = boost::trim_copy(ethabi_decode_result(abiFile, eventName, data));
+	responce = responce.substr(1, responce.length() - 2);
+	boost::split(arrayStr, responce, boost::is_any_of(","));
+
+	for (vector<string>::iterator it = arrayStr.begin(); it != arrayStr.end(); ++it) {
+		arrayUInt32.push_back(strtoul(((*it).c_str()), nullptr, 16));
+	}
+	return arrayUInt32;
+}
 
 
 

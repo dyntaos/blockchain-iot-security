@@ -18,7 +18,7 @@
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
 //TODO: Make function to see if "0x" needs to be prepended to function arguments
 //TODO: Make all stored addresses NOT store "0x"
-//TODO: Escape quotes in strings to ethabi
+
 
 using namespace std;
 using namespace libconfig;
@@ -511,8 +511,8 @@ uint32_t BlockchainSecLib::get_num_gateways(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-vector<string> BlockchainSecLib::get_active_admins(void) {
-	return ethabi_decode_array(
+vector<uint32_t> BlockchainSecLib::get_active_admins(void) {
+	return ethabi_decode_uint32_array(
 		ETH_CONTRACT_ABI,
 		"get_active_admins",
 		getArrayFromContract("get_active_admins")
@@ -522,8 +522,8 @@ vector<string> BlockchainSecLib::get_active_admins(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-vector<string> BlockchainSecLib::get_authorized_devices(void) {
-	return ethabi_decode_array(
+vector<uint32_t> BlockchainSecLib::get_authorized_devices(void) {
+	return ethabi_decode_uint32_array(
 		ETH_CONTRACT_ABI,
 		"get_authorized_devices",
 		getArrayFromContract("get_authorized_devices")
@@ -533,8 +533,8 @@ vector<string> BlockchainSecLib::get_authorized_devices(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-vector<string> BlockchainSecLib::get_authorized_gateways(void) {
-	return ethabi_decode_array(
+vector<uint32_t> BlockchainSecLib::get_authorized_gateways(void) {
+	return ethabi_decode_uint32_array(
 		ETH_CONTRACT_ABI,
 		"get_authorized_gateways",
 		getArrayFromContract("get_authorized_gateways")
@@ -1093,6 +1093,19 @@ string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
 	string result = string((char*) message, msgLen);
 	delete[] message;
 
+	return result;
+}
+
+
+
+vector<uint32_t> BlockchainSecLib::getReceivedDevices(uint32_t deviceID) {
+	vector<uint32_t> authorized, result;
+
+	authorized = get_authorized_devices();
+
+	for (vector<uint32_t>::iterator it = authorized.begin(); it != authorized.end(); ++it) {
+		if (get_datareceiver(*it) == deviceID) result.push_back(*it);
+	}
 	return result;
 }
 

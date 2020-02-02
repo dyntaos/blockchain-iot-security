@@ -71,8 +71,8 @@ void senderThread(LoraTrx &trx) {
 #endif //LORA_GATEWAY
 
 
-void printVector(vector<string> v) {
-	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
+void printVector(vector<uint32_t> v) {
+	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 		cout << "\t" << *it << endl;
 	}
 }
@@ -123,6 +123,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		trx->close_server();
+		exit(EXIT_SUCCESS);
 	}
 #endif //LORA_GATEWAY
 

@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 			cerr << "This device does not have an associated device ID..." << endl << "Creating device..." << endl;
 
 			cout << endl << "Adding this address as a device..." << endl;
-			dev = sec->add_device(sec->getClientAddress(), "Local Device 1", "LOCAL MAC 1", false);
+			dev = sec->add_device(sec->getClientAddress(), "Client_Receiver1", "RECEIVERMAC1", false);
 			if (dev == 0) {
 				cout << "Failed to add local device!" << endl << endl;
 			} else {
@@ -188,6 +188,7 @@ int main(int argc, char *argv[]) {
 
 
 		for (;;) {
+			vector<uint32_t> receivedDevices;
 			string data = querySensor();
 			uint32_t myDeviceID = sec->get_my_device_id();
 
@@ -197,33 +198,40 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
-			cout << "Attempting to push data to the blockchain..." << endl;
+			cout << "Obtaining vector of all devices received by this device..." << endl;
 
-			if (!sec->encryptAndPushData(data)) {
-				cerr << "Failed to push data to the blockchain! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
+			try {
+				receivedDevices = sec->getReceivedDevices(sec->get_my_device_id());
+
+			} catch (BlockchainSecLibException &e) {
+				cerr << "Error while retrieving received devices from the blockchain!" << endl << e.what() << endl << endl;
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;
 			}
 
-			cout << "Successfully pushed data to the blockchain..." << endl << endl;
+			cout << receivedDevices.size() << " devices received by this device" << endl << endl;
+
 
 			string chainData;
 			time_t dataTimestamp;
 
-			try {
-				chainData = sec->getDataAndDecrypt(myDeviceID);
-				dataTimestamp = sec->get_dataTimestamp(myDeviceID);
 
-			} catch (BlockchainSecLibException &e) {
-				cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl;
-				sleep(INVALID_DEVICE_TRY_INTERVAL);
-				break;
+			for (vector<uint32_t>::iterator it = receivedDevices.begin(); it != receivedDevices.end(); ++it) {
+				try {
+					chainData = sec->getDataAndDecrypt(myDeviceID);
+					dataTimestamp = sec->get_dataTimestamp(myDeviceID);
+
+				} catch (BlockchainSecLibException &e) {
+					cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl << endl;
+					sleep(INVALID_DEVICE_TRY_INTERVAL);
+					break;
+				}
+
+				string timestamp = asctime(localtime(&dataTimestamp));
+				boost::trim(timestamp);
+
+				cout << "Got data from device #" << *it << " timestamped " << timestamp << ":" << endl << endl << chainData << endl;
 			}
-
-			string timestamp = asctime(localtime(&dataTimestamp));
-			boost::trim(timestamp);
-
-			cout << "Got data timestamped as " << timestamp << ":" << endl << endl << chainData << endl;
 
 			sleep(DATA_PUSH_INTERVAL);
 		}

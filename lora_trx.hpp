@@ -174,6 +174,7 @@ class LoraTrx {
 		std::thread *server_thread;
 		bool halt_server = true;
 
+		void SetupLoRa(void);
 		void selectreceiver(void);
 		void unselectreceiver(void);
 		byte readReg(byte addr);
@@ -187,7 +188,7 @@ class LoraTrx {
 				std::string &msg,
 				byte &len,
 				byte &packet_rssi,
-				byte &rssi, 
+				byte &rssi,
 				int64_t &snr
 		);
 		void txlora(byte *frame, byte datalen);
@@ -204,6 +205,9 @@ class LoraTrx {
 	public:
 
 		LoraTrx(void);
+		void SwitchModeRx(void);
+		void SwitchModeTx(void);
+
 		std::string readMessage(void);
 		bool sendMessage(std::string msg_str);
 		void server_init(void);
