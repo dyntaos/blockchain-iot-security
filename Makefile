@@ -50,10 +50,9 @@ clean:
 lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
-	$(eval LINK_LORA = -lwiringPi)
-	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
-	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
-	@echo $(LORA_OBJ)
+	$(eval LINK_LORA = -lwiringPi )
+	$(eval LORA_OBJ = $(OBJ)/lora_trx.o )
+	$(eval LORA_GATEWAY = -DLORA_GATEWAY )
 
 
 ### Static Library ###
