@@ -95,7 +95,7 @@ void LoraTrx::SetupLoRa(void) {
 
 	if (version == 0x22) {
 		// sx1272
-		printf("SX1272 detected, starting.\n");
+		//printf("SX1272 detected, starting.\n"); // TODO
 		sx1272 = true;
 	} else {
 		// sx1276?
@@ -106,7 +106,7 @@ void LoraTrx::SetupLoRa(void) {
 		version = readReg(REG_VERSION);
 		if (version == 0x12) {
 			// sx1276
-			printf("SX1276 detected, starting.\n");
+			//printf("SX1276 detected, starting.\n"); // TODO
 			sx1272 = false;
 		} else {
 			printf("Unrecognized transceiver.\n");
