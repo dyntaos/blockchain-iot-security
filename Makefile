@@ -53,6 +53,7 @@ _lora:
 	$(eval LINK_LORA = -lwiringPi)
 	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
 	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
+	@echo $(LORA_OBJ)
 
 
 ### Static Library ###
