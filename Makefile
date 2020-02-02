@@ -47,7 +47,7 @@ debug_flag:
 clean:
 	rm -rf ./build ./client ./client_test
 
-lora: _lora mkdirs $(OBJ)/lora_trx.o $(BIN)/client
+lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
 	$(eval LINK_LORA = -lwiringPi)
