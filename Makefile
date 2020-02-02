@@ -52,11 +52,11 @@ clean:
 lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
-	$(eval LINK_LORA = -lwiringPi)
+	$(eval LINK_LORA=-lwiringPi)
 	@echo LORA OBJECT
 	@echo $(LORA_OBJ)
-	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
-	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
+	$(eval LORA_OBJ=$(OBJ)/lora_trx.o)
+	$(eval LORA_GATEWAY=-DLORA_GATEWAY)
 	@echo LORA OBJECT2
 	@echo $(LORA_OBJ)
 
