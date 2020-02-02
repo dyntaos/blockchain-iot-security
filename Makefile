@@ -10,7 +10,9 @@
 
 CC = g++
 CROSSCOMPILE =
-CFLAGS =
+
+# Disable warnings about future GCC abi changes
+CFLAGS = -Wno-psabi
 CPPFLAGS = -std=gnu++17 -Wall -Wextra -pedantic -g
 LDFLAGS =
 
