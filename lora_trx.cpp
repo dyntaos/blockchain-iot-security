@@ -200,7 +200,7 @@ bool LoraTrx::receive(char *payload) {
 			payload[i] = (char)readReg(REG_FIFO);
 		}
 		payload[receivedCount] = 0;
-		cout << "receive() payload [" << (int) receivedCount << "]: " << payload << endl;
+		//cout << "receive() payload [" << (int) receivedCount << "]: " << payload << endl;
 	}
 	return true;
 }
@@ -213,7 +213,7 @@ bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rss
 
 	if(digitalRead(dio0) == 1) {
 		if(receive(message)) {
-			cout << "receivepacket @ 1 [" << (int) receivedbytes << "]" << endl;
+			//cout << "receivepacket @ 1 [" << (int) receivedbytes << "]" << endl;
 			byte value = readReg(REG_PKT_SNR_VALUE);
 			if( value & 0x80 ) { // The SNR sign bit is 1
 				// Invert and divide by 4
@@ -247,7 +247,7 @@ bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rss
 void LoraTrx::configPower(int8_t pw) {
 	if (sx1272 == false) {
 		// no boost used for now
-		if(pw >= 17) {
+		if (pw >= 17) {
 			pw = 15;
 		} else if(pw < 2) {
 			pw = 2;
@@ -258,7 +258,7 @@ void LoraTrx::configPower(int8_t pw) {
 
 	} else {
 		// set PA config (2-17 dBm using PA_BOOST)
-		if(pw > 17) {
+		if (pw > 17) {
 			pw = 17;
 		} else if(pw < 2) {
 			pw = 2;
@@ -300,7 +300,7 @@ void LoraTrx::txlora(byte *frame, byte datalen) {
 	// now we actually start the transmission
 	opmode(OPMODE_TX);
 	frame[datalen] = 0; // TODO: Temporary
-	cout << "TX: " << frame << endl;
+	//cout << "TX: " << frame << endl;
 }
 
 
@@ -362,7 +362,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 		if (msg_buffer == NULL) {
 			msg_buffer = new lora_msg;
-			cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
+			//cout << "  Allocated item for rx_queue: " << (void*) msg_buffer << endl;
 		}
 
 		if (tx_mode) {
@@ -397,7 +397,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				trx.SwitchModeTx();
 				tx_mode = true;
 
-				cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
+				//cout << "tx_queue.pop()[" << (int)tx_buffer->len << "]: " << tx_buffer->msg << endl;
 				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
 				delete tx_buffer;
 				tx_buffer = NULL;
@@ -425,14 +425,14 @@ start:
 		rx_queue_mutex.unlock();
 		goto start;
 	}
-	cout << "--Before " << rx_queue.size() << " in rx_queue" << endl;
+	//cout << "--Before " << rx_queue.size() << " in rx_queue" << endl;
 	msg = rx_queue.front();
 	rx_queue.pop();
-	cout << "--After " << rx_queue.size() << " in rx_queue" << endl;
+	//cout << "--After " << rx_queue.size() << " in rx_queue" << endl;
 	rx_queue_mutex.unlock();
 
 	result = msg->msg;
-	cout << "Freed " << (void*)msg << endl;
+	//cout << "Freed " << (void*)msg << endl;
 	delete msg;
 	return result;
 }
