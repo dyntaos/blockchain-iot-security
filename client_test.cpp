@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 		for (;;) {
 			msg = trx->readMessage();
-			cout << "Receive[" << strlen(msg) << "]: " << msg << endl << endl;
+			cout << "Receive[" << msg.length() << "]: " << msg << endl << endl;
 		}
 
 		trx->close_server();
