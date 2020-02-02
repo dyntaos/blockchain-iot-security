@@ -133,6 +133,9 @@
 
 
 
+namespace blockchainSec {
+
+
 typedef unsigned char byte;
 
 
@@ -213,5 +216,9 @@ class LoraTrx {
 		void server_init(void);
 		void close_server(void);
 };
+
+
+}
+
 
 #endif //__LORA_TRX_H

@@ -27,6 +27,7 @@
 
 using namespace std;
 
+namespace blockchainSec {
 
 
 void LoraTrx::selectreceiver(void) {
@@ -455,3 +456,6 @@ bool LoraTrx::sendMessage(string msg_str) {
 	return true;
 }
 
+
+
+}
