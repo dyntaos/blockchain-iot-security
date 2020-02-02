@@ -81,6 +81,8 @@ $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
 $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(LORA_OBJ) $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
+	@echo LORA OBJECT LIB
+	@echo $(LORA_OBJ)
 	ar rcs $@ $^
 
 
