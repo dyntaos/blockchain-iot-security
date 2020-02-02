@@ -32,7 +32,7 @@ LIB = $(BUILD)/lib/$(ARCH)
 
 DEBUG =
 
-.PHONY: all mkdirs debug clean
+.PHONY: all mkdirs debug clean lora _lora
 
 all: mkdirs $(BIN)/client $(BIN)/client_test $(BIN)/client_receiver $(BIN)/client_test_self
 
@@ -50,9 +50,9 @@ clean:
 lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
-	$(eval LINK_LORA = -lwiringPi )
-	$(eval LORA_OBJ = $(OBJ)/lora_trx.o )
-	$(eval LORA_GATEWAY = -DLORA_GATEWAY )
+	$(eval LINK_LORA = -lwiringPi)
+	$(eval LORA_OBJ = $(OBJ)/lora_trx.o)
+	$(eval LORA_GATEWAY = -DLORA_GATEWAY)
 
 
 ### Static Library ###

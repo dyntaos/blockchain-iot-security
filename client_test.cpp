@@ -106,7 +106,9 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
+#ifndef LORA_GATEWAY
 	sec = new BlockchainSecLib(compileFlag);
+#endif
 
 #ifdef _DEBUG
 	sec->test();
@@ -126,6 +128,8 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_SUCCESS);
 	}
 #endif //LORA_GATEWAY
+
+#ifndef LORA_GATEWAY
 
 	sleep(3);
 
@@ -242,5 +246,9 @@ int main(int argc, char *argv[]) {
 	cout << endl << "DONE!" << endl;
 
 	sec->joinThreads();
+
+#endif
+
+
 	return EXIT_SUCCESS;
 }
