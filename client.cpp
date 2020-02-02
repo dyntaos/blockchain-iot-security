@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <cxxopts.hpp>
+#include <sodium.h>
 
 #include <blockchainsec.hpp>
 #include <lora_trx.hpp>

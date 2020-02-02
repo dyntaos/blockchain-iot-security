@@ -18,7 +18,6 @@ JSONINC = ./json/include
 CXXOPTSINC = ./cxxopts/include
 WIRINGPIINC = ./WiringPi/wiringPi
 LIBCONFIGINC = ./libconfig/lib
-LIBHYDROGENINC = ./libhydrogen
 
 INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC)
 ARCH = $(shell uname -s)$(shell uname -m)
