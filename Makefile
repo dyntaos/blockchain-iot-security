@@ -32,7 +32,7 @@ LIB = $(BUILD)/lib/$(ARCH)
 
 RADIOHEADCFLAGS = -DRASPBERRY_PI -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
 RADIOHEADBASE = ./RadioHead/
-RADIOHEADINC = -I$(RADIOHEADBASE)
+RADIOHEADINC = -I$(RADIOHEADBASE) -I$(RADIOHEADBASE)/examples/raspi/
 
 
 DEBUG =
@@ -55,7 +55,7 @@ clean:
 lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
-	$(eval LINK_LORA=-lwiringPi)
+	$(eval LINK_LORA=-lbcm2835 -lwiringPi)
 	$(eval LORA_OBJ=$(OBJ)/lora_trx.o \
 					$(OBJ)/RasPi.o \
 					$(OBJ)/RH_RF95.o \
