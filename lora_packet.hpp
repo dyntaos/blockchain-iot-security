@@ -16,14 +16,14 @@ typedef uint32_t lora_mac_t;
 
 
 struct lora_packet {
-	lora_message_type_t message_type;
-	lora_mac_t mac;
-	uint8_t message_sequence;
+	lora_message_type_t message_type; // rf95.setHeaderFlags(uint8_t)
+	lora_mac_t mac; // device_id?
+	uint8_t message_sequence; // rf95.setHeaderId(uint8_t)
 	uint8_t payload_bytes;
 	//uint8_t split_packet_total;
 	uint32_t signature;
-	uint16_t checksum;
+	uint16_t checksum; // Not needed?
 }
 
 
-#endif // __LORA_PACKET_HPP
+#endif // __LORA_PACKET_HP

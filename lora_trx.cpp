@@ -19,9 +19,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <wiringPi.h>
-#include <wiringPiSPI.h>
-
+#include <misc.hpp>
 #include <lora_trx.hpp>
 
 
@@ -30,338 +28,76 @@ using namespace std;
 namespace blockchainSec {
 
 
-void LoraTrx::selectreceiver(void) {
-	digitalWrite(ssPin, LOW);
-}
-
-
-
-void LoraTrx::unselectreceiver(void) {
-	digitalWrite(ssPin, HIGH);
-}
-
-
-
-byte LoraTrx::readReg(byte addr) {
-	unsigned char spibuf[2];
-
-	selectreceiver();
-	spibuf[0] = addr & 0x7F;
-	spibuf[1] = 0x00;
-	wiringPiSPIDataRW(CHANNEL, spibuf, 2);
-	unselectreceiver();
-
-	return spibuf[1];
-}
-
-
-
-void LoraTrx::writeReg(byte addr, byte value) {
-	unsigned char spibuf[2];
-
-	spibuf[0] = addr | 0x80;
-	spibuf[1] = value;
-	selectreceiver();
-	wiringPiSPIDataRW(CHANNEL, spibuf, 2);
-
-	unselectreceiver();
-}
-
-
-
-void LoraTrx::opmode (uint8_t mode) {
-	writeReg(REG_OPMODE, (readReg(REG_OPMODE) & ~OPMODE_MASK) | mode);
-}
-
-
-
-void LoraTrx::opmodeLora(void) {
-	uint8_t u = OPMODE_LORA;
-	if (sx1272 == false) {
-		u |= 0x8;   // TBD: sx1276 high freq
-	}
-	writeReg(REG_OPMODE, u);
-}
-
-
-
-void LoraTrx::SetupLoRa(void) {
-	digitalWrite(RST, HIGH);
-	delay(80);
-	digitalWrite(RST, LOW);
-	delay(80);
-
-	byte version = readReg(REG_VERSION);
-
-	if (version == 0x22) {
-		// sx1272
-		printf("SX1272 detected, starting.\n");
-		sx1272 = true;
-	} else {
-		// sx1276?
-		digitalWrite(RST, LOW);
-		delay(80);
-		digitalWrite(RST, HIGH);
-		delay(80);
-
-		version = readReg(REG_VERSION);
-		if (version == 0x12) {
-			// sx1276
-			printf("SX1276 detected, starting.\n");
-			sx1272 = false;
-		} else {
-			printf("Unrecognized transceiver.\n");
-			printf("Version: 0x%x\n",version);
-			exit(1);
-		}
-	}
-
-	opmode(OPMODE_SLEEP);
-
-	// set frequency
-	uint64_t frf = ((uint64_t)freq << 19) / 32000000;
-	writeReg(REG_FRF_MSB, (uint8_t)(frf>>16) );
-	writeReg(REG_FRF_MID, (uint8_t)(frf>> 8) );
-	writeReg(REG_FRF_LSB, (uint8_t)(frf>> 0) );
-
-	writeReg(REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
-
-	if (sx1272) {
-		if (sf == SF11 || sf == SF12) {
-			writeReg(REG_MODEM_CONFIG,0x0B);
-		} else {
-			writeReg(REG_MODEM_CONFIG,0x0A);
-		}
-		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
-	} else {
-		if (sf == SF11 || sf == SF12) {
-			writeReg(REG_MODEM_CONFIG3,0x0C);
-		} else {
-			writeReg(REG_MODEM_CONFIG3,0x04);
-		}
-		writeReg(REG_MODEM_CONFIG,0x72);
-		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
-	}
-
-	if (sf == SF10 || sf == SF11 || sf == SF12) {
-		writeReg(REG_SYMB_TIMEOUT_LSB,0x05);
-	} else {
-		writeReg(REG_SYMB_TIMEOUT_LSB,0x08);
-	}
-	writeReg(REG_MAX_PAYLOAD_LENGTH,0x80);
-	writeReg(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
-	writeReg(REG_HOP_PERIOD,0xFF);
-	writeReg(REG_FIFO_ADDR_PTR, readReg(REG_FIFO_RX_BASE_AD));
-
-	writeReg(REG_LNA, LNA_MAX_GAIN);
-}
-
-
-
-void LoraTrx::ModeReInit(void) {
-	if (version == 0x22) {
-		// sx1272?
-		digitalWrite(RST, HIGH);
-		delay(60);
-		digitalWrite(RST, LOW);
-		delay(60);
-	} else {
-		digitalWrite(RST, LOW);
-		delay(60);
-		digitalWrite(RST, HIGH);
-		delay(60);
-	}
-
-	opmode(OPMODE_SLEEP);
-
-	// set frequency
-	uint64_t frf = ((uint64_t)freq << 19) / 32000000;
-	writeReg(REG_FRF_MSB, (uint8_t)(frf>>16) );
-	writeReg(REG_FRF_MID, (uint8_t)(frf>> 8) );
-	writeReg(REG_FRF_LSB, (uint8_t)(frf>> 0) );
-
-	writeReg(REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
-
-	if (sx1272) {
-		if (sf == SF11 || sf == SF12) {
-			writeReg(REG_MODEM_CONFIG,0x0B);
-		} else {
-			writeReg(REG_MODEM_CONFIG,0x0A);
-		}
-		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
-	} else {
-		if (sf == SF11 || sf == SF12) {
-			writeReg(REG_MODEM_CONFIG3,0x0C);
-		} else {
-			writeReg(REG_MODEM_CONFIG3,0x04);
-		}
-		writeReg(REG_MODEM_CONFIG,0x72);
-		writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
-	}
-
-	if (sf == SF10 || sf == SF11 || sf == SF12) {
-		writeReg(REG_SYMB_TIMEOUT_LSB,0x05);
-	} else {
-		writeReg(REG_SYMB_TIMEOUT_LSB,0x08);
-	}
-	writeReg(REG_MAX_PAYLOAD_LENGTH,0x80);
-	writeReg(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
-	writeReg(REG_HOP_PERIOD,0xFF);
-	writeReg(REG_FIFO_ADDR_PTR, readReg(REG_FIFO_RX_BASE_AD));
-
-	writeReg(REG_LNA, LNA_MAX_GAIN);
-}
-
-
 
 LoraTrx::LoraTrx(void) {
 
-	wiringPiSetup();
-	pinMode(ssPin, OUTPUT);
-	pinMode(dio0, INPUT);
-	pinMode(RST, OUTPUT);
 
-	wiringPiSPISetup(CHANNEL, 500000);
-
-	SetupLoRa();
-
-	opmodeLora();
-	opmode(OPMODE_STANDBY);
 }
 
 
+bool LoraTrx::setup(void) {
 
-bool LoraTrx::receive(char *payload) {
-	// clear rxDone
-	writeReg(REG_IRQ_FLAGS, 0x40);
-
-	int irqflags = readReg(REG_IRQ_FLAGS);
-
-	//  payload crc: 0x20
-	if((irqflags & 0x20) == 0x20) {
-		cout << "CRC error" << endl;
-		writeReg(REG_IRQ_FLAGS, 0x20);
-		return false;
-	} else {
-
-		byte currentAddr = readReg(REG_FIFO_RX_CURRENT_ADDR);
-		byte receivedCount = readReg(REG_RX_NB_BYTES);
-		receivedbytes = receivedCount; //TODO: Move to arguments rather than object scope
-
-		writeReg(REG_FIFO_ADDR_PTR, currentAddr);
-
-		for(int i = 0; i < receivedCount; i++) {
-			payload[i] = (char)readReg(REG_FIFO);
-		}
-		payload[receivedCount] = 0;
-		//cout << "receive() payload [" << (int) receivedCount << "]: " << payload << endl;
+	if (!bcm2835_init()) {
+		fprintf( stderr, "%s bcm2835_init() Failed\n\n", __BASEFILE__ );
+		return 1;
 	}
-	return true;
-}
 
+	printf( "RF95 CS=GPIO%d", RF_CS_PIN);
 
+#ifdef RF_IRQ_PIN
+	printf( ", IRQ=GPIO%d", RF_IRQ_PIN );
+	// IRQ Pin input/pull down
+	pinMode(RF_IRQ_PIN, INPUT);
+	bcm2835_gpio_set_pud(RF_IRQ_PIN, BCM2835_GPIO_PUD_DOWN);
+	// Now we can enable Rising edge detection
+	bcm2835_gpio_ren(RF_IRQ_PIN);
+#endif
 
-bool LoraTrx::receivepacket(string &msg, byte &len, byte &packet_rssi, byte &rssi, int64_t &snr) {
+#ifdef RF_RST_PIN
+	printf( ", RST=GPIO%d", RF_RST_PIN );
+	// Pulse a reset on module
+	pinMode(RF_RST_PIN, OUTPUT);
+	digitalWrite(RF_RST_PIN, LOW );
+	bcm2835_delay(150);
+	digitalWrite(RF_RST_PIN, HIGH );
+	bcm2835_delay(100);
+#endif
 
-	int rssicorr;
+	if (!rf95.init()) {
+		fprintf( stderr, "\nRF95 module init failed, Please verify wiring/module\n" );
+	} else {
+		rf95.setTxPower(14, false);
 
-	if(digitalRead(dio0) == 1) {
-		if(receive(message)) {
-			//cout << "receivepacket @ 1 [" << (int) receivedbytes << "]" << endl;
-			byte value = readReg(REG_PKT_SNR_VALUE);
-			if( value & 0x80 ) { // The SNR sign bit is 1
-				// Invert and divide by 4
-				value = ( ( ~value + 1 ) & 0xFF ) >> 2;
-				snr = -value;
-			} else {
-				// Divide by 4
-				snr = ( value & 0xFF ) >> 2;
-			}
+		// You can optionally require this module to wait until Channel Activity
+		// Detection shows no activity on the channel before transmitting by setting
+		// the CAD timeout to non-zero:
+		//rf95.setCADTimeout(10000);
 
-			if (sx1272) {
-				rssicorr = 139;
-			} else {
-				rssicorr = 157;
-			}
+		rf95.setFrequency(RF_FREQUENCY);
 
-			msg = message;
-			len = receivedbytes;
-			packet_rssi = readReg(0x1A) - rssicorr;
-			rssi = readReg(0x1B) - rssicorr;
+		// If we need to send something
+		rf95.setThisAddress(RF_NODE_ID);
+		rf95.setHeaderFrom(RF_NODE_ID);
 
-			return true;
+		// Be sure to grab all node packet
+		// we're sniffing to display, it's a demo
+		rf95.setPromiscuous(true);
 
-		} // received a message
-	} // dio0=1
+		// We're ready to listen for incoming message
+		rf95.setModeRx();
+
+		printf( " OK NodeID=%d @ %3.2fMHz\n", RF_NODE_ID, RF_FREQUENCY );
+		hardwareInitialized = true;
+		return true;
+	}
+
 	return false;
-}
-
-
-
-void LoraTrx::configPower(int8_t pw) {
-	if (sx1272 == false) {
-		// no boost used for now
-		if (pw >= 17) {
-			pw = 15;
-		} else if(pw < 2) {
-			pw = 2;
-		}
-		// check board type for BOOST pin
-		writeReg(RegPaConfig, (uint8_t)(0x80|(pw&0xf)));
-		writeReg(RegPaDac, readReg(RegPaDac)|0x4);
-
-	} else {
-		// set PA config (2-17 dBm using PA_BOOST)
-		if (pw > 17) {
-			pw = 17;
-		} else if(pw < 2) {
-			pw = 2;
-		}
-		writeReg(RegPaConfig, (uint8_t)(0x80|(pw-2)));
-	}
-}
-
-
-
-void LoraTrx::writeBuf(byte addr, byte *value, byte len) {
-	unsigned char spibuf[256];
-	spibuf[0] = addr | 0x80;
-	for (int i = 0; i < len; i++) {
-		spibuf[i + 1] = value[i];
-	}
-	selectreceiver();
-	wiringPiSPIDataRW(CHANNEL, spibuf, len + 1);
-	unselectreceiver();
-}
-
-
-
-void LoraTrx::txlora(byte *frame, byte datalen) {
-	// set the IRQ mapping DIO0=TxDone DIO1=NOP DIO2=NOP
-	writeReg(RegDioMapping1, MAP_DIO0_LORA_TXDONE|MAP_DIO1_LORA_NOP|MAP_DIO2_LORA_NOP);
-	// clear all radio IRQ flags
-	writeReg(REG_IRQ_FLAGS, 0xFF);
-	// mask all IRQs but TxDone
-	writeReg(REG_IRQ_FLAGS_MASK, ~IRQ_LORA_TXDONE_MASK);
-
-	// initialize the payload size and address pointers
-	writeReg(REG_FIFO_TX_BASE_AD, 0x00);
-	writeReg(REG_FIFO_ADDR_PTR, 0x00);
-	writeReg(REG_PAYLOAD_LENGTH, datalen);
-
-	// download buffer to the radio FIFO
-	writeBuf(REG_FIFO, frame, datalen);
-	// now we actually start the transmission
-	opmode(OPMODE_TX);
-	frame[datalen] = 0; // TODO: Temporary
-	//cout << "TX: " << frame << endl;
 }
 
 
 
 void LoraTrx::server_init(void) {
 
-	opmode(OPMODE_RX);
 	halt_server = false;
 
 	server_thread = new thread(
@@ -385,29 +121,20 @@ void LoraTrx::close_server(void) {
 
 
 
-void LoraTrx::SwitchModeRx(void) {
-	ModeReInit();
-	opmodeLora();
-	opmode(OPMODE_STANDBY);
-	opmode(OPMODE_RX);
-}
-
-
-
-void LoraTrx::SwitchModeTx(void) {
-	ModeReInit();
-	opmodeLora();
-	opmode(OPMODE_STANDBY);
-	writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
-	configPower(23);
-}
-
-
-
 void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
+
+	if (!hardwareInitialized) {
+		if (!setup()) {
+			halt_server = true;
+			cerr << "The gateway server was unable to initialize hardware!" << endl;
+		}
+	}
+
+
+
 
 	while (!halt_server) {
 
@@ -416,13 +143,42 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		}
 
 		if (tx_mode) {
-			trx.SwitchModeRx();
+			rf95.setModeRX();
 			tx_mode = false;
 		}
 
-		if (trx.receivepacket(msg, msg_buffer->len, msg_buffer->prssi, msg_buffer->rssi, msg_buffer->snr) && msg_buffer->len > 0) {
-			strncpy(msg_buffer->msg, msg.c_str(), msg_buffer->len);
-			msg_buffer->msg[msg_buffer->len] = 0;
+		if (rf95.available()) {
+
+			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
+
+			msg_buffer->id    = rf95.headerId();
+			msg_buffer->from  = rf95.headerFrom();
+			msg_buffer->to    = rf95.headerTo();
+			msg_buffer->flags = rf95.headerFlags();
+			msg_buffer->rssi  = rf95.lastRssi();
+			msg_buffer->snr   = rf95.lastSNR();
+
+			if (rf95.recv(buf, &msg_buffer->len)) {
+
+				msg_buffer->data = (uint8_t*) malloc(msg_buffer->len);
+				memcpy(msg_buffer->data, buf, msg_buffer->len);
+
+				// TODO: Remove after debugging
+				string printbuffer = hexStr(buf, msg_buffer->len);
+				cout << "*Packet* " << endl
+					<< "\tLength: " << len << endl
+					<< "\tID: " << id << endl
+					<< "\tFrom: " << from << endl
+					<< "\tTo: " << to << endl
+					<< "\tFlags: " << flags << endl
+					<< "\tRSSI: " << rssi << endl
+					<< "\tMessage: " << printbuffer << endl << endl;
+				// TODO: End remove
+
+			} else {
+				cerr << "Error receiving packet..." << endl;
+				continue;
+			}
 
 			rx_queue_mutex.lock();
 			rx_queue.push(msg_buffer);
@@ -439,18 +195,21 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_queue.pop();
 				tx_queue_mutex.unlock();
 
-				trx.SwitchModeTx();
+				rf95.setModeTX();
 				tx_mode = true;
 
-				trx.txlora((byte*) tx_buffer->msg, tx_buffer->len);
-			
-				delay(tx_buffer->len * 1.5); // TODO: Change constant?
+				if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
+					cerr << "Error transmitting packet..." << endl;
+					// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
+				} else {
+					rf95.waitPacketSent();
+				}
 
 				delete tx_buffer;
 				tx_buffer = NULL;
 			} else tx_queue_mutex.unlock();
 		}
-		delay(1);
+		//delay(1); // TODO: Should we wait at all? Watch CPU loads...
 	}
 
 	halt_server = true;
@@ -488,12 +247,12 @@ start:
 bool LoraTrx::sendMessage(string msg_str) {
 	lora_msg *msg;
 
-	if (msg_str.length() > 255) return false;
+	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) return false;
 
 	msg = new lora_msg;
 
 	msg->len = msg_str.length();
-	strncpy(msg->msg, msg_str.c_str(), msg->len);
+	memcpy(msg->data, msg_str.c_str(), msg->len);
 
 	tx_queue_mutex.lock();
 	tx_queue.push(msg);
