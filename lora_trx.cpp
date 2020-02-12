@@ -209,7 +209,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_buffer = NULL;
 			} else tx_queue_mutex.unlock();
 		}
-		//delay(1); // TODO: Should we wait at all? Watch CPU loads...
+		delay(1); // TODO: Should we wait at all? Watch CPU loads...
 	}
 
 	halt_server = true;

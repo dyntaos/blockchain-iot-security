@@ -7,8 +7,11 @@
 #include <cxxopts.hpp>
 
 #include <blockchainsec.hpp>
-#include <lora_trx.hpp>
 #include <client.hpp>
+
+#ifdef LORA_GATEWAY
+#include <lora_trx.hpp>
+#endif
 
 using namespace std;
 using namespace blockchainSec;

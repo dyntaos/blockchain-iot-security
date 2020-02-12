@@ -30,13 +30,16 @@ BIN = $(BUILD)/bin/$(ARCH)
 OBJ = $(BUILD)/obj/$(ARCH)
 LIB = $(BUILD)/lib/$(ARCH)
 
+RADIOHEADCFLAGS = -DRASPBERRY_PI -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
+RADIOHEADBASE = ./RadioHead/
+RADIOHEADINC = -I$(RADIOHEADBASE)
 
 
 DEBUG =
 
 .PHONY: all mkdirs debug clean lora _lora
 
-all: mkdirs $(BIN)/client $(BIN)/client_test $(BIN)/client_receiver $(BIN)/client_test_self
+all: mkdirs $(BIN)/client $(BIN)/client_blockchain_test $(BIN)/client_data_receiver
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -47,14 +50,48 @@ debug_flag:
 	$(eval DEBUG = -D_DEBUG)
 
 clean:
-	rm -rf ./build ./client ./client_test ./client_receiver ./client_test_self
+	rm -rf ./build ./client ./client_blockchain_test ./client_data_receiver
 
 lora: _lora mkdirs $(OBJ)/lora_trx.o all
 
 _lora:
 	$(eval LINK_LORA=-lwiringPi)
-	$(eval LORA_OBJ=$(OBJ)/lora_trx.o)
+	$(eval LORA_OBJ=$(OBJ)/lora_trx.o \
+					$(OBJ)/RasPi.o \
+					$(OBJ)/RH_RF95.o \
+					$(OBJ)/RHDatagram.o \
+					$(OBJ)/RHHardwareSPI.o \
+					$(OBJ)/RHSPIDriver.o \
+					$(OBJ)/RHGenericDriver.o \
+					$(OBJ)/RHGenericSPI.o)
 	$(eval LORA_GATEWAY=-DLORA_GATEWAY)
+
+
+### RadioHead Library ###
+
+$(OBJ)/RasPi.o: $(RADIOHEADBASE)/RHutil/RasPi.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADBASE)/RHutil/RasPi.cpp $(RADIOHEADINC)
+
+$(OBJ)/RH_RF95.o: $(RADIOHEADBASE)/RH_RF95.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+$(OBJ)/RHDatagram.o: $(RADIOHEADBASE)/RHDatagram.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+$(OBJ)/RHHardwareSPI.o: $(RADIOHEADBASE)/RHHardwareSPI.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+$(OBJ)/RHSPIDriver.o: $(RADIOHEADBASE)/RHSPIDriver.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+$(OBJ)/RHGenericDriver.o: $(RADIOHEADBASE)/RHGenericDriver.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+$(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
+	$(CC) $(CFLAGS) -o $@ -c $(RADIOHEADINC) $<
+
+
+
 
 ### Static Library ###
 
@@ -68,7 +105,7 @@ $(OBJ)/ethabi.o: ethabi.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/lora_trx.o: lora_trx.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) -Wall -Wextra -std=c++11 --pedantic -g -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
 
 $(OBJ)/misc.o: misc.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
@@ -85,17 +122,6 @@ $(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $
 
 ### Client Binary ###
 
-$(OBJ)/client_test.o: client_test.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
-
-$(BIN)/client_test: $(OBJ)/client_test.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client_test.o \
-		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
-	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client_test
-
 $(OBJ)/client.o: client.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
@@ -107,24 +133,26 @@ $(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
 	cp ./*.sol ./*.conf $(BIN)/
 	ln -fs $@ ./client
 
-$(OBJ)/client_test_self.o: client_test_self.cpp
+
+$(OBJ)/client_data_receiver.o: client_data_receiver.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client_test_self: $(OBJ)/client_test_self.o $(LIB)/libblockchainsec.a
+$(BIN)/client_data_receiver: $(OBJ)/client_data_receiver.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client_test_self.o \
+		$(OBJ)/client_data_receiver.o \
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client_test_self
+	ln -fs $@ ./client_data_receiver
 
-$(OBJ)/client_receiver.o: client_receiver.cpp
+
+$(OBJ)/client_blockchain_test.o: client_blockchain_test.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(BIN)/client_receiver: $(OBJ)/client_receiver.o $(LIB)/libblockchainsec.a
+$(BIN)/client_blockchain_test: $(OBJ)/client_blockchain_test.o $(LIB)/libblockchainsec.a
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client_receiver.o \
+		$(OBJ)/client_blockchain_test.o \
 		-L $(LIB) \
 		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
 	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client_receiver
+	ln -fs $@ ./client_blockchain_test

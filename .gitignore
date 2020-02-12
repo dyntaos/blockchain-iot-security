@@ -1,8 +1,7 @@
 build
 .vscode
-client
-client_test
 dev_mgmt_contract.abi
 dev_mgmt_contract.bin
-client_receiver
-client_test_self
+client
+client_data_receiver
+client_blockchain_test
