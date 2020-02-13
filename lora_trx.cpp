@@ -143,22 +143,22 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		}
 
 		if (tx_mode) {
-			trx->_rf95.setModeRX();
+			trx._rf95.setModeRX();
 			tx_mode = false;
 		}
 
-		if (trx->_rf95.available()) {
+		if (trx._rf95.available()) {
 
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
 
-			msg_buffer->id    = trx->_rf95.headerId();
-			msg_buffer->from  = trx->_rf95.headerFrom();
-			msg_buffer->to    = trx->_rf95.headerTo();
-			msg_buffer->flags = trx->_rf95.headerFlags();
-			msg_buffer->rssi  = trx->_rf95.lastRssi();
-			msg_buffer->snr   = trx->_rf95.lastSNR();
+			msg_buffer->id    = trx._rf95.headerId();
+			msg_buffer->from  = trx._rf95.headerFrom();
+			msg_buffer->to    = trx._rf95.headerTo();
+			msg_buffer->flags = trx._rf95.headerFlags();
+			msg_buffer->rssi  = trx._rf95.lastRssi();
+			msg_buffer->snr   = trx._rf95.lastSNR();
 
-			if (trx->_rf95.recv(buf, &msg_buffer->len)) {
+			if (trx._rf95.recv(buf, &msg_buffer->len)) {
 
 				msg_buffer->data = (uint8_t*) malloc(msg_buffer->len);
 				memcpy(msg_buffer->data, buf, msg_buffer->len);
@@ -195,14 +195,14 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_queue.pop();
 				tx_queue_mutex.unlock();
 
-				trx->_rf95.setModeTX();
+				trx._rf95.setModeTX();
 				tx_mode = true;
 
-				if (!trx->_rf95.send(tx_buffer->data, tx_buffer->len)) {
+				if (!trx._rf95.send(tx_buffer->data, tx_buffer->len)) {
 					cerr << "Error transmitting packet..." << endl;
 					// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 				} else {
-					trx->_rf95.waitPacketSent();
+					trx._rf95.waitPacketSent();
 				}
 
 				delete tx_buffer;
