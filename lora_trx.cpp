@@ -254,7 +254,7 @@ bool LoraTrx::sendMessage(string msg_str) {
 	msg = new lora_msg;
 
 	msg->len = msg_str.length();
-	msg->data = new char[msg->len];
+	msg->data = new uint8_t[msg->len];
 
 	memcpy(msg->data, msg_str.c_str(), msg->len);
 

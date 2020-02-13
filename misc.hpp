@@ -1,6 +1,9 @@
 #ifndef __MISC_HPP
 #define __MISC_HPP
 
+#include <string>
+#include <vector>
+
 
 namespace blockchainSec {
 
