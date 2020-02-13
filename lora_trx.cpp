@@ -9,15 +9,15 @@
 
 #include <iostream>
 #include <string>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <queue>
+//#include <thread>
+//#include <mutex>
+//#include <condition_variable>
+//#include <queue>
 
 #include <sys/types.h>
 #include <string.h>
 #include <fcntl.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include <misc.hpp>
 #include <lora_trx.hpp>
@@ -28,6 +28,7 @@ using namespace std;
 namespace blockchainSec {
 
 
+RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 LoraTrx::LoraTrx(void) {
 
@@ -87,7 +88,7 @@ bool LoraTrx::_setup(void) {
 		rf95.setModeRx();
 
 		printf( " OK NodeID=%d @ %3.2fMHz\n", RF_NODE_ID, RF_FREQUENCY );
-		hardwareInitialized = true;
+		_hardwareInitialized = true;
 		return true;
 	}
 
@@ -126,8 +127,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
-	if (!trx->_hardwareInitialized) {
-		if (!trx->_setup()) {
+	if (!trx._hardwareInitialized) {
+		if (!trx._setup()) {
 			halt_server = true;
 			cerr << "The gateway server was unable to initialize hardware!" << endl;
 		}
@@ -143,22 +144,22 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		}
 
 		if (tx_mode) {
-			trx._rf95.setModeRX();
+			rf95.setModeRx();
 			tx_mode = false;
 		}
 
-		if (trx._rf95.available()) {
+		if (rf95.available()) {
 
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
 
-			msg_buffer->id    = trx._rf95.headerId();
-			msg_buffer->from  = trx._rf95.headerFrom();
-			msg_buffer->to    = trx._rf95.headerTo();
-			msg_buffer->flags = trx._rf95.headerFlags();
-			msg_buffer->rssi  = trx._rf95.lastRssi();
-			msg_buffer->snr   = trx._rf95.lastSNR();
+			msg_buffer->id    = rf95.headerId();
+			msg_buffer->from  = rf95.headerFrom();
+			msg_buffer->to    = rf95.headerTo();
+			msg_buffer->flags = rf95.headerFlags();
+			msg_buffer->rssi  = rf95.lastRssi();
+//			msg_buffer->snr   = rf95.lastSNR();
 
-			if (trx._rf95.recv(buf, &msg_buffer->len)) {
+			if (rf95.recv(buf, &msg_buffer->len)) {
 
 				msg_buffer->data = (uint8_t*) malloc(msg_buffer->len);
 				memcpy(msg_buffer->data, buf, msg_buffer->len);
@@ -195,21 +196,21 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				tx_queue.pop();
 				tx_queue_mutex.unlock();
 
-				trx._rf95.setModeTX();
+				rf95.setModeTx();
 				tx_mode = true;
 
-				if (!trx._rf95.send(tx_buffer->data, tx_buffer->len)) {
+				if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
 					cerr << "Error transmitting packet..." << endl;
 					// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 				} else {
-					trx._rf95.waitPacketSent();
+					rf95.waitPacketSent();
 				}
 
 				delete tx_buffer;
 				tx_buffer = NULL;
 			} else tx_queue_mutex.unlock();
 		}
-		delay(1); // TODO: Should we wait at all? Watch CPU loads...
+		bcm2835_delay(1); // TODO: Should we wait at all? Watch CPU loads...
 	}
 
 	halt_server = true;
@@ -236,7 +237,7 @@ start:
 	//cout << "--After " << rx_queue.size() << " in rx_queue" << endl;
 	rx_queue_mutex.unlock();
 
-	result = msg->msg;
+	result = string((char*) msg->data, msg->len);
 	//cout << "Freed " << (void*)msg << endl;
 	delete msg;
 	return result;

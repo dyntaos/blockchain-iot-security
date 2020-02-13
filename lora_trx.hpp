@@ -14,6 +14,7 @@
 //#include <RH_RF69.h>
 #include <RH_RF95.h>
 
+
 #define BOARD_DRAGINO_PIHAT
 
 #include <RasPiBoards.h>
@@ -35,7 +36,7 @@ typedef struct lora_msg_t {
 	uint8_t to;
 	uint8_t flags;
 	int8_t  rssi;
-	int32_t snr;
+//	int32_t snr;
 	uint8_t len;
 	uint8_t *data;
 } lora_msg;
@@ -65,7 +66,7 @@ class LoraTrx {
 
 
 	public:
-		RH_RF95 _rf95(RF_CS_PIN, RF_IRQ_PIN);
+	//	RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 		bool _hardwareInitialized = false;
 
 		LoraTrx(void);
@@ -74,7 +75,7 @@ class LoraTrx {
 		bool sendMessage(std::string msg_str);
 		void server_init(void);
 		void close_server(void);
-		void _setup(void);
+		bool _setup(void);
 };
 
 
