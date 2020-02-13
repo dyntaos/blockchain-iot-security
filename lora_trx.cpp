@@ -173,7 +173,9 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 					<< "\tTo: " << unsigned(msg_buffer->to) << endl
 					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
-					<< "\tMessage: " << printbuffer << endl << endl;
+					<< "\tMessage Hex: " << printbuffer << endl
+					<< "\tMessage ASCII: " << string(msg_buffer->data, msg_buffer->len)
+					<< endl << endl;
 				// TODO: End remove
 
 			} else {
