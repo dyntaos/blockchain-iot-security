@@ -143,6 +143,29 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			msg_buffer = new lora_msg;
 		}
 
+		tx_queue_mutex.lock();
+		if (!tx_queue.empty()) {
+			tx_buffer = tx_queue.front();
+			tx_queue.pop();
+			tx_queue_mutex.unlock();
+
+			if (!tx_mode) {
+				rf95.setModeTx();
+				tx_mode = true;
+			}
+
+			if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
+				cerr << "Error transmitting packet..." << endl;
+				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
+			} else {
+				rf95.waitPacketSent();
+			}
+
+			delete tx_buffer->data;
+			delete tx_buffer;
+			tx_buffer = NULL;
+		} else tx_queue_mutex.unlock();
+
 		if (tx_mode) {
 			rf95.setModeRx();
 			tx_mode = false;
@@ -190,29 +213,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			rx_queue_condvar.notify_all();
 
 			msg_buffer = NULL;
-
-		} else {
-			tx_queue_mutex.lock();
-			if (!tx_queue.empty()) {
-				tx_buffer = tx_queue.front();
-				tx_queue.pop();
-				tx_queue_mutex.unlock();
-
-				rf95.setModeTx();
-				tx_mode = true;
-
-				if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
-					cerr << "Error transmitting packet..." << endl;
-					// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
-				} else {
-					rf95.waitPacketSent();
-				}
-
-				delete tx_buffer->data;
-				delete tx_buffer;
-				tx_buffer = NULL;
-			} else tx_queue_mutex.unlock();
 		}
+
 		bcm2835_delay(1); // TODO: Should we wait at all? Watch CPU loads...
 	}
 
