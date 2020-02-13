@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h> // TODO: TEMP
+#include <boost/algorithm/string.hpp> // TODO: Temp for boost::to_upper()
 
 #include <cxxopts.hpp>
 
@@ -123,12 +124,18 @@ int main(int argc, char *argv[]) {
 
 #ifdef LORA_GATEWAY
 	if (gatewayFlag) {
-		thread send_thread(senderThread, std::ref(*trx));
+		//thread send_thread(senderThread, std::ref(*trx));
 		string msg;
 
 		for (;;) {
 			msg = trx->readMessage();
 			cout << "Receive[" << msg.length() << "]: " << msg << endl << endl;
+
+			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + msg))) {
+				cout << "Sent reply to LoRa node" << endl;
+			} else {
+				cout << "Error sending reply to LoRa node..." << endl;
+			}
 		}
 
 		trx->close_server();
