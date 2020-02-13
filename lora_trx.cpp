@@ -151,6 +151,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 		if (rf95.available()) {
 
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
+			msg_buffer->len   = RH_RF95_MAX_MESSAGE_LEN;
 
 			msg_buffer->id    = rf95.headerId();
 			msg_buffer->from  = rf95.headerFrom();
@@ -166,12 +167,12 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				// TODO: Remove after debugging
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
-					<< "\tLength: " << msg_buffer->len << endl
-					<< "\tID: " << msg_buffer->id << endl
-					<< "\tFrom: " << msg_buffer->from << endl
-					<< "\tTo: " << msg_buffer->to << endl
-					<< "\tFlags: " << msg_buffer->flags << endl
-					<< "\tRSSI: " << msg_buffer->rssi << endl
+					<< "\tLength: " << unsigned(msg_buffer->len) << endl
+					<< "\tID: " << unsigned(msg_buffer->id) << endl
+					<< "\tFrom: " << unsigned(msg_buffer->from) << endl
+					<< "\tTo: " << unsigned(msg_buffer->to) << endl
+					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
+					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
 					<< "\tMessage: " << printbuffer << endl << endl;
 				// TODO: End remove
 
@@ -249,7 +250,9 @@ start:
 bool LoraTrx::sendMessage(string msg_str) {
 	lora_msg *msg;
 
-	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) return false;
+	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) {
+		return false;
+	}
 
 	msg = new lora_msg;
 
