@@ -46,15 +46,12 @@ class LoraTrx {
 
 	private:
 
-		RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
-
 		std::queue<lora_msg*> rx_queue, tx_queue;
 		std::mutex rx_queue_mutex, tx_queue_mutex;
 		std::mutex rx_ulock_mutex;
 		std::condition_variable rx_queue_condvar;
 		std::thread *server_thread;
 		bool halt_server = true;
-		bool hardwareInitialized = false;
 
 		static void server(
 				std::queue<lora_msg*> &rx_queue,
@@ -65,9 +62,11 @@ class LoraTrx {
 				bool &halt_server,
 				LoraTrx &trx
 		);
-		void setup(void);
+
 
 	public:
+		RH_RF95 _rf95(RF_CS_PIN, RF_IRQ_PIN);
+		bool _hardwareInitialized = false;
 
 		LoraTrx(void);
 
@@ -75,6 +74,7 @@ class LoraTrx {
 		bool sendMessage(std::string msg_str);
 		void server_init(void);
 		void close_server(void);
+		void _setup(void);
 };
 
 
