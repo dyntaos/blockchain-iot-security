@@ -18,4 +18,4 @@
 	url = https://github.com/ReneNyffenegger/cpp-base64.git
 [submodule "RadioHead"]
 	path = RadioHead
-	url = https://github.com/hallard/RadioHead.git
+	url = git@github.com:dyntaos/RadioHead.git
