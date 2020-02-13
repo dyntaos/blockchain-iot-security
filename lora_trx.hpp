@@ -36,7 +36,6 @@ typedef struct lora_msg_t {
 	uint8_t to;
 	uint8_t flags;
 	int8_t  rssi;
-//	int32_t snr;
 	uint8_t len;
 	uint8_t *data;
 } lora_msg;

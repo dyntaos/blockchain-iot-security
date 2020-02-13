@@ -157,11 +157,10 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			msg_buffer->to    = rf95.headerTo();
 			msg_buffer->flags = rf95.headerFlags();
 			msg_buffer->rssi  = rf95.lastRssi();
-//			msg_buffer->snr   = rf95.lastSNR();
 
 			if (rf95.recv(buf, &msg_buffer->len)) {
 
-				msg_buffer->data = (uint8_t*) malloc(msg_buffer->len);
+				msg_buffer->data = new uint8_t[msg_buffer->len];
 				memcpy(msg_buffer->data, buf, msg_buffer->len);
 
 				// TODO: Remove after debugging
@@ -206,6 +205,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 					rf95.waitPacketSent();
 				}
 
+				delete tx_buffer->data;
 				delete tx_buffer;
 				tx_buffer = NULL;
 			} else tx_queue_mutex.unlock();
@@ -239,6 +239,7 @@ start:
 
 	result = string((char*) msg->data, msg->len);
 	//cout << "Freed " << (void*)msg << endl;
+	delete msg->data;
 	delete msg;
 	return result;
 }
@@ -253,6 +254,8 @@ bool LoraTrx::sendMessage(string msg_str) {
 	msg = new lora_msg;
 
 	msg->len = msg_str.length();
+	msg->data = new char[msg->len];
+
 	memcpy(msg->data, msg_str.c_str(), msg->len);
 
 	tx_queue_mutex.lock();
