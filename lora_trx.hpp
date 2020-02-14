@@ -7,21 +7,16 @@
 #include <condition_variable>
 #include <queue>
 
-#include <bcm2835.h>
 #include <unistd.h>
-//#include <stdio.h>
-
-//#include <RH_RF69.h>
+#include <bcm2835.h>
 #include <RH_RF95.h>
-
 
 #define BOARD_DRAGINO_PIHAT
 
 #include <RasPiBoards.h>
 
 
-#define RF_FREQUENCY		915.10
-#define RF_NODE_ID			1
+#define RF_FREQUENCY		915.10 // TODO: Move to config file
 
 
 namespace blockchainSec {
@@ -29,15 +24,14 @@ namespace blockchainSec {
 
 
 
-
 typedef struct lora_msg_t {
-	uint8_t id;
-	uint32_t from;
-	uint32_t to;
-	uint8_t flags;
-	int8_t  rssi;
-	uint8_t len;
-	uint8_t *data;
+	rh_id_t      id;
+	rh_address_t from;
+	rh_address_t to;
+	rh_flags_t   flags;
+	int8_t       rssi;
+	uint8_t      len;
+	uint8_t      *data;
 } lora_msg;
 
 
