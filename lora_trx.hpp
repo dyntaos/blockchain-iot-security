@@ -32,8 +32,8 @@ namespace blockchainSec {
 
 typedef struct lora_msg_t {
 	uint8_t id;
-	uint8_t from;
-	uint8_t to;
+	uint32_t from;
+	uint32_t to;
 	uint8_t flags;
 	int8_t  rssi;
 	uint8_t len;
