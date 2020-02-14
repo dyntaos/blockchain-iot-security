@@ -77,7 +77,7 @@ void setup()
 
   Serial.begin(115200);
   while (!Serial) {
-    delay(1);
+    delay(10);
   }
 
   delay(100);
@@ -110,7 +110,8 @@ void setup()
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then 
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
-  rf95.setHeaderFrom(0xAF);
+  rf95.setHeaderFrom(0xDEADBEEF);
+  rf95.setHeaderTo(0xCAFEBABE);
 
   Serial.print("Max msg len: ");
   Serial.println(rf95.maxMessageLength());
