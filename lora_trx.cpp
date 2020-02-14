@@ -187,7 +187,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				msg_buffer->data = new uint8_t[msg_buffer->len];
 				memcpy(msg_buffer->data, buf, msg_buffer->len);
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
 					<< "\tLength: " << unsigned(msg_buffer->len) << endl
@@ -197,9 +197,9 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
 					<< "\tMessage Hex: " << printbuffer << endl
-					<< "\tMessage ASCII: " << string(msg_buffer->data, msg_buffer->len)
+					<< "\tMessage ASCII: " << string((char*) msg_buffer->data, msg_buffer->len)
 					<< endl << endl;
-#endif // _DEBUG
+//#endif // _DEBUG
 
 			} else {
 				cerr << "Error receiving packet..." << endl;

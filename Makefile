@@ -30,7 +30,7 @@ BIN = $(BUILD)/bin/$(ARCH)
 OBJ = $(BUILD)/obj/$(ARCH)
 LIB = $(BUILD)/lib/$(ARCH)
 
-RADIOHEADCFLAGS = -DRASPBERRY_PI -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
+RADIOHEADCFLAGS = -g -DRASPBERRY_PI -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
 RADIOHEADBASE = ./RadioHead
 RADIOHEADINC = -I$(RADIOHEADBASE) -I$(RADIOHEADBASE)/examples/raspi
 
@@ -52,10 +52,10 @@ debug_flag:
 clean:
 	rm -rf ./build ./client ./client_blockchain_test ./client_data_receiver
 
-lora: _lora mkdirs $(OBJ)/lora_trx.o all
+lora: _lora mkdirs $(OBJ)/lora_trx.o $(OBJ)/RasPi.o $(OBJ)/RH_RF95.o $(OBJ)/RHDatagram.o $(OBJ)/RHHardwareSPI.o $(OBJ)/RHSPIDriver.o $(OBJ)/RHGenericDriver.o $(OBJ)/RHGenericSPI.o all
 
 _lora:
-	$(eval LINK_LORA=-lbcm2835 -lwiringPi)
+	$(eval LINK_LORA=-lbcm2835 -lwiringPi )
 	$(eval LORA_OBJ=$(OBJ)/lora_trx.o \
 					$(OBJ)/RasPi.o \
 					$(OBJ)/RH_RF95.o \
@@ -63,8 +63,8 @@ _lora:
 					$(OBJ)/RHHardwareSPI.o \
 					$(OBJ)/RHSPIDriver.o \
 					$(OBJ)/RHGenericDriver.o \
-					$(OBJ)/RHGenericSPI.o)
-	$(eval LORA_GATEWAY=-DLORA_GATEWAY)
+					$(OBJ)/RHGenericSPI.o )
+	$(eval LORA_GATEWAY=-DLORA_GATEWAY )
 
 
 ### RadioHead Library ###
@@ -92,7 +92,6 @@ $(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
 
 
 
-
 ### Static Library ###
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
@@ -104,7 +103,7 @@ $(OBJ)/subscription_server.o: subscription_server.cpp
 $(OBJ)/ethabi.o: ethabi.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
-$(OBJ)/lora_trx.o: lora_trx.cpp $(OBJ)/RasPi.o $(OBJ)/RH_RF95.o $(OBJ)/RHDatagram.o $(OBJ)/RHHardwareSPI.o $(OBJ)/RHSPIDriver.o $(OBJ)/RHGenericDriver.o $(OBJ)/RHGenericSPI.o
+$(OBJ)/lora_trx.o: lora_trx.cpp
 	$(CROSSCOMPILE)$(CC) \
 		$(CFLAGS) \
 		$(RADIOHEADCFLAGS) \
@@ -122,7 +121,7 @@ $(OBJ)/misc.o: misc.cpp
 $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
+$(LIB)/libblockchainsec.a: $(LORA_OBJ) $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
 	ar rcs $@ $(LORA_OBJ) $^
 
 
