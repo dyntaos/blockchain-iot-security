@@ -1,23 +1,10 @@
-/*******************************************************************************
- *
- * Copyright (c) 2018 Dragino
- *
- * http://www.dragino.com
- * https://github.com/dragino/rpi-lora-tranceiver
- *
- *******************************************************************************/
 
 #include <iostream>
 #include <string>
-//#include <thread>
-//#include <mutex>
-//#include <condition_variable>
-//#include <queue>
 
 #include <sys/types.h>
 #include <string.h>
 #include <fcntl.h>
-//#include <unistd.h>
 
 #include <misc.hpp>
 #include <lora_trx.hpp>
@@ -30,16 +17,16 @@ namespace blockchainSec {
 
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
-LoraTrx::LoraTrx(void) {
 
-
+LoraTrx::LoraTrx(uint32_t gatewayDeviceId) {
+	this->gatewayDeviceId = gatewayDeviceId;
 }
 
 
-bool LoraTrx::_setup(void) {
+bool LoraTrx::setup(void) {
 
 	if (!bcm2835_init()) {
-		fprintf( stderr, "%s bcm2835_init() Failed\n\n", __BASEFILE__ );
+		cerr << __BASE_FILE__ << " bcm2835_init() Failed" << endl << endl;
 		return 1;
 	}
 
@@ -65,7 +52,7 @@ bool LoraTrx::_setup(void) {
 #endif
 
 	if (!rf95.init()) {
-		fprintf( stderr, "\nRF95 module init failed, Please verify wiring/module\n" );
+		cerr << endl << "RF95 module init failed, Please verify wiring/module" << endl;
 	} else {
 		rf95.setTxPower(14, false);
 
@@ -77,8 +64,8 @@ bool LoraTrx::_setup(void) {
 		rf95.setFrequency(RF_FREQUENCY);
 
 		// If we need to send something
-		rf95.setThisAddress(RF_NODE_ID);
-		rf95.setHeaderFrom(RF_NODE_ID);
+		rf95.setThisAddress(gatewayDeviceId);
+		rf95.setHeaderFrom(gatewayDeviceId);
 
 		// Be sure to grab all node packet
 		// we're sniffing to display, it's a demo
@@ -87,8 +74,8 @@ bool LoraTrx::_setup(void) {
 		// We're ready to listen for incoming message
 		rf95.setModeRx();
 
-		printf( " OK NodeID=%d @ %3.2fMHz\n", RF_NODE_ID, RF_FREQUENCY );
-		_hardwareInitialized = true;
+		cout << " OK NodeID=" << RF_NODE_ID << " @ " << RF_FREQUENCY << "MHz" << endl;
+		hardwareInitialized = true;
 		return true;
 	}
 
@@ -127,15 +114,12 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
-	if (!trx._hardwareInitialized) {
-		if (!trx._setup()) {
+	if (!trx.hardwareInitialized) {
+		if (!trx.setup()) {
 			halt_server = true;
 			cerr << "The gateway server was unable to initialize hardware!" << endl;
 		}
 	}
-
-
-
 
 	while (!halt_server) {
 
@@ -153,6 +137,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				rf95.setModeTx();
 				tx_mode = true;
 			}
+
+			rf95.setHeaderTo(tx_buffer->to);
 
 			if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
 				cerr << "Error transmitting packet..." << endl;
@@ -176,11 +162,12 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
 			msg_buffer->len   = RH_RF95_MAX_MESSAGE_LEN;
 
-			msg_buffer->id    = rf95.headerId();
-			msg_buffer->from  = rf95.headerFrom();
-			msg_buffer->to    = rf95.headerTo();
-			msg_buffer->flags = rf95.headerFlags();
-			msg_buffer->rssi  = rf95.lastRssi();
+			msg_buffer->from     = rf95.headerFrom();
+			msg_buffer->to       = rf95.headerTo();
+			msg_buffer->id       = rf95.headerId();
+			msg_buffer->fragment = rf95.headerFragment();
+			msg_buffer->flags    = rf95.headerFlags();
+			msg_buffer->rssi     = rf95.lastRssi();
 
 			if (rf95.recv(buf, &msg_buffer->len)) {
 
@@ -191,9 +178,10 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
 					<< "\tLength: " << unsigned(msg_buffer->len) << endl
-					<< "\tID: " << unsigned(msg_buffer->id) << endl
 					<< "\tFrom: " << unsigned(msg_buffer->from) << endl
 					<< "\tTo: " << unsigned(msg_buffer->to) << endl
+					<< "\tID: " << unsigned(msg_buffer->id) << endl
+					<< "\tFragment: " << unsigned(msg_buffer->fragment) << endl
 					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
 					<< "\tMessage Hex: " << printbuffer << endl
@@ -223,8 +211,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 
 
-string LoraTrx::readMessage(void) {
-	string result;
+lora_msg_t LoraTrx::readMessage(void) {
+	//string result;
 	lora_msg *msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
 
@@ -236,22 +224,22 @@ start:
 		rx_queue_mutex.unlock();
 		goto start;
 	}
-	//cout << "--Before " << rx_queue.size() << " in rx_queue" << endl;
+
 	msg = rx_queue.front();
 	rx_queue.pop();
-	//cout << "--After " << rx_queue.size() << " in rx_queue" << endl;
+
 	rx_queue_mutex.unlock();
 
-	result = string((char*) msg->data, msg->len);
-	//cout << "Freed " << (void*)msg << endl;
-	delete msg->data;
-	delete msg;
-	return result;
+	//result = string((char*) msg->data, msg->len);
+	//delete msg->data;
+	//delete msg;
+	//return result;
+	return msg;
 }
 
 
 
-bool LoraTrx::sendMessage(string msg_str) {
+bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 	lora_msg *msg;
 
 	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) {
@@ -262,6 +250,7 @@ bool LoraTrx::sendMessage(string msg_str) {
 
 	msg->len = msg_str.length();
 	msg->data = new uint8_t[msg->len];
+	msg->to = toDeviceId;
 
 	memcpy(msg->data, msg_str.c_str(), msg->len);
 

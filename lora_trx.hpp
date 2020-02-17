@@ -9,6 +9,8 @@
 
 #include <unistd.h>
 #include <bcm2835.h>
+
+#define RH_FRAGMENT_FIELD
 #include <RH_RF95.h>
 
 #define BOARD_DRAGINO_PIHAT
@@ -25,13 +27,14 @@ namespace blockchainSec {
 
 
 typedef struct lora_msg_t {
-	rh_id_t      id;
-	rh_address_t from;
-	rh_address_t to;
-	rh_flags_t   flags;
-	int8_t       rssi;
-	uint8_t      len;
-	uint8_t      *data;
+	rh_address_t  from;
+	rh_address_t  to;
+	rh_id_t       id;
+	rh_fragment_t fragment;
+	rh_flags_t    flags;
+	int8_t        rssi;
+	uint8_t       len;
+	uint8_t       *data;
 } lora_msg;
 
 
@@ -46,6 +49,8 @@ class LoraTrx {
 		std::condition_variable rx_queue_condvar;
 		std::thread *server_thread;
 		bool halt_server = true;
+		bool hardwareInitialized = false;
+		uint32_t gatewayDeviceId;
 
 		static void server(
 				std::queue<lora_msg*> &rx_queue,
@@ -57,18 +62,19 @@ class LoraTrx {
 				LoraTrx &trx
 		);
 
+		bool setup(void);
+
 
 	public:
 	//	RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
-		bool _hardwareInitialized = false;
 
-		LoraTrx(void);
+		LoraTrx(uint32_t gatewayDeviceId);
 
 		std::string readMessage(void);
 		bool sendMessage(std::string msg_str);
 		void server_init(void);
 		void close_server(void);
-		bool _setup(void);
+
 };
 
 

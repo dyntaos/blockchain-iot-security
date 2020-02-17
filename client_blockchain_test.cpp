@@ -57,28 +57,6 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 
 
 
-#ifdef LORA_GATEWAY
-
-void senderThread(LoraTrx &trx) {
-	int r;
-	char output[256];
-	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
-
-	srand(time(NULL));
-
-	for (;;) {
-		sleep((rand() % 9) + 1);
-		r = rand() % 140;
-		strncpy(output, d, r);
-		output[r] = 0;
-		cout << "Send[" << r << "]: " << output << endl << endl;
-		trx.sendMessage(output);
-	}
-}
-
-#endif //LORA_GATEWAY
-
-
 void printVector(vector<uint32_t> v) {
 	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 		cout << "\t" << *it << endl;
@@ -124,11 +102,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef LORA_GATEWAY
 	if (gatewayFlag) {
-		//thread send_thread(senderThread, std::ref(*trx));
-		string msg;
+		lora_msg_t msg;
+		string msgStr;
 
 		for (;;) {
 			msg = trx->readMessage();
+			msgStr = string(msg->data, msg->len);
 			cout << "Receive[" << msg.length() << "]: " << msg << endl << endl;
 
 			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + msg))) {
