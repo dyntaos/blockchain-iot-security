@@ -140,7 +140,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 			rf95.setHeaderTo(tx_buffer->to);
 
-			if (!rf95.send(tx_buffer->data, tx_buffer->len)) {
+			if (!rf95.send((uint8_t*) tx_buffer->data, tx_buffer->len)) {
 				cerr << "Error transmitting packet..." << endl;
 				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 			} else {
@@ -171,7 +171,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 			if (rf95.recv(buf, &msg_buffer->len)) {
 
-				msg_buffer->data = new uint8_t[msg_buffer->len];
+				msg_buffer->data = new char[msg_buffer->len];
 				memcpy(msg_buffer->data, buf, msg_buffer->len);
 
 //#ifdef _DEBUG
@@ -249,7 +249,7 @@ bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 	msg = new lora_msg;
 
 	msg->len = msg_str.length();
-	msg->data = new uint8_t[msg->len];
+	msg->data = new char[msg->len];
 	msg->to = toDeviceId;
 
 	memcpy(msg->data, msg_str.c_str(), msg->len);

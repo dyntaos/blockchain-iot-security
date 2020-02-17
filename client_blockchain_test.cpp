@@ -102,15 +102,15 @@ int main(int argc, char *argv[]) {
 
 #ifdef LORA_GATEWAY
 	if (gatewayFlag) {
-		lora_msg_t msg;
+		lora_msg_t *msg;
 		string msgStr;
 
 		for (;;) {
 			msg = trx->readMessage();
 			msgStr = string(msg->data, msg->len);
-			cout << "Receive[" << msg.length() << "]: " << msg << endl << endl;
+			cout << "Receive[" << unsigned(msg->len) << "]: " << msg << endl << endl;
 
-			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + msg))) {
+			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + string(msg->data, msg->len)), 5)) {
 				cout << "Sent reply to LoRa node" << endl;
 			} else {
 				cout << "Error sending reply to LoRa node..." << endl;

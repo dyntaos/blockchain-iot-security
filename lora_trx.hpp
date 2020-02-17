@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <bcm2835.h>
 
-#define RH_FRAGMENT_FIELD
 #include <RH_RF95.h>
 
 #define BOARD_DRAGINO_PIHAT
@@ -34,7 +33,7 @@ typedef struct lora_msg_t {
 	rh_flags_t    flags;
 	int8_t        rssi;
 	uint8_t       len;
-	uint8_t       *data;
+	char          *data;
 } lora_msg;
 
 
