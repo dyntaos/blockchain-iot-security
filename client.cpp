@@ -69,7 +69,7 @@ void senderThread(LoraTrx &trx) {
 		r = rand() % 255;
 		strncpy(output, d, r);
 		cout << "Send[" << r << "]: " << output << endl;
-		trx.sendMessage(output);
+		trx.sendMessage(output, 5);
 	}
 }
 

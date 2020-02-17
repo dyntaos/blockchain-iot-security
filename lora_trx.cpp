@@ -211,9 +211,9 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 
 
-lora_msg_t LoraTrx::readMessage(void) {
+lora_msg_t *LoraTrx::readMessage(void) {
 	//string result;
-	lora_msg *msg;
+	lora_msg_t *msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
 
 start:

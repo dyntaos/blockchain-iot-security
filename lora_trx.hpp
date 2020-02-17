@@ -70,7 +70,7 @@ class LoraTrx {
 
 		LoraTrx(uint32_t gatewayDeviceId);
 
-		lora_msg_t readMessage(void);
+		lora_msg_t *readMessage(void);
 		bool sendMessage(std::string msg_str, uint32_t toDeviceId);
 		void server_init(void);
 		void close_server(void);
