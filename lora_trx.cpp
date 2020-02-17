@@ -74,7 +74,7 @@ bool LoraTrx::setup(void) {
 		// We're ready to listen for incoming message
 		rf95.setModeRx();
 
-		cout << " OK NodeID=" << RF_NODE_ID << " @ " << RF_FREQUENCY << "MHz" << endl;
+		cout << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
 		hardwareInitialized = true;
 		return true;
 	}
