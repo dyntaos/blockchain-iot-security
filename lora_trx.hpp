@@ -61,7 +61,7 @@ class LoraTrx {
 		void server_init(void);
 		void close_server(void);
 
-		void processPacket()
+		void processPacket(struct packet *p);
 };
 
 

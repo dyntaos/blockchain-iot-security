@@ -43,7 +43,6 @@ struct packet {
 		struct packet_data             data;
 		struct packet_data_sequential  data_sequential;
 		struct packet_update_key       update_key;
-		struct packet_get_my_device_id get_my_device_id;
 	} payload;
 };
 

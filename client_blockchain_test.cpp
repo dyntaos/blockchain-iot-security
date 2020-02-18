@@ -107,10 +107,10 @@ int main(int argc, char *argv[]) {
 
 		for (;;) {
 			msg = trx->readMessage();
-			msgStr = string(msg->payload.bytes, msg->len);
+			msgStr = string((char*) msg->payload.bytes, msg->len);
 			cout << "Receive[" << unsigned(msg->len) << "]: " << msg << endl;
 
-			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + string(msg->payload.bytes, msg->len)), msg->from)) {
+			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + string((char*) msg->payload.bytes, msg->len)), msg->from)) {
 				cout << "Sent reply to LoRa node" << endl << endl;
 			} else {
 				cout << "Error sending reply to LoRa node..." << endl << endl;
