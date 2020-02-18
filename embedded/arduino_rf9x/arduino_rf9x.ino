@@ -124,8 +124,8 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 int8_t flags = 255;
 uint8_t fragment = 0;
 unsigned long sendtime, delta;
-
-
+uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+uint8_t len;
 
 void loop() {
   Serial.println("\nTransmitting...");
@@ -137,22 +137,19 @@ void loop() {
   Serial.println("\"");
   radiopacket[24] = 0;
 
-  rf95.setHeaderFlags(flags--);
-  rf95.setHeaderFragment(fragment++);
+  rf95.setHeaderFlags(flags);
+  rf95.setHeaderFragment(fragment);
 
-  Serial.println("Sending...");
+  flags--;
+  fragment++;
   
   sendtime = millis();
   rf95.send((uint8_t *) radiopacket, sizeof(radiopacket));
 
-  Serial.println("Waiting for packet to complete...");
-  delay(10);
   rf95.waitPacketSent();
 
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
+  len = sizeof(buf);
 
-  Serial.println("Waiting for reply...");
   if (rf95.waitAvailableTimeout(2000)) {
 
     if (rf95.recv(buf, &len)) {
@@ -168,8 +165,15 @@ void loop() {
       Serial.println("Receive failed");
     }
   } else {
-    Serial.println("No reply, is there a listener around?");
+    Serial.println("\nNo reply, is there a listener around?");
   }
+  Serial.print("   Good received packet count: ");
+  Serial.println(rf95.rxGood());
+  Serial.print("    Bad received packet count: ");
+  Serial.println(rf95.rxBad());
+  Serial.print("Good transmitted packet count: ");
+  Serial.println(rf95.txGood());
+  
   rf95.sleep();
-  delay(6000);
+  delay(12000);
 }
