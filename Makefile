@@ -100,6 +100,9 @@ $(OBJ)/blockchainsec.o: blockchainsec.cpp
 $(OBJ)/subscription_server.o: subscription_server.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
+$(OBJ)/console.o: console.cpp
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
+
 $(OBJ)/ethabi.o: ethabi.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
@@ -121,7 +124,7 @@ $(OBJ)/misc.o: misc.cpp
 $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(LORA_OBJ) $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
+$(LIB)/libblockchainsec.a: $(LORA_OBJ) $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/console.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
 	ar rcs $@ $(LORA_OBJ) $^
 
 

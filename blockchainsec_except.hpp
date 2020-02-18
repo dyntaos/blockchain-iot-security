@@ -50,6 +50,12 @@ class ResourceRequestFailedException : public BlockchainSecLibException {
 		ResourceRequestFailedException (const std::string& msg) : BlockchainSecLibException(msg) {}
 };
 
+class ThreadExistsException : public BlockchainSecLibException {
+	public:
+		ThreadExistsException (const char* msg) : BlockchainSecLibException(msg) {}
+		ThreadExistsException (const std::string& msg) : BlockchainSecLibException(msg) {}
+};
+
 
 
 class CryptographicException : public BlockchainSecLibException {

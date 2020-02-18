@@ -88,14 +88,14 @@ void LoraTrx::server_init(void) {
 	halt_server = false;
 
 	server_thread = new thread(
-			this->server,
-			std::ref(rx_queue),
-			std::ref(tx_queue),
-			std::ref(rx_queue_mutex),
-			std::ref(tx_queue_mutex),
-			std::ref(rx_queue_condvar),
-			std::ref(halt_server),
-			std::ref(*this)
+		this->server,
+		std::ref(rx_queue),
+		std::ref(tx_queue),
+		std::ref(rx_queue_mutex),
+		std::ref(tx_queue_mutex),
+		std::ref(rx_queue_condvar),
+		std::ref(halt_server),
+		std::ref(*this)
 	);
 }
 

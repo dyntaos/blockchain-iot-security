@@ -8,6 +8,7 @@
 #include <cxxopts.hpp>
 
 #include <blockchainsec.hpp>
+#include <console.hpp>
 #include <client.hpp>
 
 #ifdef LORA_GATEWAY
@@ -20,8 +21,7 @@ using namespace blockchainSec;
 //TODO: Globals are bad
 bool compileFlag = false;
 bool gatewayFlag = false;
-
-BlockchainSecLib *sec;
+bool consoleFlag = false;
 
 
 
@@ -36,9 +36,27 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 		options
 			.allow_unrecognised_options()
 			.add_options()
-			("h,help", "Display help", cxxopts::value<bool>(helpFlag))
-			("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compileFlag))
-			("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gatewayFlag));
+			(
+				"h,help",
+				"Display help",
+				cxxopts::value<bool>(helpFlag)
+			)
+			(
+				"C,compile",
+				"Compile & upload the solidity contract to the blockchain, and save the "
+				"contract address, overwriting the old address in the config file",
+				cxxopts::value<bool>(compileFlag)
+			)
+			(
+				"g,gateway",
+				"Start this client in gateway mode. TODO MORE",
+				cxxopts::value<bool>(gatewayFlag)
+			)
+			(
+				"c,console",
+				"Start this client in with the console enabled.",
+				cxxopts::value<bool>(consoleFlag)
+			);
 
 		auto result = options.parse(argc, argv);
 
@@ -65,6 +83,8 @@ void printVector(vector<uint32_t> v) {
 
 
 int main(int argc, char *argv[]) {
+	BlockchainSecLib *sec;
+	BlockchainSecConsole *blockchainSecConsole;
 
 #ifdef LORA_GATEWAY
 	LoraTrx *trx;
@@ -81,6 +101,7 @@ int main(int argc, char *argv[]) {
 		cout << "Compiling smart contract..." << endl;
 	}
 
+
 	if (gatewayFlag) {
 #ifdef LORA_GATEWAY
 		cout << "Started in gateway mode..." << endl;
@@ -92,13 +113,22 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
+
 #ifndef LORA_GATEWAY
 	sec = new BlockchainSecLib(compileFlag);
 #endif
 
+/*
 #ifdef _DEBUG
 	sec->test();
 #endif //_DEBUG
+*/
+
+	if (consoleFlag) {
+		cout << "Console enabled..." << endl;
+		blockchainSecConsole = new BlockchainSecConsole();
+		blockchainSecConsole->startThread(*sec);
+	}
 
 #ifdef LORA_GATEWAY
 	if (gatewayFlag) {
@@ -124,6 +154,7 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_SUCCESS);
 	}
 #endif //LORA_GATEWAY
+
 
 #ifndef LORA_GATEWAY
 
