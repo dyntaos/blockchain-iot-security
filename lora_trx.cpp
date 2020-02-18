@@ -186,6 +186,10 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
 					<< "\tMessage Hex: " << printbuffer << endl
 					<< "\tMessage ASCII: " << string((char*) msg_buffer->data, msg_buffer->len)
+					<< endl << endl
+					<< "\t   Good received packet count: " << unsigned(rf95.rxGood())
+					<< "\t    Bad received packet count: " << unsigned(rf95.rxBad())
+					<< "\tGood transmitted packet count: " << unsigned(rf95.txGood())
 					<< endl << endl;
 //#endif // _DEBUG
 
