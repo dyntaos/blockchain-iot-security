@@ -11,6 +11,7 @@
 #include <bcm2835.h>
 
 #include <RH_RF95.h>
+#include <packet.hpp>
 
 #define BOARD_DRAGINO_PIHAT
 
@@ -24,25 +25,11 @@ namespace blockchainSec {
 
 
 
-
-typedef struct lora_msg_t {
-	rh_address_t  from;
-	rh_address_t  to;
-	rh_id_t       id;
-	rh_fragment_t fragment;
-	rh_flags_t    flags;
-	int8_t        rssi;
-	uint8_t       len;
-	char          *data;
-} lora_msg;
-
-
-
 class LoraTrx {
 
 	private:
 
-		std::queue<lora_msg*> rx_queue, tx_queue;
+		std::queue<struct packet*> rx_queue, tx_queue;
 		std::mutex rx_queue_mutex, tx_queue_mutex;
 		std::mutex rx_ulock_mutex;
 		std::condition_variable rx_queue_condvar;
@@ -52,8 +39,8 @@ class LoraTrx {
 		uint32_t gatewayDeviceId;
 
 		static void server(
-				std::queue<lora_msg*> &rx_queue,
-				std::queue<lora_msg*> &tx_queue,
+				std::queue<struct packet*> &rx_queue,
+				std::queue<struct packet*> &tx_queue,
 				std::mutex &rx_queue_mutex,
 				std::mutex &tx_queue_mutex,
 				std::condition_variable &rx_queue_condvar,
@@ -69,11 +56,12 @@ class LoraTrx {
 
 		LoraTrx(uint32_t gatewayDeviceId);
 
-		lora_msg_t *readMessage(void);
+		struct packet *readMessage(void);
 		bool sendMessage(std::string msg_str, uint32_t toDeviceId);
 		void server_init(void);
 		void close_server(void);
 
+		void processPacket()
 };
 
 

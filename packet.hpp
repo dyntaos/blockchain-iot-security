@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <sodium.h>
+#include <RH_RF95.h>
 
 #define PACKET_TYPE_ACK					0
 #define PACKET_TYPE_DATA_ONLY			1
@@ -19,29 +20,38 @@ struct packet_data;
 struct packet_data_sequential;
 struct packet_update_key;
 struct packet_get_receiver_key;
-//struct packet_get_my_device_id;
+struct packet_get_my_device_id;
 
-struct packet_header {
+struct packet {
 	uint8_t       id;
 	uint32_t      to;
 	uint32_t      from;
 	uint8_t       flags;
+	uint8_t       rssi;
 	uint8_t       len;
-	unsigned char signature[crypto_sign_BYTES]; // 64 Bytes
+	union {
+		uint8_t                        bytes[RH_RF95_MAX_MESSAGE_LEN]; // 244 Bytes
+		struct packet_data             data;
+		struct packet_data_sequential  data_sequential;
+		struct packet_update_key       update_key;
+		struct packet_get_my_device_id get_my_device_id;
+	} payload;
 };
+
 
 
 struct packet_data {
+	unsigned char signature[crypto_sign_BYTES]; // 64 Bytes
 	unsigned char crypto_nonce[crypto_stream_xchacha20_NONCEBYTES]; // 24 Bytes
-	uint8_t *data;
+	uint8_t       data[RH_RF95_MAX_MESSAGE_LEN - crypto_stream_xchacha20_NONCEBYTES]; // 255 - 11 - 64 - 24 = 156 Bytes
 };
 
 struct packet_data_sequential {
-	uint8_t *data;
+	uint8_t       data[RH_RF95_MAX_MESSAGE_LEN]; // 244 Bytes
 };
 
 struct packet_update_key {
-
+	uint8_t       data[RH_RF95_MAX_MESSAGE_LEN]; // TODO
 };
 
 

@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <string>
 
@@ -109,9 +108,9 @@ void LoraTrx::close_server(void) {
 
 
 
-void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
+void LoraTrx::server(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
-	lora_msg *msg_buffer = NULL, *tx_buffer = NULL;
+	struct packet *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
 	if (!trx.hardwareInitialized) {
@@ -124,7 +123,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 	while (!halt_server) {
 
 		if (msg_buffer == NULL) {
-			msg_buffer = new lora_msg;
+			msg_buffer = new struct packet;
 		}
 
 		tx_queue_mutex.lock();
@@ -140,14 +139,13 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 			rf95.setHeaderTo(tx_buffer->to);
 
-			if (!rf95.send((uint8_t*) tx_buffer->data, tx_buffer->len)) {
+			if (!rf95.send((uint8_t*) &tx_buffer->.payload.bytes, tx_buffer->len)) {
 				cerr << "Error transmitting packet..." << endl;
 				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 			} else {
 				rf95.waitPacketSent();
 			}
 
-			delete tx_buffer->data;
 			delete tx_buffer;
 			tx_buffer = NULL;
 		} else tx_queue_mutex.unlock();
@@ -171,8 +169,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 			if (rf95.recv(buf, &msg_buffer->len)) {
 
-				msg_buffer->data = new char[msg_buffer->len];
-				memcpy(msg_buffer->data, buf, msg_buffer->len);
+				memcpy(msg_buffer->payload.bytes, buf, msg_buffer->len);
 
 //#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
@@ -185,7 +182,7 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
 					<< "\tMessage Hex: " << printbuffer << endl
-					<< "\tMessage ASCII: " << string((char*) msg_buffer->data, msg_buffer->len)
+					<< "\tMessage ASCII: " << string((char*) msg_buffer->payload.bytes, msg_buffer->len)
 					<< endl << endl
 					<< "\t   Good received packet count: " << unsigned(rf95.rxGood()) << endl
 					<< "\t    Bad received packet count: " << unsigned(rf95.rxBad()) << endl
@@ -216,9 +213,8 @@ void LoraTrx::server(queue<lora_msg*> &rx_queue, queue<lora_msg*> &tx_queue, mut
 
 
 
-lora_msg_t *LoraTrx::readMessage(void) {
-	//string result;
-	lora_msg_t *msg;
+struct packet *LoraTrx::readMessage(void) {
+	struct packet *msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
 
 start:
@@ -235,29 +231,25 @@ start:
 
 	rx_queue_mutex.unlock();
 
-	//result = string((char*) msg->data, msg->len);
-	//delete msg->data;
-	//delete msg;
-	//return result;
 	return msg;
 }
 
 
 
 bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
-	lora_msg *msg;
+	struct packet *msg;
 
 	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) {
 		return false;
 	}
 
-	msg = new lora_msg;
+	msg = new struct packet;
 
 	msg->len = msg_str.length();
 	msg->data = new char[msg->len];
 	msg->to = toDeviceId;
 
-	memcpy(msg->data, msg_str.c_str(), msg->len);
+	memcpy(msg->payload.bytes, msg_str.c_str(), msg->len);
 
 	tx_queue_mutex.lock();
 	tx_queue.push(msg);

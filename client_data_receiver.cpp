@@ -10,9 +10,6 @@
 #include <blockchainsec.hpp>
 #include <client.hpp>
 
-#ifdef LORA_GATEWAY
-#include <lora_trx.hpp>
-#endif
 
 using namespace std;
 using namespace blockchainSec;
@@ -54,26 +51,6 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 }
-
-
-
-#ifdef LORA_GATEWAY
-
-void senderThread(LoraTrx &trx) {
-	int r;
-	char output[256];
-	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
-
-	for (;;) {
-		sleep((rand() % 9) + 1);
-		r = rand() % 255;
-		strncpy(output, d, r);
-		cout << "Send[" << r << "]: " << output << endl;
-		trx.sendMessage(output, 5);
-	}
-}
-
-#endif //LORA_GATEWAY
 
 
 
