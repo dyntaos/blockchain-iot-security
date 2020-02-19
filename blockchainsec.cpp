@@ -566,7 +566,7 @@ uint32_t BlockchainSecLib::add_device(string const& deviceAddress, string const&
 						"' -p " + (gatewayManaged ? "true" : "false");
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog)) {
-		return stoi((*eventLog.get())["device_id"]); // TODO: What id [device_id] doesn't exist? try catch
+		return stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
 	} else {
 		return 0;
 	}
@@ -591,7 +591,7 @@ uint32_t BlockchainSecLib::add_gateway(string const& gatewayAddress, string cons
 						"' -p '" + escapeSingleQuotes(mac) + "'";
 
 	if (callMutatorContract("add_gateway", ethabiEncodeArgs, eventLog)) {
-		return stoi((*eventLog.get())["device_id"]); // TODO: What id [device_id] doesn't exist? try catch
+		return stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
 	} else {
 		return 0;
 	}
