@@ -199,9 +199,10 @@ bool BlockchainSecLib::loadDataReceiverPublicKey(uint32_t deviceID) {
 			return false;
 		}
 		dataReceiverPublicKey = get_key(dataReceiver);
-	} catch (runtime_error &e) {
+	} catch (BlockchainSecLibException &e) {
 		return false;
 	}
+	if (boost::trim_copy(dataReceiverPublicKey) == "") return false;
 
 	byteVector = hexToBytes(dataReceiverPublicKey);
 	memcpy(dataReceiver_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
