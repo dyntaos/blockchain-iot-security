@@ -22,6 +22,8 @@ class BlockchainSecConsole {
 			BlockchainSecConsole & self
 		);
 
+		void processCommand(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
+
 	public:
 		BlockchainSecConsole() {};
 
