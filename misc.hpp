@@ -17,6 +17,7 @@ bool isEthereumAddress(std::string const& str);
 std::string escapeSingleQuotes(std::string const& str);
 std::vector<char> hexToBytes(std::string const& hex);
 std::string hexStr(unsigned char *data, uint16_t len);
+bool isInt(std::string & s);
 
 }
 

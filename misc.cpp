@@ -3,7 +3,9 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <cstdint>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <misc.hpp>
 
@@ -75,6 +77,16 @@ string hexStr(unsigned char *data, uint16_t len) {
 	return ss.str();
 }
 
+
+
+bool isInt(string & s) {
+	try {
+		boost::lexical_cast<uint64_t>(s);
+	} catch (...) {
+		return false;
+	}
+	return true;
+}
 
 
 }

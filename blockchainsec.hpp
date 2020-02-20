@@ -33,7 +33,7 @@ namespace blockchainSec {
 
 class BlockchainSecLib {
 	public:
-		enum AddrType_e {UNSET, IPV4, IPV6, LORA, ZIGBEE, BLUETOOTH, OTHER};
+		enum AddrType_e {UNSET, IPV4, IPV6, LORA, OTHER};
 		typedef AddrType_e AddrType;
 
 		BlockchainSecLib(bool compile);
@@ -52,7 +52,7 @@ class BlockchainSecLib {
 		bool is_gateway(uint32_t deviceID);
 		uint32_t get_my_device_id(void);
 		uint32_t get_datareceiver(uint32_t deviceID);
-		uint32_t get_default_datareceiver();
+		uint32_t get_default_datareceiver(void);
 		std::string get_key(uint32_t deviceID);
 		AddrType get_addrtype(uint32_t deviceID);
 		std::string get_addr(uint32_t deviceID);
@@ -80,7 +80,7 @@ class BlockchainSecLib {
 		bool authorize_admin(std::string const& adminAddr);
 		bool deauthorize_admin(std::string const& adminAddr);
 
-		bool updateLocalKeys(void);
+		bool updateLocalKeys(void); // TODO: CLI Command?
 		void loadLocalDeviceParameters(void);
 		bool loadDataReceiverPublicKey(uint32_t deviceID);
 		bool encryptAndPushData(std::string const& data);
