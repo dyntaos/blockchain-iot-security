@@ -55,6 +55,7 @@ BlockchainSecConsole::BlockchainSecConsole(void) {
 		("encrypt_and_push_data",     cmd_encrypt_and_push_data)
 		("get_data_and_decrypt",      cmd_get_data_and_decrypt)
 		("get_received_devices",      cmd_get_received_devices)
+		("help",                      cmd_help)
 	;
 }
 
@@ -922,6 +923,46 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 	}
 }
 
+
+
+void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
+	cout
+		<< "Commands:\n"
+		"\tis_admin\n"
+		"\tis_authd\n"
+		"\tis_device\n"
+		"\tis_gateway\n"
+		"\tget_my_device_id\n"
+		"\tget_data_receiver\n"
+		"\tget_default_data_receiver\n"
+		"\tget_key\n"
+		"\tget_addr_type\n"
+		"\tget_addr\n"
+		"\tget_name\n"
+		"\tget_mac\n"
+		"\tget_data\n"
+		"\tget_data_timestamp\n"
+		"\tget_creation_timestamp\n"
+		"\tget_num_admin\n"
+		"\tget_num_devices\n"
+		"\tget_num_gateways\n"
+		"\tget_active_admins\n"
+		"\tget_authorized_devices\n"
+		"\tget_authorized_gateways\n"
+		"\tadd_device\n"
+		"\tadd_gateway\n"
+		"\tremove_device\n"
+		"\tremove_gateway\n"
+		"\tupdate_data_receiver\n"
+		"\tset_default_data_receiver\n"
+		"\tupdate_addr\n"
+		"\tauthorize_admin\n"
+		"\tdeauthorize_admin\n"
+		"\tencrypt_and_push_data\n"
+		"\tget_data_and_decrypt\n"
+		"\tget_received_devices\n"
+		<< endl;
+}
 
 
 }
