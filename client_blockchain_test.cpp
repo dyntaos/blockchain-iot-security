@@ -113,10 +113,9 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
-
-#ifndef LORA_GATEWAY
-	sec = new BlockchainSecLib(compileFlag);
-#endif
+	if (consoleFlag) {
+		sec = new BlockchainSecLib(compileFlag);
+	}
 
 /*
 #ifdef _DEBUG
