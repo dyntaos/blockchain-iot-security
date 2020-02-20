@@ -506,7 +506,7 @@ void BlockchainSecConsole::cmd_get_num_admin(vector<string> & cmds, BlockchainSe
 		cout << blockchainSec.get_num_admin() << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
-			<< "Unable to retreive default data receiver"
+			<< "Unable to retreive number of authorized administrators"
 			<< endl;
 	}
 }
@@ -522,7 +522,7 @@ void BlockchainSecConsole::cmd_get_num_devices(vector<string> & cmds, Blockchain
 		cout << blockchainSec.get_num_devices() << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
-			<< "Unable to retreive default data receiver"
+			<< "Unable to retreive number of authorized devices"
 			<< endl;
 	}
 }
@@ -538,7 +538,7 @@ void BlockchainSecConsole::cmd_get_num_gateways(vector<string> & cmds, Blockchai
 		cout << blockchainSec.get_num_gateways() << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
-			<< "Unable to retreive default data receiver"
+			<< "Unable to retreive number of authorized gateways"
 			<< endl;
 	}
 }
@@ -557,11 +557,11 @@ void BlockchainSecConsole::cmd_get_active_admins(vector<string> & cmds, Blockcha
 		for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 			if (!first) {
 				cout << ", ";
-				first = false;
 			}
+			first = false;
 			cout << unsigned(*it);
 		}
-		cout << "]";
+		cout << "]" << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
@@ -583,11 +583,11 @@ void BlockchainSecConsole::cmd_get_authorized_devices(vector<string> & cmds, Blo
 		for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 			if (!first) {
 				cout << ", ";
-				first = false;
 			}
+			first = false;
 			cout << unsigned(*it);
 		}
-		cout << "]";
+		cout << "]" << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
@@ -609,11 +609,11 @@ void BlockchainSecConsole::cmd_get_authorized_gateways(vector<string> & cmds, Bl
 		for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 			if (!first) {
 				cout << ", ";
-				first = false;
 			}
+			first = false;
 			cout << unsigned(*it);
 		}
-		cout << "]";
+		cout << "]" << endl;
 	} catch (ResourceRequestFailedException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
@@ -911,8 +911,8 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 		for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
 			if (!first) {
 				cout << ", ";
-				first = false;
 			}
+			first = false;
 			cout << unsigned(*it);
 		}
 		cout << "]";
