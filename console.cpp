@@ -926,6 +926,8 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 
 
 void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
+	(void) cmds;
+	(void) blockchainSec;
 	cout
 		<< "Commands:\n"
 		"\tis_admin\n"
