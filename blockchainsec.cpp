@@ -519,8 +519,8 @@ uint32_t BlockchainSecLib::get_num_gateways(void) {
 
 
 // Throws ResourceRequestFailedException from ethabi()
-vector<uint32_t> BlockchainSecLib::get_active_admins(void) {
-	return ethabi_decode_uint32_array(
+vector<string> BlockchainSecLib::get_active_admins(void) {
+	return ethabi_decode_results(
 		ETH_CONTRACT_ABI,
 		"get_active_admins",
 		getArrayFromContract("get_active_admins")

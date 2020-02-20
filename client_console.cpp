@@ -75,11 +75,12 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 
 
 
-void printVector(vector<uint32_t> v) {
+void printIntVector(vector<uint32_t> v) {
 	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
-		cout << "\t" << *it << endl;
+		cout << "\t" << unsigned(*it) << endl;
 	}
 }
+
 
 
 int main(int argc, char *argv[]) {

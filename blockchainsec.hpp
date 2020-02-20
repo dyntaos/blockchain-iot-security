@@ -64,7 +64,7 @@ class BlockchainSecLib {
 		uint32_t get_num_admin(void);
 		uint32_t get_num_devices(void);
 		uint32_t get_num_gateways(void);
-		std::vector<uint32_t> get_active_admins(void);
+		std::vector<std::string> get_active_admins(void);
 		std::vector<uint32_t> get_authorized_devices(void);
 		std::vector<uint32_t> get_authorized_gateways(void);
 

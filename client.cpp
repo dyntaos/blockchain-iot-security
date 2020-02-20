@@ -77,7 +77,7 @@ void senderThread(LoraTrx &trx) {
 
 
 
-void printVector(vector<string> v) {
+void printStrVector(vector<string> v) {
 	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
 		cout << "\t" << *it << endl;
 	}

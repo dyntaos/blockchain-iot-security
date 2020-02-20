@@ -75,11 +75,20 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 
 
 
-void printVector(vector<uint32_t> v) {
+void printIntVector(vector<uint32_t> v) {
 	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
+		cout << "\t" << unsigned(*it) << endl;
+	}
+}
+
+
+
+void printStrVector(vector<string> v) {
+	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
 		cout << "\t" << *it << endl;
 	}
 }
+
 
 
 int main(int argc, char *argv[]) {
@@ -113,9 +122,10 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
-	if (consoleFlag) {
-		sec = new BlockchainSecLib(compileFlag);
-	}
+
+#ifndef LORA_GATEWAY
+	sec = new BlockchainSecLib(compileFlag);
+#endif
 
 /*
 #ifdef _DEBUG
@@ -213,7 +223,7 @@ int main(int argc, char *argv[]) {
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
 
 	cout << "get admins..."<< endl;
-	printVector(sec->get_active_admins());
+	printStrVector(sec->get_active_admins());
 
 	cout << endl << "authorize_admin(deadcafebabe51b3bbf842da92bae9359e23fa3b)" << endl << endl;
 	sec->authorize_admin("deadcafebabe51b3bbf842da92bae9359e23fa3b");
@@ -221,10 +231,10 @@ int main(int argc, char *argv[]) {
 	cout << "get_num_admin() = " << sec->get_num_admin() << endl << endl;
 
 	cout << "get admins..."<< endl;
-	printVector(sec->get_active_admins());
+	printStrVector(sec->get_active_admins());
 
 	cout << endl << "get authorized devices..."<< endl;
-	printVector(sec->get_authorized_devices());
+	printIntVector(sec->get_authorized_devices());
 
 	cout << "remove_device(1)..." << endl;
 	if (sec->remove_device(1)) {
@@ -234,7 +244,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	cout << "get authorized devices..."<< endl;
-	printVector(sec->get_authorized_devices());
+	printIntVector(sec->get_authorized_devices());
 
 
 	cout << endl << "Adding this address as a device..." << endl;
