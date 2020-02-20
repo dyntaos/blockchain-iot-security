@@ -144,7 +144,14 @@ void BlockchainSecLib::loadLocalDeviceParameters(void) {
 
 	if (localDeviceID != 0) {
 		// This client has a device ID -- verify it has proper keys
-		string publicKey = boost::trim_copy(get_key(localDeviceID)); // TODO: What makes a valid public key?
+		string publicKey;
+
+		try {
+			publicKey = boost::trim_copy(get_key(localDeviceID)); // TODO: What makes a valid public key?
+		} catch (...) { // TODO
+			cerr << "This device does not have a public key on the blockchain..." << endl;
+			return;
+		}
 
 		if (cfgRoot->exists("privateKey") && publicKey == "") {
 			cerr << "Client has private key, but no public key exists on the blockchain for device ID " << localDeviceID << endl;
