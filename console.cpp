@@ -799,9 +799,28 @@ void BlockchainSecConsole::cmd_update_addr(vector<string> & cmds, BlockchainSecL
 		cerr << "\"" << cmds[1] << "\" is not a valid device ID" << endl << endl;
 		return;
 	}
+	BlockchainSecLib::AddrType addrType;
+	if (boost::algorithm::to_lower_copy(cmds[2]) == "unset") {
+		addrType = BlockchainSecLib::UNSET;
+	} else if (boost::algorithm::to_lower_copy(cmds[2]) == "ipv4") {
+		addrType = BlockchainSecLib::IPV4;
+	} else if (boost::algorithm::to_lower_copy(cmds[2]) == "ipv6") {
+		addrType = BlockchainSecLib::IPV6;
+	} else if (boost::algorithm::to_lower_copy(cmds[2]) == "lora") {
+		addrType = BlockchainSecLib::LORA;
+	} else if (boost::algorithm::to_lower_copy(cmds[2]) == "other") {
+		addrType = BlockchainSecLib::OTHER;
+	} else {
+		cerr
+			<< "addrType must be \"UNSET\", \"IPV4\", \"IPV6\", \"LORA\",  or \"OTHER\""
+			<< endl << endl;
+		return;
+	}
 	try {
-		if (blockchainSec.set_default_datareceiver(
-				strtoul(cmds[1].c_str(), nullptr, 10)
+		if (blockchainSec.update_addr(
+				strtoul(cmds[1].c_str(), nullptr, 10),
+				addrType,
+				cmds[3]
 			)
 		) {
 			cout << "TRUE" << endl << endl;
