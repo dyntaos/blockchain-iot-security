@@ -34,12 +34,12 @@ class LoraTrx {
 		std::mutex rx_queue_mutex, tx_queue_mutex;
 		std::mutex rx_ulock_mutex;
 		std::condition_variable rx_queue_condvar;
-		std::thread *server_thread;
+		std::thread *server_thread, *forwarder_thread;
 		bool halt_server = true;
 		bool hardwareInitialized = false;
 		uint32_t gatewayDeviceId;
 
-		static void server(
+		static void serverThread(
 				std::queue<struct packet*> &rx_queue,
 				std::queue<struct packet*> &tx_queue,
 				std::mutex &rx_queue_mutex,
@@ -49,8 +49,14 @@ class LoraTrx {
 				LoraTrx &trx
 		);
 
+		static void forwarderThread(
+			bool &halt_server,
+			LoraTrx &trx
+		);
+
 		bool setup(void);
 
+		struct packet *readMessage(void);
 		void processPacket(struct packet *p);
 		bool verifySignature(struct packet *p)
 
@@ -59,7 +65,6 @@ class LoraTrx {
 
 		LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec);
 
-		struct packet *readMessage(void);
 		bool sendMessage(std::string msg_str, uint32_t toDeviceId);
 		void server_init(void);
 		void close_server(void);

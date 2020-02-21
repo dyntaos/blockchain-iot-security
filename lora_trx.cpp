@@ -18,8 +18,21 @@ RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 
 LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
+	if (blockchainSec == NULL) {
+		throw InvalidArgumentException(
+			"blockchainSec argument to LoraTrx"
+			" constructor is a null pointer"
+		);
+	}
 	this->gatewayDeviceId = gatewayDeviceId;
 	this->blockchainSec = blockchainSec;
+
+	if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id())) {
+		cerr
+			<< "WARNING: This device was started as a LoRa gateway"
+			<< " but is not registered as a gateway on Ethereum!"
+			<< endl;
+	}
 }
 
 
@@ -89,7 +102,7 @@ void LoraTrx::server_init(void) {
 	halt_server = false;
 
 	server_thread = new thread(
-		this->server,
+		this->serverThread,
 		std::ref(rx_queue),
 		std::ref(tx_queue),
 		std::ref(rx_queue_mutex),
@@ -98,18 +111,27 @@ void LoraTrx::server_init(void) {
 		std::ref(halt_server),
 		std::ref(*this)
 	);
+
+	forwarder_thread = new thread(
+		this->forwarderThread,
+		std::ref(halt_server),
+		std::ref(*this)
+	);
 }
 
 
 
 void LoraTrx::close_server(void) {
-	server_thread->join();
 	halt_server = true;
+	rx_queue_condvar.notify_all();
+
+	if (server_thread != NULL) server_thread->join();
+	if (forwarder_thread != NULL) forwarder_thread->join();
 }
 
 
 
-void LoraTrx::server(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
+void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
 	string msg;
 	struct packet *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
@@ -213,6 +235,24 @@ void LoraTrx::server(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_
 
 
 
+void LoraTrx::forwarderThread(bool &halt_server, LoraTrx &trx) {
+	struct packet *p;
+
+// #ifdef _DEBUG // TODO: Uncomment
+	cout
+		<< "LoRa forwarder thread initialized"
+		<< endl;
+// #endif // _DEBUG
+
+	while (!halt_server) {
+		p = trx.readMessage();
+		trx.processPacket(p);
+		delete p;
+	}
+}
+
+
+
 struct packet *LoraTrx::readMessage(void) {
 	struct packet *msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
@@ -291,6 +331,54 @@ void LoraTrx::processPacket(struct packet *p) {
 				<< endl;
 #endif // _DEBUG
 
+			// Ensure this device is a gateway before even trying to push data
+			if (
+				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
+			) {
+				try {
+					blockchainSec->push_data(
+						p->from,
+						string(p->payload.data.data, p->len),
+						p->len,
+						p->payload.data.crypto_nonce
+					);
+				} catch (ResourceRequestFailedException & e) {
+					cerr
+						<< "Failed to encode transaction request when attempting"
+						" to forward LoRa packet data for device ID "
+						<< unsigned(p->from)
+						<< " to the blockchain"
+						<< endl;
+					return;
+				} catch (TransactionFailedException & e) {
+					cerr
+						<< "Failed to forward LoRa packet data to blockchain;"
+						<< endl
+						<< "\tIs this gateway authorized and is device ID "
+						<< unsigned(p->from)
+						<< " gateway managed?"
+						<< endl;
+					return;
+				} catch (BlockchainSecLibException & e) {
+					// Catch any exceptions not caught above
+					cerr
+						<< "Caught unknown exception when forwarding "
+						"LoRa packet data from device ID "
+						<< unsigned(p->from)
+						<< " to the blockchain"
+						<< endl;
+					return;
+				}
+//#ifdef _DEBUG  // TODO: Uncomment
+			cout
+				<< "Successfully forwarded LoRa packet data "
+				"from device ID "
+				<< unsigned(p->from)
+				<< " to the blockchain"
+				<< endl;
+//#endif // _DEBUG
+
+			}
 
 			break;
 
