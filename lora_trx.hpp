@@ -51,6 +51,8 @@ class LoraTrx {
 
 		bool setup(void);
 
+		void processPacket(struct packet *p);
+		bool verifySignature(struct packet *p)
 
 	public:
 	//	RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
@@ -62,7 +64,6 @@ class LoraTrx {
 		void server_init(void);
 		void close_server(void);
 
-		void processPacket(struct packet *p);
 };
 
 

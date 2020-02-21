@@ -259,7 +259,7 @@ bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 
 
 
-void processPacket(struct packet *p) {
+void LoraTrx::processPacket(struct packet *p) {
 	uint8_t maskedFlags;
 
 	if (p == NULL) {
@@ -269,35 +269,126 @@ void processPacket(struct packet *p) {
 	maskedFlags = p->flags & 0xF;
 	switch (maskedFlags) {
 		case PACKET_TYPE_ACK:
-
+			cerr
+				<< "Received currently unsupported message "
+				"type PACKET_TYPE_ACK"
+				<< endl;
 			break;
 
 		case PACKET_TYPE_DATA_FIRST:
+			if (!verifySignature(p)) {
+				cerr << "Packet from device ID "
+					<< unsigned(p->from)
+					<< " was discarded due to invalid signature"
+					<< endl;
+				return;
+			}
+#ifdef _DEBUG
+			cout
+				<< "Received LoRa PACKET_TYPE_DATA_FIRST packet "
+				"with valid signature from device ID "
+				<< unsigned(p->from)
+				<< endl;
+#endif // _DEBUG
+
 
 			break;
 
 		case PACKET_TYPE_DATA_INTERMEDIARY:
-			cerr << "Received currently unsupported message type" << endl;
+			cerr
+				<< "Received currently unsupported message "
+				"type PACKET_TYPE_DATA_INTERMEDIARY"
+				<< endl;
 			break;
 
 		case PACKET_TYPE_DATA_LAST:
-			cerr << "Received currently unsupported message type" << endl;
+			cerr
+				<< "Received currently unsupported message "
+				"type PACKET_TYPE_DATA_LAST"
+				<< endl;
 			break;
 
 		case PACKET_TYPE_GET_RECEIVER_KEY:
-
+			cerr
+				<< "Received currently unsupported message "
+				"type PACKET_TYPE_GET_RECEIVER_KEY"
+				<< endl;
 			break;
 
 		case PACKET_TYPE_UPDATE_KEY:
-
+			cerr
+				<< "Received currently unsupported message "
+				"type PACKET_TYPE_UPDATE_KEY"
+				<< endl;
 			break;
 
 		default:
-			cerr << "Unknown message LoRa message type!" << endl;
+			cerr
+				<< "Unknown message LoRa message type "
+				<< unsigned(maskedFlags)
+				<< endl;
 			return; // TODO: Can this stay as a return or can we just fall through?
 	}
 }
 
+
+
+bool LoraTrx::verifySignature(struct packet *p) {
+	string senderPubKey;
+	crypto_sign_state state;
+	uint8_t maskedFlags;
+
+	if (p == NULL) return false;
+
+	try {
+		senderPubKey = blockchainSec->get_key(p->from);
+	} catch (BlockchainSecLibException & e) {
+		return false;
+	}
+
+	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
+
+	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
+	crypto_sign_update(&state, &p->from, sizeof(p->from));
+	crypto_sign_update(&state, &p->id, sizeof(p->id));
+	crypto_sign_update(&state, &p->fragment, sizeof(p->fragment));
+	maskedFlags = p->flags & 0xF;
+	crypto_sign_update(&state, &maskedFlags, sizeof(maskedFlags));
+	crypto_sign_update(&state, &p->len, sizeof(p->len));
+
+	// TODO: When multi packet messages are supported, the
+	// signatures are for the stream of messages and this
+	// function needs to be modified accordingly.
+
+	if (maskedFlags == PACKET_TYPE_DATA_FIRST) {
+		crypto_sign_update(
+			&state,
+			&p->payload.data.crypto_nonce,
+			sizeof(p->payload.data.crypto_nonce)
+		);
+		crypto_sign_update(
+			&state,
+			&p->payload.data.data,
+			p->len
+		);
+	} else {
+		crypto_sign_update(
+			&state,
+			&p->payload.data.data,
+			p->len
+		);
+	}
+
+	if (crypto_sign_final_verify(
+			&state,
+			p->payload.data.signature,
+			senderPubKey.c_str()
+		) != 0
+	) {
+		return false;
+	}
+	return true;
+}
 
 
 }
