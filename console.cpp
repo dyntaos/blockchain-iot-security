@@ -904,7 +904,7 @@ void BlockchainSecConsole::cmd_get_data_and_decrypt(vector<string> & cmds, Block
 }
 
 
-
+// TODO Urgent: Implement in Solidity
 void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
 	if (cmds.size() != 2) {
 		cout << "Usage: get_received_devices dataReceiverID" << endl << endl;

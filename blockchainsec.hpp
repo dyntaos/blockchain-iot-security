@@ -83,6 +83,7 @@ class BlockchainSecLib {
 		bool updateLocalKeys(void); // TODO: CLI Command?
 		void loadLocalDeviceParameters(void);
 		bool loadDataReceiverPublicKey(uint32_t deviceID);
+
 		bool encryptAndPushData(std::string const& data);
 		std::string getDataAndDecrypt(uint32_t const deviceID);
 		std::vector<uint32_t> getReceivedDevices(uint32_t deviceID);

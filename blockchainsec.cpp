@@ -1029,8 +1029,8 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 
 
 bool BlockchainSecLib::encryptAndPushData(string const& data) {
-	const uint16_t cipherLen = data.length()  + crypto_secretbox_MACBYTES;
-	unsigned char nonce[crypto_secretbox_NONCEBYTES + 1];
+	const uint16_t cipherLen = data.length();
+	unsigned char nonce[crypto_secretbox_NONCEBYTES];
 	unsigned char *cipher{new unsigned char[cipherLen]{}};
 	string cipherStr, nonceStr;
 
@@ -1043,8 +1043,14 @@ bool BlockchainSecLib::encryptAndPushData(string const& data) {
 	}
 
 	randombytes_buf(nonce, crypto_secretbox_NONCEBYTES);
-	nonce[crypto_secretbox_NONCEBYTES] = 0;
-	crypto_secretbox_easy(cipher, (unsigned char*) data.c_str(), data.length(), nonce, txSharedKey);
+
+	crypto_stream_xchacha20_xor( // TODO: Check return value?
+		cipher,
+		(unsigned char*) data.c_str(),
+		data.length(),
+		nonce,
+		txSharedKey
+	);
 
 	cipherStr = string((char*) cipher, cipherLen);
 	nonceStr = string((char*) nonce, crypto_secretbox_NONCEBYTES);
@@ -1064,7 +1070,9 @@ string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
 	uint16_t msgLen;
 
 	if (get_my_device_id() != get_datareceiver(deviceID)) {
-		throw CryptographicKeyMissmatchException("Cannot decrypt the requested data with current keys");
+		throw CryptographicKeyMissmatchException(
+			"Cannot decrypt the requested data with current keys"
+		);
 	}
 
 	nodePublicKeyStr = get_key(deviceID);
@@ -1081,22 +1089,18 @@ string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
 	chainData = get_data(deviceID);
 	msgLen = stoi(chainData[1]);
 
-	unsigned char *message{new unsigned char[msgLen + 1]{}};
-	message[msgLen] = 0;
+	unsigned char *message{new unsigned char[msgLen]{}};
 
 	string cipherStr = base64_decode(chainData[0]);
 	string nonceStr = base64_decode(chainData[2]);
 
-	if (crypto_secretbox_open_easy(
-			message,
-			(unsigned char*) cipherStr.c_str(),
-			cipherStr.length(),
-			(unsigned char*) nonceStr.c_str(),
-			rxKey
-	) != 0) {
-		// Message was forged
-		throw CryptographicFailureException("Message forged");
-	}
+	crypto_stream_xchacha20_xor( // TODO: Check return value
+		message,
+		(unsigned char*) cipherStr.c_str(),
+		msgLen,
+		(unsigned char*) nonceStr.c_str(),
+		rxKey
+	);
 
 	string result = string((char*) message, msgLen);
 	delete[] message;
@@ -1109,7 +1113,7 @@ string BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID) {
 vector<uint32_t> BlockchainSecLib::getReceivedDevices(uint32_t deviceID) {
 	vector<uint32_t> authorized, result;
 
-	authorized = get_authorized_devices();
+	authorized = get_authorized_devices(); // TODO
 
 	for (vector<uint32_t>::iterator it = authorized.begin(); it != authorized.end(); ++it) {
 		if (get_datareceiver(*it) == deviceID) result.push_back(*it);
