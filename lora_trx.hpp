@@ -11,6 +11,7 @@
 #include <bcm2835.h>
 
 #include <RH_RF95.h>
+#include <blockchainsec.hpp>
 #include <packet.hpp>
 
 #define BOARD_DRAGINO_PIHAT
@@ -28,7 +29,7 @@ namespace blockchainSec {
 class LoraTrx {
 
 	private:
-
+		BlockchainSecLib *blockchainSec;
 		std::queue<struct packet*> rx_queue, tx_queue;
 		std::mutex rx_queue_mutex, tx_queue_mutex;
 		std::mutex rx_ulock_mutex;
@@ -54,7 +55,7 @@ class LoraTrx {
 	public:
 	//	RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
-		LoraTrx(uint32_t gatewayDeviceId);
+		LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec);
 
 		struct packet *readMessage(void);
 		bool sendMessage(std::string msg_str, uint32_t toDeviceId);

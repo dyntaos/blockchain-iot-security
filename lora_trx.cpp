@@ -17,8 +17,9 @@ namespace blockchainSec {
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 
-LoraTrx::LoraTrx(uint32_t gatewayDeviceId) {
+LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
 	this->gatewayDeviceId = gatewayDeviceId;
+	this->blockchainSec = blockchainSec;
 }
 
 
@@ -171,7 +172,7 @@ void LoraTrx::server(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_
 
 				memcpy(msg_buffer->payload.bytes, buf, msg_buffer->len);
 
-//#ifdef _DEBUG
+#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
 					<< "\tLength: " << unsigned(msg_buffer->len) << endl
@@ -188,8 +189,7 @@ void LoraTrx::server(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_
 					<< "\t    Bad received packet count: " << unsigned(rf95.rxBad()) << endl
 					<< "\tGood transmitted packet count: " << unsigned(rf95.txGood())
 					<< endl << endl;
-//#endif // _DEBUG
-
+#endif // _DEBUG
 
 			} else {
 				cerr << "Error receiving packet..." << endl;
@@ -255,6 +255,47 @@ bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 	tx_queue_mutex.unlock();
 
 	return true;
+}
+
+
+
+void processPacket(struct packet *p) {
+	uint8_t maskedFlags;
+
+	if (p == NULL) {
+		throw InvalidArgumentException("Packet struct is a null pointer");
+	}
+
+	maskedFlags = p->flags & 0xF;
+	switch (maskedFlags) {
+		case PACKET_TYPE_ACK:
+
+			break;
+
+		case PACKET_TYPE_DATA_FIRST:
+
+			break;
+
+		case PACKET_TYPE_DATA_INTERMEDIARY:
+			cerr << "Received currently unsupported message type" << endl;
+			break;
+
+		case PACKET_TYPE_DATA_LAST:
+			cerr << "Received currently unsupported message type" << endl;
+			break;
+
+		case PACKET_TYPE_GET_RECEIVER_KEY:
+
+			break;
+
+		case PACKET_TYPE_UPDATE_KEY:
+
+			break;
+
+		default:
+			cerr << "Unknown message LoRa message type!" << endl;
+			return; // TODO: Can this stay as a return or can we just fall through?
+	}
 }
 
 
