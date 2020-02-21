@@ -158,7 +158,7 @@ void BlockchainSecConsole::cmd_is_admin(vector<string> & cmds, BlockchainSecLib 
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Invalid argument provided" << endl;
 	}
 }
@@ -180,7 +180,7 @@ void BlockchainSecConsole::cmd_is_authd(vector<string> & cmds, BlockchainSecLib 
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Invalid argument provided" << endl;
 	}
 }
@@ -202,7 +202,7 @@ void BlockchainSecConsole::cmd_is_device(vector<string> & cmds, BlockchainSecLib
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Invalid argument provided" << endl;
 	}
 }
@@ -224,7 +224,7 @@ void BlockchainSecConsole::cmd_is_gateway(vector<string> & cmds, BlockchainSecLi
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Invalid argument provided" << endl;
 	}
 }
@@ -238,7 +238,7 @@ void BlockchainSecConsole::cmd_get_my_device_id(vector<string> & cmds, Blockchai
 	}
 	try {
 		cout << blockchainSec.get_my_device_id() << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "No device ID associated with address \""
 			<< blockchainSec.getClientAddress()
@@ -260,7 +260,7 @@ void BlockchainSecConsole::cmd_get_data_receiver(vector<string> & cmds, Blockcha
 	}
 	try {
 		cout << blockchainSec.get_datareceiver(strtoul(cmds[1].c_str(), nullptr, 10)) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -278,7 +278,7 @@ void BlockchainSecConsole::cmd_get_default_data_receiver(vector<string> & cmds, 
 	}
 	try {
 		cout << blockchainSec.get_default_datareceiver() << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl;
@@ -298,7 +298,7 @@ void BlockchainSecConsole::cmd_get_key(vector<string> & cmds, BlockchainSecLib &
 	}
 	try {
 		cout << blockchainSec.get_key(strtoul(cmds[1].c_str(), nullptr, 10)) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -345,7 +345,7 @@ void BlockchainSecConsole::cmd_get_addr_type(vector<string> & cmds, BlockchainSe
 				cerr << "Error retreiving address type" << endl;
 				break;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -367,7 +367,7 @@ void BlockchainSecConsole::cmd_get_addr(vector<string> & cmds, BlockchainSecLib 
 	}
 	try {
 		cout << blockchainSec.get_addr(strtoul(cmds[1].c_str(), nullptr, 10)) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -389,7 +389,7 @@ void BlockchainSecConsole::cmd_get_name(vector<string> & cmds, BlockchainSecLib 
 	}
 	try {
 		cout << blockchainSec.get_name(strtoul(cmds[1].c_str(), nullptr, 10)) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -411,7 +411,7 @@ void BlockchainSecConsole::cmd_get_mac(vector<string> & cmds, BlockchainSecLib &
 	}
 	try {
 		cout << blockchainSec.get_mac(strtoul(cmds[1].c_str(), nullptr, 10)) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -436,7 +436,7 @@ void BlockchainSecConsole::cmd_get_data(vector<string> & cmds, BlockchainSecLib 
 		for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
 			cout << *it << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -461,7 +461,7 @@ void BlockchainSecConsole::cmd_get_data_timestamp(vector<string> & cmds, Blockch
 		cout
 			<< unsigned(t) << endl
 			<< ctime(&t) << endl; // TODO: Does the return value of ctime() need to be free'd?
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -486,7 +486,7 @@ void BlockchainSecConsole::cmd_get_creation_timestamp(vector<string> & cmds, Blo
 		cout
 			<< unsigned(t) << endl
 			<< ctime(&t) << endl; // TODO: Does the return value of ctime() need to be free'd?
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -504,7 +504,7 @@ void BlockchainSecConsole::cmd_get_num_admin(vector<string> & cmds, BlockchainSe
 	}
 	try {
 		cout << blockchainSec.get_num_admin() << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive number of authorized administrators"
 			<< endl;
@@ -520,7 +520,7 @@ void BlockchainSecConsole::cmd_get_num_devices(vector<string> & cmds, Blockchain
 	}
 	try {
 		cout << blockchainSec.get_num_devices() << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive number of authorized devices"
 			<< endl;
@@ -536,7 +536,7 @@ void BlockchainSecConsole::cmd_get_num_gateways(vector<string> & cmds, Blockchai
 	}
 	try {
 		cout << blockchainSec.get_num_gateways() << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive number of authorized gateways"
 			<< endl;
@@ -562,7 +562,7 @@ void BlockchainSecConsole::cmd_get_active_admins(vector<string> & cmds, Blockcha
 			cout << *it;
 		}
 		cout << "]" << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl;
@@ -588,7 +588,7 @@ void BlockchainSecConsole::cmd_get_authorized_devices(vector<string> & cmds, Blo
 			cout << unsigned(*it);
 		}
 		cout << "]" << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl;
@@ -614,7 +614,7 @@ void BlockchainSecConsole::cmd_get_authorized_gateways(vector<string> & cmds, Bl
 			cout << unsigned(*it);
 		}
 		cout << "]" << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl;
@@ -648,7 +648,7 @@ void BlockchainSecConsole::cmd_add_device(vector<string> & cmds, BlockchainSecLi
 	try {
 		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], "", gatewayManaged); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Failed to add new device" << endl;
 	}
 }
@@ -670,7 +670,7 @@ void BlockchainSecConsole::cmd_add_gateway(vector<string> & cmds, BlockchainSecL
 	try {
 		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2], ""); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Failed to add new gateway" << endl;
 	}
 }
@@ -692,7 +692,7 @@ void BlockchainSecConsole::cmd_remove_device(vector<string> & cmds, BlockchainSe
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -714,7 +714,7 @@ void BlockchainSecConsole::cmd_remove_gateway(vector<string> & cmds, BlockchainS
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -744,7 +744,7 @@ void BlockchainSecConsole::cmd_update_data_receiver(vector<string> & cmds, Block
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -769,7 +769,7 @@ void BlockchainSecConsole::cmd_set_default_data_receiver(vector<string> & cmds, 
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -798,7 +798,7 @@ void BlockchainSecConsole::cmd_update_addr(vector<string> & cmds, BlockchainSecL
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -821,7 +821,7 @@ void BlockchainSecConsole::cmd_authorize_admin(vector<string> & cmds, Blockchain
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -844,7 +844,7 @@ void BlockchainSecConsole::cmd_deauthorize_admin(vector<string> & cmds, Blockcha
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -865,7 +865,7 @@ void BlockchainSecConsole::cmd_encrypt_and_push_data(vector<string> & cmds, Bloc
 		} else {
 			cout << "FALSE" << endl;
 		}
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -888,7 +888,7 @@ void BlockchainSecConsole::cmd_get_data_and_decrypt(vector<string> & cmds, Block
 	try {
 		string d = blockchainSec.getDataAndDecrypt(strtoul(cmds[1].c_str(), nullptr, 10));
 		cout << "Data: \"" << d << "\"" << endl;
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr << "Error completing command" << endl;
 	}
 }
@@ -916,7 +916,7 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 			cout << unsigned(*it);
 		}
 		cout << "]";
-	} catch (ResourceRequestFailedException & e) {
+	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive list of received devices"
 			<< endl;
