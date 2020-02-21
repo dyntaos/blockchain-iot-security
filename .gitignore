@@ -5,3 +5,4 @@ dev_mgmt_contract.bin
 client
 client_data_receiver
 client_blockchain_test
+client_console

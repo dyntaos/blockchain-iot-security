@@ -115,9 +115,9 @@ int main(int argc, char *argv[]) {
 	}
 
 
-#ifndef LORA_GATEWAY
+// #ifndef LORA_GATEWAY
 	sec = new BlockchainSecLib(compileFlag);
-#endif
+// #endif
 
 
 	if (consoleFlag) {
