@@ -552,16 +552,10 @@ void BlockchainSecConsole::cmd_get_active_admins(vector<string> & cmds, Blockcha
 	}
 	try {
 		vector<string> v = blockchainSec.get_active_admins();
-		bool first = true;
-		cout << "[";
+
 		for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
-			if (!first) {
-				cout << ", ";
-			}
-			first = false;
-			cout << *it;
+			cout << *it << endl;
 		}
-		cout << "]" << endl;
 	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
