@@ -640,6 +640,24 @@ contract DeviceMgmt {
 	 * @dev
 	 * @return
 	 */
+	function get_num_devices() external view _admin returns(uint32) {
+		return uint32(authorized_devices.length);
+	}
+
+
+	/*
+	 * @dev
+	 * @return
+	 */
+	function get_num_gateways() external view _admin returns(uint32) {
+		return uint32(authorized_gateways.length);
+	}
+
+
+	/*
+	 * @dev
+	 * @return
+	 */
 	 function get_active_admins() public view _admin returns(address[] memory) {
 		 return active_admin_users;
 	}
