@@ -340,7 +340,7 @@ void LoraTrx::processPacket(struct packet *p) {
 						p->from,
 						string((char*) p->payload.data.data, p->len),
 						p->len,
-						p->payload.data.crypto_nonce
+						string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES)
 					);
 				} catch (ResourceRequestFailedException & e) {
 					cerr
