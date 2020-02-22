@@ -338,7 +338,7 @@ void LoraTrx::processPacket(struct packet *p) {
 				try {
 					blockchainSec->push_data(
 						p->from,
-						string(p->payload.data.data, p->len),
+						string((char*) p->payload.data.data, p->len),
 						p->len,
 						p->payload.data.crypto_nonce
 					);
@@ -437,7 +437,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
 
 	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
-	crypto_sign_update(&state, &p->from, sizeof(p->from));
+	crypto_sign_update(&state, (unsigned char*) &p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
 	crypto_sign_update(&state, &p->id, sizeof(p->id));
 	crypto_sign_update(&state, &p->fragment, sizeof(p->fragment));
 	maskedFlags = p->flags & 0xF;
@@ -451,18 +451,18 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	if (maskedFlags == PACKET_TYPE_DATA_FIRST) {
 		crypto_sign_update(
 			&state,
-			&p->payload.data.crypto_nonce,
+			p->payload.data.crypto_nonce,
 			sizeof(p->payload.data.crypto_nonce)
 		);
 		crypto_sign_update(
 			&state,
-			&p->payload.data.data,
+			p->payload.data.data,
 			p->len
 		);
 	} else {
 		crypto_sign_update(
 			&state,
-			&p->payload.data.data,
+			p->payload.data.data,
 			p->len
 		);
 	}
@@ -470,7 +470,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	if (crypto_sign_final_verify(
 			&state,
 			p->payload.data.signature,
-			senderPubKey.c_str()
+			(unsigned char*) senderPubKey.c_str()
 		) != 0
 	) {
 		return false;
