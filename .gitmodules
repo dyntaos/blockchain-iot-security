@@ -19,3 +19,6 @@
 [submodule "RadioHead"]
 	path = RadioHead
 	url = git@github.com:dyntaos/RadioHead.git
+[submodule "embedded/Arduino-Makefile"]
+	path = embedded/Arduino-Makefile
+	url = https://github.com/sudar/Arduino-Makefile.git
