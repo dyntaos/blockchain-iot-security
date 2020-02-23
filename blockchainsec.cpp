@@ -418,6 +418,12 @@ bool BlockchainSecLib::is_gateway(uint32_t deviceID) {
 
 // Throws ResourceRequestFailedException from ethabi()
 uint32_t BlockchainSecLib::get_my_device_id(void) {
+	uint32_t deviceId = getIntFromContract("get_my_device_id");
+	if (deviceId == 0) {
+		throw DeviceNotAssignedException(
+			"This client has no device ID assigned"
+		);
+	}
 	return getIntFromContract("get_my_device_id");
 }
 
@@ -695,7 +701,7 @@ bool BlockchainSecLib::push_data(uint32_t deviceID, string & data, uint16_t data
 	string dataAscii = base64_encode((unsigned char*) data.c_str(), data.length());
 	string nonceAscii = base64_encode((unsigned char*) nonce.c_str(), nonce.length());
 
-	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '";
+	ethabiEncodeArgs  = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '";
 	ethabiEncodeArgs += dataAscii;
 	ethabiEncodeArgs +=  "' -p '" + boost::lexical_cast<string>(dataLen) + "' -p '";
 	ethabiEncodeArgs +=  nonceAscii;

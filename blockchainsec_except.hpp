@@ -44,6 +44,12 @@ class InvalidArgumentException : public BlockchainSecLibException {
 
 
 
+class DeviceNotAssignedException : public BlockchainSecLibException {
+	public:
+		DeviceNotAssignedException (const char* msg) : BlockchainSecLibException(msg) {}
+		DeviceNotAssignedException (const std::string& msg) : BlockchainSecLibException(msg) {}
+};
+
 class ResourceRequestFailedException : public BlockchainSecLibException {
 	public:
 		ResourceRequestFailedException (const char* msg) : BlockchainSecLibException(msg) {}
