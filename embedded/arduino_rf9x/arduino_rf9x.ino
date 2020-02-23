@@ -30,7 +30,7 @@ unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-
+// TODO:
 
 void setup(void) {
 	pinMode(RFM95_RST, OUTPUT);
@@ -70,11 +70,19 @@ void setup(void) {
 	rf95.setTxPower(23, false);
 
 	rf95.setThisAddress(DEVICE_ID);
+
+	generateKeys(); // TODO
 }
 
-
+// TODO: Flash Memory stuff
+// TODO: Data Receiver Key
 
 void loop(void) {
+	char sensorData[156]; // TODO: Remove magic number
+
+	memcpy(sensorData, "Sensor Data", 12);
+
+	sendData(sensorData, 12);
 
 	delay(DATA_SEND_INTERVAL);
 }
@@ -136,7 +144,6 @@ void signPacket(struct packet *p) {
 		NULL,
 		privateKey
 	);
-	return true;
 }
 
 
@@ -156,7 +163,7 @@ void transmitData(struct packet *p) {
 
 	if (rf95.waitAvailableTimeout(REPLY_TIMEOUT)) {
 
-		if (rf95.recv(recvP.payload.bytes), &recvP.len)) {
+		if (rf95.recv((uint8_t*) recvP.payload.bytes, &recvP.len)) {
 			Serial.println("Received reply");
 
 			recvP.from     = rf95.headerFrom();
@@ -166,7 +173,7 @@ void transmitData(struct packet *p) {
 			recvP.flags    = rf95.headerFlags();
 			recvP.rssi     = rf95.lastRssi();
 
-			processReply(recvP);
+			processReply(&recvP);
 
 		} else {
 			Serial.println("Receive failed");
@@ -201,14 +208,15 @@ bool sendData(char *data, uint8_t dataLen) {
 	p.len = dataLen;
 
 	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
-	encryptData(p.payload.data, data, dataLen);
-	signPacket(p);
+	encryptData(&p.payload.data, data, dataLen);
+	signPacket(&p);
 
 }
 
 
 void generateKeys(void) {
 	crypto_kx_keypair(publicKey, privateKey);
+	generateSharedKeys(); // TODO: Check return value
 }
 
 
