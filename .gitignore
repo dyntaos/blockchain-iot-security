@@ -6,3 +6,4 @@ client
 client_data_receiver
 client_blockchain_test
 client_console
+embedded/arduino_rf9x/build-adafruit_feather_m0

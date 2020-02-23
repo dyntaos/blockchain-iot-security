@@ -7,10 +7,6 @@
 //#include "../../packet.hpp"
 #include "packet.hpp"
 
-#define DEVICE_ID                    10
-#define REPLY_TIMEOUT                2000
-#define DATA_SEND_INTERVAL           (10 * 1000)
-#define DATA_RECEIVER_PUBLIC_KEY     ""
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int8_t flags = 255;
@@ -19,7 +15,6 @@ unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len;
 
-
 unsigned char dataReceiverPublicKey[crypto_sign_PUBLICKEYBYTES];
 unsigned char txSharedKey[crypto_kx_SESSIONKEYBYTES];
 unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
@@ -27,8 +22,8 @@ unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
 unsigned char publicKey[crypto_sign_PUBLICKEYBYTES];
 unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
 
-
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
+
 
 // TODO:
 
@@ -210,7 +205,9 @@ bool sendData(char *data, uint8_t dataLen) {
 	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 	encryptData(&p.payload.data, data, dataLen);
 	signPacket(&p);
+	transmitData(&p);
 
+	return true;
 }
 
 
