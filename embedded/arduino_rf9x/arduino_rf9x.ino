@@ -1,124 +1,16 @@
-// Feather9x_TX
-// -*- mode: C++ -*-
-// Example sketch showing how to create a simple messaging client (transmitter)
-// with the RH_RF95 class. RH_RF95 class does not provide for addressing or
-// reliability, so you should only use RH_RF95 if you do not need the higher
-// level messaging abilities.
-// It is designed to work with the other example Feather9x_RX
-
-#include <SPI.h>
-
-#include <RH_RF95.h>
-
-/* for feather32u4
-#define RFM95_CS 8
-#define RFM95_RST 4
-#define RFM95_INT 7
-*/
-
-/* for feather m0  */
-#define RFM95_CS 8
-#define RFM95_RST 4
-#define RFM95_INT 3
+//#include <FlashAsEEPROM.h>
 
 
-/* for shield
-#define RFM95_CS 10
-#define RFM95_RST 9
-#define RFM95_INT 7
-*/
+#include "feather_m0.h"
+//#include "../../libsodium/src/libsodium/include/sodium.h"
+#include "libsodium_include/sodium.h"
+//#include "../../packet.hpp"
+#include "packet.hpp"
 
-/* Feather 32u4 w/wing
-#define RFM95_RST     11   // "A"
-#define RFM95_CS      10   // "B"
-#define RFM95_INT     2    // "SDA" (only SDA/SCL/RX/TX have IRQ!)
-*/
-
-/* Feather m0 w/wing
-#define RFM95_RST     11   // "A"
-#define RFM95_CS      10   // "B"
-#define RFM95_INT     6    // "D"
-*/
-
-#if defined(ESP8266)
-  /* for ESP w/featherwing */
-  #define RFM95_CS  2    // "E"
-  #define RFM95_RST 16   // "D"
-  #define RFM95_INT 15   // "B"
-
-#elif defined(ESP32)
-  /* ESP32 feather w/wing */
-  #define RFM95_RST     27   // "A"
-  #define RFM95_CS      33   // "B"
-  #define RFM95_INT     12   //  next to A
-
-#elif defined(NRF52)
-  /* nRF52832 feather w/wing */
-  #define RFM95_RST     7   // "A"
-  #define RFM95_CS      11   // "B"
-  #define RFM95_INT     31   // "C"
-
-#elif defined(TEENSYDUINO)
-  /* Teensy 3.x w/wing */
-  #define RFM95_RST     9   // "A"
-  #define RFM95_CS      10   // "B"
-  #define RFM95_INT     4    // "C"
-#endif
-
-// Change to 434.0 or other frequency, must match RX's freq!
-#define RF95_FREQ 915.1
-
-// Singleton instance of the radio driver
-RH_RF95 rf95(RFM95_CS, RFM95_INT);
-
-void setup() {
-  pinMode(RFM95_RST, OUTPUT);
-  digitalWrite(RFM95_RST, HIGH);
-
-  Serial.begin(115200);
-  while (!Serial) {
-    delay(10);
-  }
-
-  delay(100);
-
-  Serial.println("Feather LoRa TX Test!");
-
-  // manual reset
-  digitalWrite(RFM95_RST, LOW);
-  delay(10);
-  digitalWrite(RFM95_RST, HIGH);
-  delay(10);
-
-  while (!rf95.init()) {
-    Serial.println("LoRa radio init failed");
-    Serial.println("Uncomment '#define SERIAL_DEBUG' in RH_RF95.cpp for detailed debug info");
-    while (1);
-  }
-  Serial.println("LoRa radio init OK!");
-
-  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
-  if (!rf95.setFrequency(RF95_FREQ)) {
-    Serial.println("setFrequency failed");
-    while (1);
-  }
-  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
-
-  // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-
-  // The default transmitter power is 13dBm, using PA_BOOST.
-  // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
-  // you can set transmitter powers from 5 to 23 dBm:
-  rf95.setTxPower(23, false);
-  rf95.setThisAddress(0xDEADBEEF);
-  rf95.setHeaderFrom(0xDEADBEEF);
-  rf95.setHeaderTo(0xCAFEBABE);
-
-  Serial.print("Max msg len: ");
-  Serial.println(rf95.maxMessageLength());
-}
-
-
+#define DEVICE_ID                    10
+#define REPLY_TIMEOUT                2000
+#define DATA_SEND_INTERVAL           (10 * 1000)
+#define DATA_RECEIVER_PUBLIC_KEY     ""
 
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int8_t flags = 255;
@@ -127,53 +19,203 @@ unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len;
 
-void loop() {
-  Serial.println("\nTransmitting...");
 
-  char radiopacket[25] = ".:Packet:. #            ";
-  itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending \"");
-  Serial.print(radiopacket);
-  Serial.println("\"");
-  radiopacket[24] = 0;
+unsigned char dataReceiverPublicKey[crypto_sign_PUBLICKEYBYTES];
+unsigned char txSharedKey[crypto_kx_SESSIONKEYBYTES];
+unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
 
-  rf95.setHeaderFlags(flags);
-  rf95.setHeaderFragment(fragment);
+unsigned char publicKey[crypto_sign_PUBLICKEYBYTES];
+unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
 
-  flags--;
-  fragment++;
-  
-  sendtime = millis();
-  rf95.send((uint8_t *) radiopacket, sizeof(radiopacket));
 
-  rf95.waitPacketSent();
+RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-  len = sizeof(buf);
 
-  if (rf95.waitAvailableTimeout(2000)) {
 
-    if (rf95.recv(buf, &len)) {
-      delta = millis() - sendtime;
-      Serial.print("Got reply in ");
-      Serial.print(delta);
-      Serial.print("ms : ");
-      Serial.println((char*)buf);
-      Serial.print("RSSI: ");
-      Serial.println(rf95.lastRssi(), DEC);
-      Serial.println();
-    } else {
-      Serial.println("Receive failed");
-    }
-  } else {
-    Serial.println("\nNo reply, is there a listener around?");
-  }
-  Serial.print("   Good received packet count: ");
-  Serial.println(rf95.rxGood());
-  Serial.print("    Bad received packet count: ");
-  Serial.println(rf95.rxBad());
-  Serial.print("Good transmitted packet count: ");
-  Serial.println(rf95.txGood());
-  
-  rf95.sleep();
-  delay(12000);
+void setup(void) {
+	pinMode(RFM95_RST, OUTPUT);
+	digitalWrite(RFM95_RST, HIGH);
+
+	Serial.begin(115200);
+	while (!Serial) { // TODO: Change to boot without Serial
+		delay(50);
+	}
+
+	delay(100);
+
+	// Reset RF95 Radio
+	digitalWrite(RFM95_RST, LOW);
+	delay(10);
+	digitalWrite(RFM95_RST, HIGH);
+	delay(10);
+
+	while (!rf95.init()) {
+		Serial.println("LoRa radio init failed");
+		while (1); // TODO: Make more robust? Flash led?
+	}
+
+	Serial.println("LoRa radio initialized");
+
+	if (!rf95.setFrequency(RF95_FREQ)) {
+		Serial.println("setFrequency failed");
+		while (1); // TODO: Make more robust? Flash led?
+	}
+
+	Serial.print("Set Freq to: ");
+	Serial.println(RF95_FREQ);
+
+	// The default transmitter power is 13dBm, using PA_BOOST.
+	// If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
+	// you can set transmitter powers from 5 to 23 dBm:
+	rf95.setTxPower(23, false);
+
+	rf95.setThisAddress(DEVICE_ID);
+}
+
+
+
+void loop(void) {
+
+	delay(DATA_SEND_INTERVAL);
+}
+
+
+
+void encryptData(struct packet_data *pd, char* data, uint8_t dataLen) {
+	crypto_stream_xchacha20_xor( // TODO: Check return value?
+		pd->data,
+		(unsigned char*) data,
+		dataLen,
+		pd->crypto_nonce,
+		txSharedKey
+	);
+}
+
+
+
+void signPacket(struct packet *p) {
+	crypto_sign_state state;
+	uint8_t maskedFlags;
+
+	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
+
+	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
+	crypto_sign_update(&state, (unsigned char*) &p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
+	crypto_sign_update(&state, &p->id, sizeof(p->id));
+	crypto_sign_update(&state, &p->fragment, sizeof(p->fragment));
+	maskedFlags = p->flags & 0xF;
+	crypto_sign_update(&state, &maskedFlags, sizeof(maskedFlags));
+	crypto_sign_update(&state, &p->len, sizeof(p->len));
+
+	// TODO: When multi packet messages are supported, the
+	// signatures are for the stream of messages and this
+	// function needs to be modified accordingly.
+
+	if (maskedFlags == PACKET_TYPE_DATA_FIRST) {
+		crypto_sign_update(
+			&state,
+			p->payload.data.crypto_nonce,
+			sizeof(p->payload.data.crypto_nonce)
+		);
+		crypto_sign_update(
+			&state,
+			p->payload.data.data,
+			p->len
+		);
+	} else {
+		crypto_sign_update(
+			&state,
+			p->payload.data.data,
+			p->len
+		);
+	}
+
+	crypto_sign_final_create(
+		&state,
+		p->payload.data.signature,
+		NULL,
+		privateKey
+	);
+	return true;
+}
+
+
+
+void transmitData(struct packet *p) {
+	struct packet recvP;
+
+	Serial.println("Transmitting packet");
+
+	rf95.setHeaderTo(p->to);
+	rf95.setHeaderFrom(p->from);
+	rf95.setHeaderFlags(p->flags);
+	rf95.setHeaderFragment(p->fragment);
+
+	rf95.send((uint8_t *) p->payload.bytes, p->len);
+	rf95.waitPacketSent();
+
+	if (rf95.waitAvailableTimeout(REPLY_TIMEOUT)) {
+
+		if (rf95.recv(recvP.payload.bytes), &recvP.len)) {
+			Serial.println("Received reply");
+
+			recvP.from     = rf95.headerFrom();
+			recvP.to       = rf95.headerTo();
+			recvP.id       = rf95.headerId();
+			recvP.fragment = rf95.headerFragment();
+			recvP.flags    = rf95.headerFlags();
+			recvP.rssi     = rf95.lastRssi();
+
+			processReply(recvP);
+
+		} else {
+			Serial.println("Receive failed");
+		}
+	} else {
+		Serial.println("No reply received within timeout");
+	}
+
+	rf95.sleep();
+}
+
+
+
+void processReply(struct packet *p) {
+	// TODO
+	return;
+}
+
+
+
+bool sendData(char *data, uint8_t dataLen) {
+	struct packet p;
+
+	//Currently, only a max of 156 bytes can be sent
+	if (dataLen > 156) return false;
+
+	p.to = 0;
+	p.from = DEVICE_ID;
+	p.flags = PACKET_TYPE_DATA_FIRST;
+	p.id = 0;
+	p.fragment = 0;
+	p.len = dataLen;
+
+	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+	encryptData(p.payload.data, data, dataLen);
+	signPacket(p);
+
+}
+
+
+void generateKeys(void) {
+	crypto_kx_keypair(publicKey, privateKey);
+}
+
+
+
+bool generateSharedKeys(void) {
+	if (crypto_kx_server_session_keys(rxSharedKey, txSharedKey, publicKey, privateKey, dataReceiverPublicKey) != 0) {
+		return false;
+	}
+	return true;
 }
