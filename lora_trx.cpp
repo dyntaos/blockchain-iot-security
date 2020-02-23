@@ -336,11 +336,13 @@ void LoraTrx::processPacket(struct packet *p) {
 				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
 			) {
 				try {
+					string data = string((char*) p->payload.data.data, p->len);
+					string nonce = string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 					blockchainSec->push_data(
 						p->from,
-						string((char*) p->payload.data.data, p->len),
+						data,
 						p->len,
-						string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES)
+						nonce
 					);
 				} catch (ResourceRequestFailedException & e) {
 					cerr

@@ -111,10 +111,15 @@ int main(int argc, char *argv[]) {
 	}
 
 
+// #ifndef LORA_GATEWAY
+	sec = new BlockchainSecLib(compileFlag);
+// #endif
+
+
 	if (gatewayFlag) {
 #ifdef LORA_GATEWAY
 		cout << "Started in gateway mode..." << endl;
-		trx = new LoraTrx(1); // TODO: Gateway ID
+		trx = new LoraTrx(1, sec); // TODO: Gateway ID
 		trx->server_init();
 #else
 		cout << "This architecture does not support running as a LoRa gateway!" << endl;
@@ -122,10 +127,6 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
-
-// #ifndef LORA_GATEWAY
-	sec = new BlockchainSecLib(compileFlag);
-// #endif
 
 /*
 #ifdef _DEBUG
@@ -139,6 +140,7 @@ int main(int argc, char *argv[]) {
 		blockchainSecConsole->startThread(*sec);
 	}
 
+/*
 #ifdef LORA_GATEWAY
 	if (gatewayFlag) {
 		struct packet *msg;
@@ -163,7 +165,7 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_SUCCESS);
 	}
 #endif //LORA_GATEWAY
-
+*/
 
 #ifndef LORA_GATEWAY
 
