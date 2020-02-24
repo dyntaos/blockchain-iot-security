@@ -27,7 +27,15 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
 	this->gatewayDeviceId = gatewayDeviceId;
 	this->blockchainSec = blockchainSec;
 
-	if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id())) {
+	try {
+		if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id())) {
+			cerr
+				<< "WARNING: This device was started as a LoRa gateway"
+				<< " but is not registered as a gateway on Ethereum!"
+				<< endl;
+		}
+	} catch (DeviceNotAssignedException & e) {
+		// Thrown by get_my_device_id()
 		cerr
 			<< "WARNING: This device was started as a LoRa gateway"
 			<< " but is not registered as a gateway on Ethereum!"
