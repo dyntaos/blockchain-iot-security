@@ -45,16 +45,19 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
 
 
 bool LoraTrx::setup(void) {
+	string msg;
 
 	if (!bcm2835_init()) {
 		cerr << __BASE_FILE__ << " bcm2835_init() Failed" << endl << endl;
 		return 1;
 	}
 
-	printf( "RF95 CS=GPIO%d", RF_CS_PIN);
+	msg = "RF95 CS=GPIO";
+	msg += RF_CS_PIN;
 
 #ifdef RF_IRQ_PIN
-	printf( ", IRQ=GPIO%d", RF_IRQ_PIN );
+	msg += ", IRQ=GPIO";
+	msg += RF_IRQ_PIN;
 	// IRQ Pin input/pull down
 	pinMode(RF_IRQ_PIN, INPUT);
 	bcm2835_gpio_set_pud(RF_IRQ_PIN, BCM2835_GPIO_PUD_DOWN);
@@ -63,12 +66,13 @@ bool LoraTrx::setup(void) {
 #endif
 
 #ifdef RF_RST_PIN
-	printf( ", RST=GPIO%d", RF_RST_PIN );
+	msg += ", RST=GPIO";
+	msg += RF_RST_PIN;
 	// Pulse a reset on module
 	pinMode(RF_RST_PIN, OUTPUT);
-	digitalWrite(RF_RST_PIN, LOW );
+	digitalWrite(RF_RST_PIN, LOW);
 	bcm2835_delay(150);
-	digitalWrite(RF_RST_PIN, HIGH );
+	digitalWrite(RF_RST_PIN, HIGH);
 	bcm2835_delay(100);
 #endif
 
@@ -95,7 +99,7 @@ bool LoraTrx::setup(void) {
 		// We're ready to listen for incoming message
 		rf95.setModeRx();
 
-		cout << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
+		cout << msg << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
 		hardwareInitialized = true;
 		return true;
 	}

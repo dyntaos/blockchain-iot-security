@@ -16,7 +16,7 @@ CPPFLAGS += -fno-fat-lto-objects
 #CPPFLAGS += -ffat-lto-objects -fuse-linker-plugin
 #CORE_OBJS += --use-linker-plugin --plugin /home/kale/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/liblto_plugin.so
 CPPFLAGS += -I ../../RadioHead
-LDFLAGS = -L /home/kale/Desktop/CMPT400/dev/blockchain-iot-security/libsodium/build-arm-m0/lib -lsodium
+LDFLAGS = -L /home/kale/Desktop/CMPT400/dev/blockchain-iot-security/libsodium/build-cortex-m0/lib -lsodium
 #CPPFLAGS += -I ../../libsodium/src/libsodium/sodium
 MONITOR_BAUDRATE = 115200
 

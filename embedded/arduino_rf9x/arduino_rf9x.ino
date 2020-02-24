@@ -22,7 +22,18 @@ unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
 unsigned char publicKey[crypto_sign_PUBLICKEYBYTES];
 unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
 
+struct randombytes_implementation randImplM0 = {
+	.implementation_name = customRandName,
+	.random = customRand,
+	.stir = customRandSeed,
+	.uniform = NULL,
+	.buf = customRandBytes,
+	.close = NULL
+};
+
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
+
+
 
 
 // TODO:
@@ -66,6 +77,11 @@ void setup(void) {
 
 	rf95.setThisAddress(DEVICE_ID);
 
+	randombytes_set_implementation(&randImplM0);
+
+	if (sodium_init() == -1) {
+		while(1); // TODO: More robust solution?
+	}
 	generateKeys(); // TODO
 }
 
@@ -226,8 +242,8 @@ bool sendData(char *data, uint8_t dataLen) {
 
 void generateKeys(void) {
 	Serial.println("generateKeys()");
-	crypto_kx_keypair(publicKey, privateKey);
-	generateSharedKeys(); // TODO: Check return value
+	//crypto_kx_keypair(publicKey, privateKey);
+	//generateSharedKeys(); // TODO: Check return value
 }
 
 
@@ -238,4 +254,40 @@ bool generateSharedKeys(void) {
 		return false;
 	}
 	return true;
+}
+
+
+
+void customRandSeed(void) {
+	Serial.println("customRandSeed()");
+	randomSeed(analogRead(0)); // TODO: Verify this pin is floating!!! Make #define for it
+}
+
+
+
+uint32_t customRand(void) {
+	Serial.println("customRand()");
+	return (uint32_t) random(UINT32_MAX);
+}
+
+
+
+const char *customRandName(void) {
+	Serial.println("customRandName()");
+	return "m0";
+}
+
+
+
+void customRandBytes(void *buf, const size_t size) {
+	Serial.println("customRandBytes()");
+	for (uint16_t i = 0; i < size; i += 4u) {
+		if (i + 3u < size) {
+			((uint32_t*) buf)[i] = customRand();
+		} else {
+			for (uint8_t j = i; j < size; j++) {
+				((uint8_t*) buf)[j] = (uint8_t) customRand();
+			}
+		}
+	}
 }

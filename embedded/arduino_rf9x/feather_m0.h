@@ -24,5 +24,9 @@ void processReply(struct packet *p);
 bool sendData(char *data, uint8_t dataLen);
 void generateKeys(void);
 bool generateSharedKeys(void);
+void customRandSeed(void);
+uint32_t customRand(void);
+const char *customRandName(void);
+void customRandBytes(void *buf, const size_t size);
 
 #endif // __FEATHER_M0_H
