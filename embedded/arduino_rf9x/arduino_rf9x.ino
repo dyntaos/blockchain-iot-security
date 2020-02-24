@@ -74,10 +74,13 @@ void setup(void) {
 
 void loop(void) {
 	char sensorData[156]; // TODO: Remove magic number
+	Serial.println("Begin main loop...");
 
 	memcpy(sensorData, "Sensor Data", 12);
 
 	sendData(sensorData, 12);
+
+	Serial.println("Returned to main loop and waiting for next iteration...");
 
 	delay(DATA_SEND_INTERVAL);
 }
@@ -85,6 +88,8 @@ void loop(void) {
 
 
 void encryptData(struct packet_data *pd, char* data, uint8_t dataLen) {
+	Serial.println("encryptData()");
+
 	crypto_stream_xchacha20_xor( // TODO: Check return value?
 		pd->data,
 		(unsigned char*) data,
@@ -99,6 +104,8 @@ void encryptData(struct packet_data *pd, char* data, uint8_t dataLen) {
 void signPacket(struct packet *p) {
 	crypto_sign_state state;
 	uint8_t maskedFlags;
+
+	Serial.println("signPacket()");
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
 
@@ -146,7 +153,7 @@ void signPacket(struct packet *p) {
 void transmitData(struct packet *p) {
 	struct packet recvP;
 
-	Serial.println("Transmitting packet");
+	Serial.println("transmitData():1");
 
 	rf95.setHeaderTo(p->to);
 	rf95.setHeaderFrom(p->from);
@@ -155,6 +162,7 @@ void transmitData(struct packet *p) {
 
 	rf95.send((uint8_t *) p->payload.bytes, p->len);
 	rf95.waitPacketSent();
+	Serial.println("transmitData(): Packet Sent!");
 
 	if (rf95.waitAvailableTimeout(REPLY_TIMEOUT)) {
 
@@ -184,6 +192,7 @@ void transmitData(struct packet *p) {
 
 void processReply(struct packet *p) {
 	// TODO
+	Serial.println("processReply()");
 	return;
 }
 
@@ -192,8 +201,12 @@ void processReply(struct packet *p) {
 bool sendData(char *data, uint8_t dataLen) {
 	struct packet p;
 
+	Serial.println("sendData():1");
+
 	//Currently, only a max of 156 bytes can be sent
 	if (dataLen > 156) return false;
+
+	Serial.println("sendData():2");
 
 	p.to = 0;
 	p.from = DEVICE_ID;
@@ -212,6 +225,7 @@ bool sendData(char *data, uint8_t dataLen) {
 
 
 void generateKeys(void) {
+	Serial.println("generateKeys()");
 	crypto_kx_keypair(publicKey, privateKey);
 	generateSharedKeys(); // TODO: Check return value
 }
@@ -219,6 +233,7 @@ void generateKeys(void) {
 
 
 bool generateSharedKeys(void) {
+	Serial.println("generateSharedKeys()");
 	if (crypto_kx_server_session_keys(rxSharedKey, txSharedKey, publicKey, privateKey, dataReceiverPublicKey) != 0) {
 		return false;
 	}

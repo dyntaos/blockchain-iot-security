@@ -139,8 +139,11 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 
 void BlockchainSecLib::loadLocalDeviceParameters(void) {
-	// TODO: try catch ?
-	localDeviceID = get_my_device_id();
+	try {
+		localDeviceID = get_my_device_id();
+	} catch (DeviceNotAssignedException & e) {
+		localDeviceID = 0; // DeviceID of 0 means DeviceID is no assigned
+	}
 
 	if (localDeviceID != 0) {
 		// This client has a device ID -- verify it has proper keys

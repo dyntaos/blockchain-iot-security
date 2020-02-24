@@ -13,7 +13,7 @@
 
 #define DEVICE_ID                    10
 #define REPLY_TIMEOUT                2000
-#define DATA_SEND_INTERVAL           (10 * 1000)
+#define DATA_SEND_INTERVAL           (5 * 1000)
 #define DATA_RECEIVER_PUBLIC_KEY     ""
 
 

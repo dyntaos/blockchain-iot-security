@@ -158,7 +158,14 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 
 restart: // TODO: Get rid of this
 
-	socket.connect(ep);
+	try {
+		socket.connect(ep);
+	} catch (...) {
+		throw ResourceRequestFailedException(
+			"Failed to open Unix Domain Socket with Geth Ethereum client via "
+			"\"" + ipcPath + "\""
+		);
+	}
 
 	for (i = 0; i < 11; i++) { // TODO URGENT: Dynamically set upper bound****
 		data = "{\"id\":1,"
