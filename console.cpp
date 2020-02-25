@@ -55,7 +55,7 @@ BlockchainSecConsole::BlockchainSecConsole(void) {
 		("encrypt_and_push_data",     cmd_encrypt_and_push_data)
 		("get_data_and_decrypt",      cmd_get_data_and_decrypt)
 		("get_received_devices",      cmd_get_received_devices)
-		("update_local_keys",         cmd_update_data_receiver)
+		("update_local_keys",         cmd_update_local_keys)
 		("help",                      cmd_help)
 	;
 }
@@ -974,7 +974,7 @@ void BlockchainSecConsole::cmd_update_local_keys(vector<string> & cmds, Blockcha
 		}
 	} catch (BlockchainSecLibException & e) {
 		cerr
-			<< "Unable to retreive list of received devices"
+			<< "Unable to update local key pair"
 			<< endl << endl;
 		return;
 	}
