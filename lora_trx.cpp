@@ -170,7 +170,7 @@ void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*
 
 			rf95.setHeaderTo(tx_buffer->to);
 
-			if (!rf95.send((uint8_t*) &tx_buffer->payload.bytes, tx_buffer->len)) {
+			if (!rf95.send((uint8_t*) &tx_buffer->payload.bytes, tx_buffer->len + 13)) { // TODO: Magic numbers
 				cerr << "Error transmitting packet..." << endl;
 				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 			} else {
@@ -189,20 +189,20 @@ void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*
 		if (rf95.available()) {
 
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
-			msg_buffer->len   = RH_RF95_MAX_MESSAGE_LEN;
-
-			msg_buffer->from     = rf95.headerFrom();
-			msg_buffer->to       = rf95.headerTo();
-			msg_buffer->id       = rf95.headerId();
-			msg_buffer->fragment = rf95.headerFragment();
-			msg_buffer->flags    = rf95.headerFlags();
-			msg_buffer->rssi     = rf95.lastRssi();
+			msg_buffer->len      = RH_RF95_MAX_MESSAGE_LEN;
 
 			if (rf95.recv(buf, &msg_buffer->len)) {
 
+				msg_buffer->from     = rf95.headerFrom();
+				msg_buffer->to       = rf95.headerTo();
+				msg_buffer->id       = rf95.headerId();
+				msg_buffer->fragment = rf95.headerFragment();
+				msg_buffer->flags    = rf95.headerFlags();
+				msg_buffer->rssi     = rf95.lastRssi();
+
 				memcpy(msg_buffer->payload.bytes, buf, msg_buffer->len);
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
 					<< "\tLength: " << unsigned(msg_buffer->len) << endl
@@ -212,14 +212,14 @@ void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*
 					<< "\tFragment: " << unsigned(msg_buffer->fragment) << endl
 					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
 					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
-					<< "\tMessage Hex: " << printbuffer << endl
-					<< "\tMessage ASCII: " << string((char*) msg_buffer->payload.bytes, msg_buffer->len)
+					<< "\tPayload Hex: " << printbuffer << endl
+					<< "\tPayload ASCII: " << string((char*) msg_buffer->payload.bytes, msg_buffer->len - 13) // TODO: Magic number
 					<< endl << endl
 					<< "\t   Good received packet count: " << unsigned(rf95.rxGood()) << endl
 					<< "\t    Bad received packet count: " << unsigned(rf95.rxBad()) << endl
 					<< "\tGood transmitted packet count: " << unsigned(rf95.txGood())
 					<< endl << endl;
-#endif // _DEBUG
+//#endif // _DEBUG
 
 			} else {
 				cerr << "Error receiving packet..." << endl;
@@ -293,10 +293,10 @@ bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 
 	msg = new struct packet;
 
-	msg->len = msg_str.length();
+	msg->len = msg_str.length(); //TODO: Make = payload length
 	msg->to = toDeviceId;
 
-	memcpy(msg->payload.bytes, msg_str.c_str(), msg->len);
+	memcpy(msg->payload.bytes, msg_str.c_str(), msg->len); // TODO: Payload Length
 
 	tx_queue_mutex.lock();
 	tx_queue.push(msg);
@@ -313,6 +313,17 @@ void LoraTrx::processPacket(struct packet *p) {
 	if (p == NULL) {
 		throw InvalidArgumentException("Packet struct is a null pointer");
 	}
+
+	string dataStr = string((char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); // TODO: Magic number
+	string dataHexStr = hexStr((unsigned char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); //TODO: Magic num
+	string sigHexStr = hexStr((unsigned char*) p->payload.data.signature, crypto_sign_BYTES);
+	string nonceHexStr = hexStr((unsigned char*) p->payload.data.crypto_nonce, crypto_stream_xchacha20_NONCEBYTES);
+
+	cout
+		<< "Data: " << dataStr << endl
+		<< "Data Hex: " << dataHexStr << endl
+		<< "Signature Hex: " << sigHexStr << endl
+		<< "Nonce Hex: " << nonceHexStr << endl;
 
 	maskedFlags = p->flags & 0xF;
 	switch (maskedFlags) {
@@ -344,12 +355,12 @@ void LoraTrx::processPacket(struct packet *p) {
 				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
 			) {
 				try {
-					string data = string((char*) p->payload.data.data, p->len);
+					string data = string((char*) p->payload.data.data, p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
 					string nonce = string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 					blockchainSec->push_data(
 						p->from,
 						data,
-						p->len,
+						data.length(),
 						nonce
 					);
 				} catch (ResourceRequestFailedException & e) {
@@ -467,7 +478,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len
+			p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)
 		);
 	} else {
 		crypto_sign_update(
