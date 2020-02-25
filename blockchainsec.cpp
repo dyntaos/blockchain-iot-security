@@ -998,6 +998,7 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 	//unsigned char rx[crypto_kx_SESSIONKEYBYTES + 1], tx[crypto_kx_SESSIONKEYBYTES + 1];
 	string pkHex, skHex;
 
+	derriveSharedSecret = true;
 	crypto_kx_keypair(pk, sk);
 
 	pk[crypto_kx_PUBLICKEYBYTES] =
@@ -1013,7 +1014,7 @@ bool BlockchainSecLib::updateLocalKeys(void) {
 	cout << "updateLocalKeys(): private key = " << skHex << endl;
 #endif //_DEBUG
 
-	if (update_publickey(get_my_device_id(), pkHex)) {
+	if (update_publickey(get_my_device_id(), pkHex)) { // TODO: TRY CATCH!!!!!
 
 #ifdef _DEBUG
 	cout << "updateLocalKeys(): update_publickey() returned TRUE." << endl;

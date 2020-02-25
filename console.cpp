@@ -55,6 +55,7 @@ BlockchainSecConsole::BlockchainSecConsole(void) {
 		("encrypt_and_push_data",     cmd_encrypt_and_push_data)
 		("get_data_and_decrypt",      cmd_get_data_and_decrypt)
 		("get_received_devices",      cmd_get_received_devices)
+		("update_local_keys",         cmd_update_data_receiver)
 		("help",                      cmd_help)
 	;
 }
@@ -954,6 +955,36 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 
 
 
+void BlockchainSecConsole::cmd_update_local_keys(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
+	if (cmds.size() != 2) {
+		cout << "Usage: update_local_keys confirm" << endl << endl;
+		return;
+	}
+	if (cmds[1] != "confirm") {
+		cerr
+			<< "Provide \"confirm\" as an argument to confirm creation of new key pair"
+			<< endl << endl;
+		return;
+	}
+	try {
+		if (!blockchainSec.updateLocalKeys()) {
+			cerr
+				<< "Failed to create new key pair!"
+				<< endl << endl;
+		}
+	} catch (BlockchainSecLibException & e) {
+		cerr
+			<< "Unable to retreive list of received devices"
+			<< endl << endl;
+		return;
+	}
+	cout
+		<< "Successfully created new key pair and pushed public key to Ethereum"
+		<< endl << endl;
+}
+
+
+
 void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
 	(void) cmds;
 	(void) blockchainSec;
@@ -992,6 +1023,7 @@ void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & bl
 		"\tencrypt_and_push_data\n"
 		"\tget_data_and_decrypt\n"
 		"\tget_received_devices\n"
+		"\tupdate_local_keys\n"
 		<< endl << endl;
 }
 

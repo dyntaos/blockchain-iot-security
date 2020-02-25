@@ -59,6 +59,7 @@ class BlockchainSecConsole {
 		static void cmd_encrypt_and_push_data(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
 		static void cmd_get_data_and_decrypt(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
 		static void cmd_get_received_devices(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
+		static void cmd_update_local_keys(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
 		static void cmd_help(std::vector<std::string> & cmds, BlockchainSecLib & blockchainSec);
 
 
