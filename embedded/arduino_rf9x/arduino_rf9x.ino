@@ -15,12 +15,12 @@ unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len;
 
-unsigned char dataReceiverPublicKey[crypto_sign_PUBLICKEYBYTES];
+unsigned char dataReceiverPublicKey[crypto_kx_PUBLICKEYBYTES];
 unsigned char txSharedKey[crypto_kx_SESSIONKEYBYTES];
 unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
 
-unsigned char publicKey[crypto_sign_PUBLICKEYBYTES];
-unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
+unsigned char publicKey[crypto_kx_PUBLICKEYBYTES];
+unsigned char privateKey[crypto_kx_SECRETKEYBYTES];
 
 struct randombytes_implementation randImplM0 = {
 	.implementation_name = customRandName,
@@ -34,11 +34,54 @@ struct randombytes_implementation randImplM0 = {
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 
+// TODO: Remove
 
+
+void printWrapper(const char *s) {
+	Serial.println(s);
+}
+
+void printWrapper32(const char *s, void *i) {
+	Serial.print(s);
+	Serial.println((int) i, HEX);
+}
+
+
+void hexPrint(unsigned char *s, uint16_t len) {
+	int c;
+	for (uint16_t i = 0; i < len; i++) {
+		c = (int) s[i];
+		if (c < 16) Serial.print('0');
+		Serial.print(c, HEX);
+	}
+}
+
+
+bool hexToBin(unsigned char *dest, const char *hex, uint16_t hexLen) {
+	if (hexLen % 2 == 1) return false;
+	for (uint16_t i = 0; i < hexLen; i += 2) {
+		char s[3];
+		s[0] = hex[i];
+		s[1] = hex[i+1];
+		s[2] = 0;
+		dest[i/2] = (unsigned char) strtol(s, NULL, 16);
+	}
+	return true;
+}
 
 // TODO:
 
 void setup(void) {
+
+	//TODO: Remove
+	setFunc1(printWrapper);
+	setFunc2(printWrapper);
+	setFunc3(printWrapper);
+	setFunc3_32(printWrapper32);
+	setFunc4(printWrapper);
+	setFunc4_32(printWrapper32);
+	setFunc5(printWrapper);
+
 	pinMode(RFM95_RST, OUTPUT);
 	digitalWrite(RFM95_RST, HIGH);
 
@@ -79,10 +122,44 @@ void setup(void) {
 
 	randombytes_set_implementation(&randImplM0);
 
+	Serial.println("sodium_init()");
 	if (sodium_init() == -1) {
 		while(1); // TODO: More robust solution?
 	}
-	generateKeys(); // TODO
+
+
+	//generateKeys(); // TODO
+	if (!hexToBin(publicKey, PUBLIC_KEY, sizeof(PUBLIC_KEY) - 1)) {
+		Serial.println("Error loading existing public key!");
+	}
+	if (!hexToBin(privateKey, PRIVATE_KEY, sizeof(PRIVATE_KEY) - 1)) {
+		Serial.println("Error loading existing private key!");
+	}
+	if (!hexToBin(dataReceiverPublicKey, DATA_RECEIVER_PUBLIC_KEY, sizeof(DATA_RECEIVER_PUBLIC_KEY) - 1)) {
+		Serial.println("Error loading data receiver public key!");
+	}
+
+	Serial.print("Public Key Str: ");
+	Serial.println(PUBLIC_KEY);
+	Serial.print("Public Key Hex: ");
+	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
+	Serial.println();
+
+	Serial.print("Private Key Str: ");
+	Serial.println(PRIVATE_KEY);
+	Serial.print("Private Key Hex: ");
+	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
+	Serial.println();
+
+	Serial.print("Data Receiver Key Str: ");
+	Serial.println(DATA_RECEIVER_PUBLIC_KEY);
+	Serial.print("Data Receiver Key Hex: ");
+	hexPrint(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	Serial.println();
+
+	generateSharedKeys(); // TODO: Check return value
+
+	Serial.println("Done setup()");
 }
 
 // TODO: Flash Memory stuff
@@ -92,9 +169,9 @@ void loop(void) {
 	char sensorData[156]; // TODO: Remove magic number
 	Serial.println("Begin main loop...");
 
-	memcpy(sensorData, "Sensor Data", 12);
+	memcpy(sensorData, "This is some sensor data /-/-", 30);
 
-	sendData(sensorData, 12);
+	sendData(sensorData, 30);
 
 	Serial.println("Returned to main loop and waiting for next iteration...");
 
@@ -106,13 +183,14 @@ void loop(void) {
 void encryptData(struct packet_data *pd, char* data, uint8_t dataLen) {
 	Serial.println("encryptData()");
 
-	crypto_stream_xchacha20_xor( // TODO: Check return value?
-		pd->data,
-		(unsigned char*) data,
-		dataLen,
-		pd->crypto_nonce,
-		txSharedKey
-	);
+	memcpy(pd->data, data, dataLen);
+	// crypto_stream_xchacha20_xor( // TODO: Check return value?
+	// 	pd->data,
+	// 	(unsigned char*) data,
+	// 	dataLen,
+	// 	pd->crypto_nonce,
+	// 	txSharedKey
+	// );
 }
 
 
@@ -146,7 +224,7 @@ void signPacket(struct packet *p) {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len
+			p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature) // TODO Change this on LoRaTRX
 		);
 	} else {
 		crypto_sign_update(
@@ -176,7 +254,7 @@ void transmitData(struct packet *p) {
 	rf95.setHeaderFlags(p->flags);
 	rf95.setHeaderFragment(p->fragment);
 
-	rf95.send((uint8_t *) p->payload.bytes, p->len);
+	rf95.send((uint8_t *) p->payload.bytes, 13 + p->len); // TODO: Magic numbers
 	rf95.waitPacketSent();
 	Serial.println("transmitData(): Packet Sent!");
 
@@ -229,30 +307,55 @@ bool sendData(char *data, uint8_t dataLen) {
 	p.flags = PACKET_TYPE_DATA_FIRST;
 	p.id = 0;
 	p.fragment = 0;
-	p.len = dataLen;
+	p.len = dataLen + sizeof(p.payload.data.crypto_nonce) + sizeof(p.payload.data.signature); // TODO: This is only valid for PACKET_TYPE_DATA_FIRST
 
-	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+	Serial.println("sendData():3");
+	//randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+	customRandBytes(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+	Serial.println("sendData():4");
 	encryptData(&p.payload.data, data, dataLen);
+	Serial.println("sendData():5");
 	signPacket(&p);
+	Serial.println("sendData():6");
 	transmitData(&p);
+	Serial.println("sendData():7");
 
 	return true;
 }
 
 
+
 void generateKeys(void) {
 	Serial.println("generateKeys()");
-	//crypto_kx_keypair(publicKey, privateKey);
-	//generateSharedKeys(); // TODO: Check return value
+
+	if (crypto_kx_keypair(publicKey, privateKey) != 0) {
+		Serial.println("crypto_kx_keypair() != 0 <FAILED>");
+	}
+
+	customRandBytes(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	Serial.print("dataReceiver Key: ");
+	hexPrint(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	Serial.println("");
+
+	Serial.print("      Public Key: ");
+	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
+	Serial.println("");
+
+	Serial.print("     Private Key: ");
+	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
+	Serial.println("");
 }
 
 
 
 bool generateSharedKeys(void) {
 	Serial.println("generateSharedKeys()");
-	if (crypto_kx_server_session_keys(rxSharedKey, txSharedKey, publicKey, privateKey, dataReceiverPublicKey) != 0) {
+	if (crypto_kx_client_session_keys(rxSharedKey, txSharedKey, publicKey, privateKey, dataReceiverPublicKey) != 0) {
+		Serial.println("generateSharedKeys() FAILED");
 		return false;
 	}
+	Serial.print("txKey: ");
+	hexPrint(txSharedKey, crypto_kx_SESSIONKEYBYTES);
 	return true;
 }
 
@@ -266,7 +369,7 @@ void customRandSeed(void) {
 
 
 uint32_t customRand(void) {
-	Serial.println("customRand()");
+	//Serial.println("customRand()");
 	return (uint32_t) random(UINT32_MAX);
 }
 
@@ -281,13 +384,22 @@ const char *customRandName(void) {
 
 void customRandBytes(void *buf, const size_t size) {
 	Serial.println("customRandBytes()");
-	for (uint16_t i = 0; i < size; i += 4u) {
-		if (i + 3u < size) {
-			((uint32_t*) buf)[i] = customRand();
-		} else {
-			for (uint8_t j = i; j < size; j++) {
-				((uint8_t*) buf)[j] = (uint8_t) customRand();
-			}
-		}
+	// for (uint16_t i = 0; i < size; i += 4u) {
+	// 	if (i + 3u < size) {
+	// 		((uint32_t*) buf)[i] = customRand();
+	// 	} else {
+	// 		for (uint8_t j = i; j < size; j++) {
+	// 			((uint8_t*) buf)[j] = (uint8_t) customRand();
+	// 		}
+	// 	}
+	// }
+	uint32_t r = 0;
+	uint8_t *byte = &((uint8_t*) (&r))[0];
+	uint8_t *arr = (uint8_t*) buf;
+	for (uint8_t j = 0; j < size; j++) {
+		r = random(0, 255);
+		arr[j] = *byte;
+		Serial.print(arr[j], HEX);
 	}
+	Serial.println("");
 }
