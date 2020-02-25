@@ -5,6 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 
+#include <cpp-base64/base64.hpp>
 #include <misc.hpp>
 #include <lora_trx.hpp>
 
@@ -443,17 +444,19 @@ void LoraTrx::processPacket(struct packet *p) {
 
 
 bool LoraTrx::verifySignature(struct packet *p) {
-	string senderPubKey;
+	string senderPubKeyB64;
+	unsigned char senderPubKey[crypto_kx_PUBLICKEYBYTES];
 	crypto_sign_state state;
 	uint8_t maskedFlags;
 
 	if (p == NULL) return false;
 
 	try {
-		senderPubKey = blockchainSec->get_key(p->from);
+		senderPubKeyB64 = blockchainSec->get_key(p->from);
 	} catch (BlockchainSecLibException & e) {
 		return false;
 	}
+	memcpy(senderPubKey, base64_decode(senderPubKeyB64).c_str(), crypto_kx_PUBLICKEYBYTES);
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
 
@@ -491,7 +494,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	if (crypto_sign_final_verify(
 			&state,
 			p->payload.data.signature,
-			(unsigned char*) senderPubKey.c_str()
+			senderPubKey
 		) != 0
 	) {
 		return false;
