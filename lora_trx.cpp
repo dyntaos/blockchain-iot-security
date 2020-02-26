@@ -53,12 +53,10 @@ bool LoraTrx::setup(void) {
 		return 1;
 	}
 
-	msg = "RF95 CS=GPIO";
-	msg += RF_CS_PIN;
+	msg = "RF95 CS=GPIO" + to_string(RF_CS_PIN);
 
 #ifdef RF_IRQ_PIN
-	msg += ", IRQ=GPIO";
-	msg += RF_IRQ_PIN;
+	msg += ", IRQ=GPIO" + to_string(RF_IRQ_PIN);
 	// IRQ Pin input/pull down
 	pinMode(RF_IRQ_PIN, INPUT);
 	bcm2835_gpio_set_pud(RF_IRQ_PIN, BCM2835_GPIO_PUD_DOWN);
@@ -67,8 +65,7 @@ bool LoraTrx::setup(void) {
 #endif
 
 #ifdef RF_RST_PIN
-	msg += ", RST=GPIO";
-	msg += RF_RST_PIN;
+	msg += ", RST=GPIO" + to_string(RF_RST_PIN);
 	// Pulse a reset on module
 	pinMode(RF_RST_PIN, OUTPUT);
 	digitalWrite(RF_RST_PIN, LOW);
