@@ -76,11 +76,12 @@ class BlockchainSecLib {
 		bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
 		bool set_default_datareceiver(uint32_t dataReceiverID);
 		bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
+		bool update_publickey(uint32_t deviceID, std::string const& publicKey);
 		bool push_data(uint32_t deviceID, std::string & data, uint16_t dataLen, std::string & nonce);
 		bool authorize_admin(std::string const& adminAddr);
 		bool deauthorize_admin(std::string const& adminAddr);
 
-		bool updateLocalKeys(void); // TODO: CLI Command?
+		bool updateLocalKeys(void);
 		void loadLocalDeviceParameters(void);
 		bool loadDataReceiverPublicKey(uint32_t deviceID);
 
@@ -131,7 +132,6 @@ class BlockchainSecLib {
 		std::string eth_createContract(std::string const& data);
 		std::string eth_getTransactionReceipt(std::string const& transactionHash);
 
-		bool update_publickey(uint32_t deviceID, std::string const& publicKey);
 
 
 };

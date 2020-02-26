@@ -166,9 +166,9 @@ contract DeviceMgmt {
 	modifier _mutator(uint32 device_id) {
 		require(id_to_device[device_id].active);
 		if (gateway_pool[msg.sender]) {
-			require(id_to_device[device_id].gateway_managed || id_to_device[device_id].eth_addr == msg.sender);
+			require(id_to_device[device_id].gateway_managed || id_to_device[device_id].eth_addr == msg.sender || admin_mapping[msg.sender].isAdmin);
 		} else {
-			require(id_to_device[device_id].eth_addr == msg.sender);
+			require(id_to_device[device_id].eth_addr == msg.sender || admin_mapping[msg.sender].isAdmin);
 		}
 		_;
 	}

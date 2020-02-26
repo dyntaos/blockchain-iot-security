@@ -56,6 +56,7 @@ BlockchainSecConsole::BlockchainSecConsole(void) {
 		("get_data_and_decrypt",      cmd_get_data_and_decrypt)
 		("get_received_devices",      cmd_get_received_devices)
 		("update_local_keys",         cmd_update_local_keys)
+		("update_public_key",         cmd_update_public_key)
 		("help",                      cmd_help)
 	;
 }
@@ -980,6 +981,53 @@ void BlockchainSecConsole::cmd_update_local_keys(vector<string> & cmds, Blockcha
 	}
 	cout
 		<< "Successfully created new key pair and pushed public key to Ethereum"
+		<< endl << endl;
+}
+
+
+
+void BlockchainSecConsole::cmd_update_public_key(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
+	if (cmds.size() != 2) {
+		cout << "Usage: update_public_key deviceID publicKeyHex" << endl << endl;
+		return;
+	}
+	if (!isInt(cmds[1])) {
+		cerr << "\"" << cmds[1] << "\" is not a valid device ID" << endl << endl;
+		return;
+	}
+	if (!isHex(cmds[2])) {
+		cerr << "\"" << cmds[2] << "\" is not a valid hexadecimal" << endl << endl;
+		return;
+	}
+	if (cmds[2].length() != crypto_kx_PUBLICKEYBYTES * 2) {
+		cerr
+			<< "Public key should be "
+			<< crypto_kx_PUBLICKEYBYTES * 2
+			<< " characters ("
+			<< crypto_kx_PUBLICKEYBYTES
+			<< " bytes)"
+			<< endl << endl;
+		return;
+	}
+	try {
+		if (!blockchainSec.update_publickey(
+			strtoul(cmds[1].c_str(), nullptr, 10),
+			cmds[2]
+		)) {
+			cerr
+				<< "Failed to update public key for device ID "
+				<< cmds[1]
+				<< endl << endl;
+		}
+	} catch (BlockchainSecLibException & e) {
+		cerr
+			<< "Unable to update public key"
+			<< endl << endl;
+		return;
+	}
+	cout
+		<< "Successfully updated public key for device ID "
+		<< cmds[1]
 		<< endl << endl;
 }
 
