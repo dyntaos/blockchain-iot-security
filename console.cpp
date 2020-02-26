@@ -987,7 +987,7 @@ void BlockchainSecConsole::cmd_update_local_keys(vector<string> & cmds, Blockcha
 
 
 void BlockchainSecConsole::cmd_update_public_key(vector<string> & cmds, BlockchainSecLib & blockchainSec) {
-	if (cmds.size() != 2) {
+	if (cmds.size() != 3) {
 		cout << "Usage: update_public_key deviceID publicKeyHex" << endl << endl;
 		return;
 	}
@@ -1072,6 +1072,7 @@ void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & bl
 		"\tget_data_and_decrypt\n"
 		"\tget_received_devices\n"
 		"\tupdate_local_keys\n"
+		"\tupdate_public_key\n"
 		<< endl << endl;
 }
 
