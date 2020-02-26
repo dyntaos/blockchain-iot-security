@@ -5,7 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <cpp-base64/base64.hpp>
+#include <cpp-base64/base64.h>
 #include <misc.hpp>
 #include <lora_trx.hpp>
 
