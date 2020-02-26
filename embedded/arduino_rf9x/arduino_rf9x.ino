@@ -251,10 +251,12 @@ void transmitData(struct packet *p) {
 
 	rf95.setHeaderTo(p->to);
 	rf95.setHeaderFrom(p->from);
+	rf95.setHeaderId(p->id);
 	rf95.setHeaderFlags(p->flags);
 	rf95.setHeaderFragment(p->fragment);
 
-	rf95.send((uint8_t *) p->payload.bytes, 13 + p->len); // TODO: Magic numbers
+	// rf95.send((uint8_t *) p->payload.bytes, 13 + p->len); // TODO: Magic numbers
+	rf95.send((uint8_t *) p->payload.bytes, p->len);
 	rf95.waitPacketSent();
 	Serial.println("transmitData(): Packet Sent!");
 
