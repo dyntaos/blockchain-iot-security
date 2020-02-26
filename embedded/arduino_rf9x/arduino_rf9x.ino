@@ -224,13 +224,13 @@ void signPacket(struct packet *p) {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature) // TODO Change this on LoRaTRX
+			p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature) // TODO Change this on LoRaTRX
 		);
 	} else {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len
+			p->len - 13
 		);
 	}
 
@@ -295,30 +295,24 @@ void processReply(struct packet *p) {
 bool sendData(char *data, uint8_t dataLen) {
 	struct packet p;
 
-	Serial.println("sendData():1");
 
-	//Currently, only a max of 156 bytes can be sent
-	if (dataLen > 156) return false;
+	//Currently, only a max of 154 bytes can be sent
+	if (dataLen > 154) return false;
 
-	Serial.println("sendData():2");
 
 	p.to = 0;
 	p.from = DEVICE_ID;
 	p.flags = PACKET_TYPE_DATA_FIRST;
 	p.id = 0;
 	p.fragment = 0;
-	p.len = dataLen + sizeof(p.payload.data.crypto_nonce) + sizeof(p.payload.data.signature); // TODO: This is only valid for PACKET_TYPE_DATA_FIRST
+	// TODO: Magic number
+	p.len = 13 + dataLen + sizeof(p.payload.data.crypto_nonce) + sizeof(p.payload.data.signature); // TODO: This is only valid for PACKET_TYPE_DATA_FIRST
 
-	Serial.println("sendData():3");
 	//randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 	customRandBytes(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
-	Serial.println("sendData():4");
 	encryptData(&p.payload.data, data, dataLen);
-	Serial.println("sendData():5");
 	signPacket(&p);
-	Serial.println("sendData():6");
 	transmitData(&p);
-	Serial.println("sendData():7");
 
 	return true;
 }

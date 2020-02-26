@@ -485,13 +485,13 @@ bool LoraTrx::verifySignature(struct packet *p) {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)
+			p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)
 		);
 	} else {
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len
+			p->len - 13
 		);
 	}
 
