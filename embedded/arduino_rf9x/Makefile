@@ -15,9 +15,11 @@ AVRDUDE_CONF = /etc/avrdude.conf
 CPPFLAGS += -fno-fat-lto-objects
 #CPPFLAGS += -ffat-lto-objects -fuse-linker-plugin
 #CORE_OBJS += --use-linker-plugin --plugin /home/kale/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/liblto_plugin.so
-CPPFLAGS += -I ../../RadioHead
+CPPFLAGS += -I ../../RadioHead \
+			-I ../../libsodium/src/libsodium/include/sodium \
+			-I ../../libsodium/src/libsodium/crypto_scalarmult/curve25519 \
+			-I ../../libsodium/src/libsodium/crypto_scalarmult/curve25519/ref10
 LDFLAGS = -L /home/kale/Desktop/CMPT400/dev/blockchain-iot-security/libsodium/build-cortex-m0/lib -lsodium
-#CPPFLAGS += -I ../../libsodium/src/libsodium/sodium
 MONITOR_BAUDRATE = 115200
 
 include ../Arduino-Makefile/Sam.mk

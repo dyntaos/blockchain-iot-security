@@ -15,12 +15,12 @@ unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len;
 
-unsigned char dataReceiverPublicKey[crypto_kx_PUBLICKEYBYTES];
+unsigned char dataReceiverPublicKey[crypto_sign_PUBLICKEYBYTES];
 unsigned char txSharedKey[crypto_kx_SESSIONKEYBYTES];
 unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES];
 
-unsigned char publicKey[crypto_kx_PUBLICKEYBYTES];
-unsigned char privateKey[crypto_kx_SECRETKEYBYTES];
+unsigned char publicKey[crypto_sign_PUBLICKEYBYTES];
+unsigned char privateKey[crypto_sign_SECRETKEYBYTES];
 
 struct randombytes_implementation randImplM0 = {
 	.implementation_name = customRandName,
@@ -129,37 +129,37 @@ void setup(void) {
 
 
 	//generateKeys(); // TODO
-	if (!hexToBin(publicKey, PUBLIC_KEY, sizeof(PUBLIC_KEY) - 1)) {
+	if (!hexToBin(publicKey, PUBLIC_KEY, crypto_sign_PUBLICKEYBYTES * 2)) {
 		Serial.println("Error loading existing public key!");
 	}
-	if (!hexToBin(privateKey, PRIVATE_KEY, sizeof(PRIVATE_KEY) - 1)) {
+	if (!hexToBin(privateKey, PRIVATE_KEY, crypto_sign_SECRETKEYBYTES * 2)) {
 		Serial.println("Error loading existing private key!");
 	}
-	if (!hexToBin(dataReceiverPublicKey, DATA_RECEIVER_PUBLIC_KEY, sizeof(DATA_RECEIVER_PUBLIC_KEY) - 1)) {
+	if (!hexToBin(dataReceiverPublicKey, DATA_RECEIVER_PUBLIC_KEY, crypto_sign_PUBLICKEYBYTES * 2)) {
 		Serial.println("Error loading data receiver public key!");
 	}
 
 	Serial.print("Public Key Str: ");
 	Serial.println(PUBLIC_KEY);
 	Serial.print("Public Key Hex: ");
-	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
+	hexPrint(publicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println();
 
 	Serial.print("Private Key Str: ");
 	Serial.println(PRIVATE_KEY);
 	Serial.print("Private Key Hex: ");
-	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
+	hexPrint(privateKey, crypto_sign_SECRETKEYBYTES);
 	Serial.println();
 
 	Serial.print("Data Receiver Key Str: ");
 	Serial.println(DATA_RECEIVER_PUBLIC_KEY);
 	Serial.print("Data Receiver Key Hex: ");
-	hexPrint(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	hexPrint(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println();
 
 	generateSharedKeys(); // TODO: Check return value
 
-	Serial.println("Done setup()");
+	Serial.println("\nDone setup()");
 }
 
 // TODO: Flash Memory stuff
@@ -202,7 +202,6 @@ void signPacket(struct packet *p) {
 	Serial.println("signPacket()");
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
-
 	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
 	crypto_sign_update(&state, (unsigned char*) &p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
 	crypto_sign_update(&state, &p->id, sizeof(p->id));
@@ -240,6 +239,11 @@ void signPacket(struct packet *p) {
 		NULL,
 		privateKey
 	);
+	Serial.print("Signature: ");
+	hexPrint(p->payload.data.signature, crypto_sign_BYTES);
+
+
+	Serial.println();
 }
 
 
@@ -324,21 +328,22 @@ bool sendData(char *data, uint8_t dataLen) {
 void generateKeys(void) {
 	Serial.println("generateKeys()");
 
-	if (crypto_kx_keypair(publicKey, privateKey) != 0) {
+	//if (crypto_kx_keypair(publicKey, privateKey) != 0) {
+	if (crypto_sign_keypair(publicKey, privateKey) != 0) {
 		Serial.println("crypto_kx_keypair() != 0 <FAILED>");
 	}
 
-	customRandBytes(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	customRandBytes(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.print("dataReceiver Key: ");
-	hexPrint(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
+	hexPrint(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println("");
 
 	Serial.print("      Public Key: ");
-	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
+	hexPrint(publicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println("");
 
 	Serial.print("     Private Key: ");
-	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
+	hexPrint(privateKey, crypto_sign_SECRETKEYBYTES);
 	Serial.println("");
 }
 
@@ -395,7 +400,7 @@ void customRandBytes(void *buf, const size_t size) {
 	for (uint8_t j = 0; j < size; j++) {
 		r = random(0, 255);
 		arr[j] = *byte;
-		Serial.print(arr[j], HEX);
+	//	Serial.print(arr[j], HEX);
 	}
-	Serial.println("");
+	//Serial.println("");
 }
