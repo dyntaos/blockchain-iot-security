@@ -999,12 +999,12 @@ void BlockchainSecConsole::cmd_update_public_key(vector<string> & cmds, Blockcha
 		cerr << "\"" << cmds[2] << "\" is not a valid hexadecimal" << endl << endl;
 		return;
 	}
-	if (cmds[2].length() != crypto_kx_PUBLICKEYBYTES * 2) {
+	if (cmds[2].length() != crypto_sign_PUBLICKEYBYTES * 2) {
 		cerr
 			<< "Public key should be "
-			<< crypto_kx_PUBLICKEYBYTES * 2
+			<< crypto_sign_PUBLICKEYBYTES * 2
 			<< " characters ("
-			<< crypto_kx_PUBLICKEYBYTES
+			<< crypto_sign_PUBLICKEYBYTES
 			<< " bytes)"
 			<< endl << endl;
 		return;

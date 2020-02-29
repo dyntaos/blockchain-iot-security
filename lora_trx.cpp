@@ -357,7 +357,7 @@ void LoraTrx::processPacket(struct packet *p) {
 				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
 			) {
 				try {
-					string data = string((char*) p->payload.data.data, p->len - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
+					string data = string((char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
 					string nonce = string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 					blockchainSec->push_data(
 						p->from,
@@ -445,22 +445,21 @@ void LoraTrx::processPacket(struct packet *p) {
 
 
 bool LoraTrx::verifySignature(struct packet *p) {
-	string senderPubKeyB64;
-	unsigned char senderPubKey[crypto_kx_PUBLICKEYBYTES];
+	vector<char> senderPubKeyHex;
+	unsigned char senderPubKey[crypto_sign_PUBLICKEYBYTES];
 	crypto_sign_state state;
 	uint8_t maskedFlags;
 
 	if (p == NULL) return false;
 
 	try {
-		senderPubKeyB64 = blockchainSec->get_key(p->from);
+		senderPubKeyHex = hexToBytes(blockchainSec->get_key(p->from));
 	} catch (BlockchainSecLibException & e) {
 		return false;
 	}
-	memcpy(senderPubKey, base64_decode(senderPubKeyB64).c_str(), crypto_kx_PUBLICKEYBYTES);
+	memcpy(senderPubKey, string(senderPubKeyHex.begin(), senderPubKeyHex.end()).c_str(), crypto_sign_PUBLICKEYBYTES);
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
-
 	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
 	crypto_sign_update(&state, (unsigned char*) &p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
 	crypto_sign_update(&state, &p->id, sizeof(p->id));
@@ -492,6 +491,8 @@ bool LoraTrx::verifySignature(struct packet *p) {
 		);
 	}
 
+	string hexS = hexStr(p->payload.data.signature, crypto_sign_BYTES);
+	cout << "Message Signature: " << hexS << endl << "Sender PubKey: " << hexStr(senderPubKey, crypto_sign_PUBLICKEYBYTES) << endl;
 	if (crypto_sign_final_verify(
 			&state,
 			p->payload.data.signature,
@@ -502,6 +503,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	}
 	return true;
 }
+
 
 
 }
