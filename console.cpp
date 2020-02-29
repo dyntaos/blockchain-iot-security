@@ -10,6 +10,7 @@
 #include <blockchainsec_except.hpp>
 #include <console.hpp>
 #include <misc.hpp>
+#include <cpp-base64/base64.h>
 
 using namespace std;
 
@@ -446,10 +447,14 @@ void BlockchainSecConsole::cmd_get_data(vector<string> & cmds, BlockchainSecLib 
 	}
 	try {
 		vector<string> v = blockchainSec.get_data(strtoul(cmds[1].c_str(), nullptr, 10));
-		for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
-			cout << *it << endl;
+		if (v.size() != 3) {
+			cerr << "Invalid responce format!" << endl;
+			return;
 		}
-		cout  << endl;
+		cout << "Data: " << base64_decode(v[0]) << endl;
+		cout << "Base 64 Data: " << v[0] << endl;
+		cout << "Data Length: " << v[1] << endl;
+		cout << "Crypto NONCE: " << v[2] << endl << endl;
 	} catch (BlockchainSecLibException & e) {
 		cerr
 			<< "Device ID "

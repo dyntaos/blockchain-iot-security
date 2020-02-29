@@ -172,7 +172,7 @@ void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*
 
 			rf95.setHeaderTo(tx_buffer->to);
 
-			if (!rf95.send((uint8_t*) &tx_buffer->payload.bytes, tx_buffer->len + 13)) { // TODO: Magic numbers
+			if (!rf95.send((uint8_t*) &tx_buffer->payload.bytes, tx_buffer->len + 13)) { // TODO: Magic numbers -- May need to remove constant
 				cerr << "Error transmitting packet..." << endl;
 				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
 			} else {
