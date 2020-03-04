@@ -7,7 +7,9 @@
 
 
 using namespace std;
-namespace blockchainSec {
+
+namespace eth_interface
+{
 
 
 
@@ -15,9 +17,10 @@ EventLogWaitManager::EventLogWaitManager(
 	string const& clientAddress,
 	string const& contractAddress,
 	string const& ipcPath,
-	vector<pair<string, string>> const& contractLogSignatures) {
-
-	if (contractLogSignatures.size() < 1) {
+	vector<pair<string, string>> const& contractLogSignatures)
+{
+	if (contractLogSignatures.size() < 1)
+	{
 		throw InvalidArgumentException("contractLogSignatures has no log signatures to subscribe to");
 	}
 
@@ -30,15 +33,20 @@ EventLogWaitManager::EventLogWaitManager(
 
 
 
-void EventLogWaitManager::joinThread(void) {
-	if (subscriptionListener != NULL) {
+void
+EventLogWaitManager::joinThread(void)
+{
+	if (subscriptionListener != NULL)
+	{
 		subscriptionListener->join();
 	}
 }
 
 
 
-unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string const& logID) {
+unique_ptr<unordered_map<string, string>>
+EventLogWaitManager::getEventLog(string const& logID)
+{
 	unordered_map<string, string> *element;
 
 #ifdef _DEBUG
@@ -51,23 +59,31 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 	cout << "EventLogWaitManager::getEventLog(): Mutex acquired..." << endl << endl;
 #endif //_DEBUG
 
-	if (eventLogMap.count(logID) == 0) {
+	if (eventLogMap.count(logID) == 0)
+	{
 		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
 	}
 
-	if (eventLogMap[logID]->hasWaitingThread) {
+	if (eventLogMap[logID]->hasWaitingThread)
+	{
 		mtx.unlock();
-		throw ResourceRequestFailedException("Cannot request log which already has a thread waiting on it.");
+		throw ResourceRequestFailedException(
+			"Cannot request log which already has a thread waiting on it."
+		);
 	}
 	eventLogMap[logID].get()->hasWaitingThread = true;
 
-	if (!eventLogMap[logID].get()->hasEventLog) {
+	if (!eventLogMap[logID].get()->hasEventLog)
+	{
+
 #ifdef _DEBUG
-	cout << "EventLogWaitManager::getEventLog(): Releasing mutex and waiting on condition variable \""
-		<< logID << "\"..." << endl << endl;
+		cout << "EventLogWaitManager::getEventLog(): Releasing mutex and waiting on condition variable \""
+			<< logID << "\"..." << endl << endl;
 #endif //_DEBUG
+
 		mtx.unlock();
-		while (!eventLogMap[logID].get()->hasEventLog) {
+		while (!eventLogMap[logID].get()->hasEventLog)
+		{
 			eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock);
 		}
 		mtx.lock();
@@ -86,27 +102,31 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 
 
 
-void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string, string> const& eventLog) {
+void
+EventLogWaitManager::setEventLog(string const& logID, unordered_map<string, string> const& eventLog)
+{
 	mtx.lock();
 
-	if (eventLogMap.count(logID) == 0) {
+	if (eventLogMap.count(logID) == 0)
+	{
 
 #ifdef _DEBUG
-	cout << "EventLogWaitManager::setEventLog(): Create EventLogWaitElement \""
-		<< logID << "\"..." << endl << endl;
+		cout << "EventLogWaitManager::setEventLog(): Create EventLogWaitElement \""
+			<< logID << "\"..." << endl << endl;
 #endif //_DEBUG
 
 		eventLogMap.emplace(logID, make_unique<EventLogWaitElement>());
 	}
 #ifdef _DEBUG
-	 else {
-		 cout << "EventLogWaitManager::setEventLog(): EventLogWaitElement \""
+	else
+	{
+		cout << "EventLogWaitManager::setEventLog(): EventLogWaitElement \""
 			<< logID << "\" already exists..." << endl << endl;
-	 }
+	}
 #endif //_DEBUG
 
-
-	if (eventLogMap[logID].get()->hasEventLog) {
+	if (eventLogMap[logID].get()->hasEventLog)
+	{
 		mtx.unlock();
 		throw ResourceRequestFailedException("logID \"" + logID + "\" already has an associated event log.");
 	}
@@ -114,11 +134,12 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 	eventLogMap[logID].get()->eventLog = unique_ptr<unordered_map<string, string>>(new unordered_map<string, string>(eventLog));
 	eventLogMap[logID].get()->hasEventLog = true;
 
-	if (eventLogMap[logID].get()->hasWaitingThread) {
+	if (eventLogMap[logID].get()->hasWaitingThread)
+	{
 
 #ifdef _DEBUG
-	cout << "EventLogWaitManager::setEventLog(): Notfiy condition variable \""
-		<< logID << "\"..." << endl << endl;
+		cout << "EventLogWaitManager::setEventLog(): Notfiy condition variable \""
+			<< logID << "\"..." << endl << endl;
 #endif //_DEBUG
 
 		eventLogMap[logID].get()->cv.notify_all();
@@ -129,10 +150,11 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 
 
 
-void EventLogWaitManager::ipc_subscription_listener_setup(
+void
+EventLogWaitManager::ipc_subscription_listener_setup(
 	boost::asio::local::stream_protocol::socket & socket,
-	boost::asio::local::stream_protocol::endpoint & ep) {
-
+	boost::asio::local::stream_protocol::endpoint & ep)
+{
 	char receiveBuffer[IPC_BUFFER_LENGTH];
 	string subscribeParse, data, message;
 	Json jsonResponce;
@@ -143,16 +165,20 @@ void EventLogWaitManager::ipc_subscription_listener_setup(
 
 restart: // TODO: Get rid of this
 
-	try {
+	try
+	{
 		socket.connect(ep);
-	} catch (...) {
+	}
+	catch (...)
+	{
 		throw ResourceRequestFailedException(
 			"Failed to open Unix Domain Socket with Geth Ethereum client via "
 			"\"" + ipcPath + "\""
 		);
 	}
 
-	for (i = 0; i < contractLogSignatures.size(); i++) {
+	for (i = 0; i < contractLogSignatures.size(); i++)
+	{
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
@@ -168,13 +194,15 @@ restart: // TODO: Get rid of this
 
 
 		socket.send(boost::asio::buffer(data.c_str(), data.length()));
-		cout << "ipc_subscription_listener_setup(): I sended data: \"" << data << "\"" << endl;
+
 subscribeReceive: // TODO: Get rid of this
 
-		while (subscribeParse.find_first_of('\n', 0) == string::npos) {
+		while (subscribeParse.find_first_of('\n', 0) == string::npos)
+		{
 			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
-			cout << "ipc_subscription_listener_setup(): I gotted data: \"" << receiveBuffer << "\"" << endl;
-			if (receiveLength == 0) {
+
+			if (receiveLength == 0)
+			{
 				// Socket was closed by other end
 				goto restart;
 			}
@@ -188,9 +216,12 @@ subParse:  // TODO: Get rid of this
 		subscribeParse = subscribeParse.substr(subscribeParse.find_first_of('\n', 0) + 1);
 
 		// TODO: Should this be in a try catch? What to do if fails?
-		try {
+		try
+		{
 			jsonResponce = Json::parse(message);
-		} catch (const Json::exception &e) {
+		}
+		catch (const Json::exception &e)
+		{
 			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce while subscribing:"
 				<< endl
 				<< "\t"
@@ -201,7 +232,8 @@ subParse:  // TODO: Get rid of this
 			goto restart; // TODO: Remove this
 		}
 
-		if (jsonResponce.count("error") > 0) {
+		if (jsonResponce.count("error") > 0)
+		{
 			throw ResourceRequestFailedException(
 				"ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!\n"
 				"Signature: " + contractLogSignatures[i].second + "\n"
@@ -210,13 +242,17 @@ subParse:  // TODO: Get rid of this
 			);
 		}
 
-		if (jsonResponce.contains("method") > 0) {
+		if (jsonResponce.contains("method") > 0)
+		{
 			receiveParse += message + "\n";
 			goto subscribeReceive;
 		}
 
-		if (jsonResponce.count("result") == 0 || !jsonResponce["result"].is_string()) {
-			throw ResourceRequestFailedException("ipc_subscription_listener_thread(): Unexpected responce to eth_subscribe received!");
+		if (jsonResponce.count("result") == 0 || !jsonResponce["result"].is_string())
+		{
+			throw ResourceRequestFailedException(
+				"ipc_subscription_listener_thread(): Unexpected responce to eth_subscribe received!"
+			);
 		}
 		string result = jsonResponce["result"];
 
@@ -229,7 +265,9 @@ subParse:  // TODO: Get rid of this
 
 
 
-void EventLogWaitManager::ipc_subscription_listener_thread(void) {
+void
+EventLogWaitManager::ipc_subscription_listener_thread(void)
+{
 	boost::asio::io_service io_service;
 	boost::asio::local::stream_protocol::endpoint ep(ipcPath);
 	boost::asio::local::stream_protocol::socket socket(io_service);
@@ -245,26 +283,27 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 
 	ipc_subscription_listener_setup(socket, ep);
 
-	for (;;) {
-		while (receiveParse.find_first_of('\n', 0) == string::npos) {
-			cout << "ipc_subscription_listener_thread(): receiveParse: \"" << receiveParse << "\"" << endl;
-			cout << "ipc_subscription_listener_thread(): Entering receive..." << endl;
+	for (;;)
+	{
+		while (receiveParse.find_first_of('\n', 0) == string::npos)
+		{
 			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
-			cout << "ipc_subscription_listener_thread(): Done receive..." << endl;
-			if (receiveLength == 0) {
+
+			if (receiveLength == 0)
+			{
 				// Socket was closed by other end
-				cout << "ipc_subscription_listener_thread(): Received 0 bytes..." << endl;
 				socket.close(); // TODO: What happens if this socket is already closed?
 				ipc_subscription_listener_setup(socket, ep);
 			}
 			receiveBuffer[receiveLength] = 0;
 			receiveParse += receiveBuffer;
 		}
-		cout << "ipc_subscription_listener_thread(): Have message..." << endl;
+
 		message = receiveParse.substr(0, receiveParse.find_first_of('\n', 0));
 		receiveParse = receiveParse.substr(receiveParse.find_first_of('\n', 0) + 1);
 
-		try {
+		try
+		{
 			jsonData = Json::parse(message);
 
 			method = jsonData["method"];
@@ -273,7 +312,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 
 			topics.clear();
 
-			for (Json::iterator iter = resultJsonObject["topics"].begin(); iter != resultJsonObject["topics"].end(); ++iter) {
+			for (Json::iterator iter = resultJsonObject["topics"].begin(); iter != resultJsonObject["topics"].end(); ++iter)
+			{
 				string iterStr = *iter;
 				iterStr = iterStr.substr(2);
 				topics.push_back(iterStr);
@@ -282,7 +322,9 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 			data = resultJsonObject["data"];
 			transactionHash = resultJsonObject["transactionHash"];
 
-		} catch (const Json::exception &e) {
+		}
+		catch (const Json::exception &e)
+		{
 			cerr << "ipc_subscription_listener_thread(): JSON responce error in responce:"
 				<< endl
 				<< "\t"
@@ -293,7 +335,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 			continue;
 		}
 
-		if (method.compare("eth_subscription") != 0) {
+		if (method.compare("eth_subscription") != 0)
+		{
 			// "method" field of the JSON data is not "eth_subscription"
 			cerr << "ipc_subscription_listener_thread(): \"method\" field of JSON message is \"eth_subscription\"!"
 				<< endl
@@ -304,7 +347,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 			continue;
 		}
 
-		if (subscriptionToEventName.count(subscription) <= 0) {cout << "Count topics2: " << topics.size() << endl;
+		if (subscriptionToEventName.count(subscription) <= 0)
+		{
 			//TODO: The subscription does not exist! Something is out of sync! -- Unsubscribe and start again?
 			cerr << "ipc_subscription_listener_thread(): Received a subscription hash that does not exist internally!"
 				<< endl
