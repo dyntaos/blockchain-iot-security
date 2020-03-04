@@ -1,8 +1,4 @@
 #include <iostream>
-#include <string>
-#include <condition_variable>
-#include <mutex>
-#include <boost/asio.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 #include <blockchainsec.hpp>
@@ -15,11 +11,31 @@ namespace blockchainSec {
 
 
 
-EventLogWaitManager::EventLogWaitManager(string const& clientAddress, string const& contractAddress, string const& ipcPath) {
+EventLogWaitManager::EventLogWaitManager(
+	string const& clientAddress,
+	string const& contractAddress,
+	string const& ipcPath,
+	vector<pair<string, string>> const& contractLogSignatures) {
+
+	if (contractLogSignatures.size() < 1) {
+		throw InvalidArgumentException("contractLogSignatures has no log signatures to subscribe to");
+	}
+
 	this->clientAddress = clientAddress;
 	this->contractAddress = contractAddress;
 	this->ipcPath = ipcPath;
+	this->contractLogSignatures = contractLogSignatures;
+	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, this);
 }
+
+
+
+void EventLogWaitManager::joinThread(void) {
+	if (subscriptionListener != NULL) {
+		subscriptionListener->join();
+	}
+}
+
 
 
 unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(string const& logID) {
@@ -51,7 +67,9 @@ unique_ptr<unordered_map<string, string>> EventLogWaitManager::getEventLog(strin
 		<< logID << "\"..." << endl << endl;
 #endif //_DEBUG
 		mtx.unlock();
-		while (!eventLogMap[logID].get()->hasEventLog) eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock);
+		while (!eventLogMap[logID].get()->hasEventLog) {
+			eventLogMap[logID].get()->cv.wait(eventLogMap[logID].get()->cvLock);
+		}
 		mtx.lock();
 	}
 
@@ -111,55 +129,21 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 
 
 
-void EventLogWaitManager::ipc_subscription_listener_thread(void) {
-	const string events[] = {
-		"Add_Device",
-		"Add_Gateway",
-		"Remove_Device",
-		"Remove_Gateway",
-		"Push_Data",
-		"Update_DataReceiver",
-		"Set_Default_DataReceiver",
-		"Update_Addr",
-		"Update_PublicKey",
-		"Authorize_Admin",
-		"Deauthorize_Admin"
-	};
-	const string signatures[] = {
-		"91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01",
-		"ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671",
-		"c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363",
-		"0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9",
-		//"0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51",
-		"bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9",
-		"e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf",
-		"adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287",
-		"8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80",
-		"9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f",
-		"134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf",
-		"e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"
-	};
+void EventLogWaitManager::ipc_subscription_listener_setup(void) {
 	char receiveBuffer[IPC_BUFFER_LENGTH];
+	string subscribeParse, data, message;
+	Json jsonResponce;
 	int receiveLength;
 	uint16_t i;
 
-	Json jsonData, resultJsonObject, jsonResponce;
-	string subscribeParse, receiveParse, data, message, method, subscription, transactionHash;
-	vector<string> topics;
-	map<string, string> subscriptionToEventName;
-
-	boost::asio::io_service io_service;
-	boost::asio::local::stream_protocol::endpoint ep(ipcPath);
-	boost::asio::local::stream_protocol::socket socket(io_service);
-
-#ifdef _DEBUG
-	cout << "ipc_subscription_listener_thread()" << endl;
-#endif //_DEBUG
+	subscriptionToEventName.clear();
 
 restart: // TODO: Get rid of this
+	if (ep == NULL) ep = new boost::asio::local::stream_protocol::endpoint(ipcPath);
+	if (socket == NULL) socket = new boost::asio::local::stream_protocol::socket(io_service);
 
 	try {
-		socket.connect(ep);
+		socket->connect(*ep);
 	} catch (...) {
 		throw ResourceRequestFailedException(
 			"Failed to open Unix Domain Socket with Geth Ethereum client via "
@@ -167,26 +151,26 @@ restart: // TODO: Get rid of this
 		);
 	}
 
-	for (i = 0; i < 11; i++) { // TODO URGENT: Dynamically set upper bound****
+	for (i = 0; i < contractLogSignatures.size(); i++) {
 		data = "{\"id\":1,"
 					"\"method\":\"eth_subscribe\","
 					"\"params\":["
 						"\"logs\",{"
 							"\"address\":\"0x" + contractAddress + "\","
 							"\"topics\":[\"" +
-								"0x" + signatures[i] + "\"," +
+								"0x" + contractLogSignatures[i].second + "\"," +
 								"\"0x000000000000000000000000" + clientAddress +
 							"\"]"
 						"}"
 					"]"
 				"}";
 
-		socket.send(boost::asio::buffer(data.c_str(), data.length()));
+		socket->send(boost::asio::buffer(data.c_str(), data.length()));
 
 subscribeReceive: // TODO: Get rid of this
 
 		while (subscribeParse.find_first_of('\n', 0) == string::npos) {
-			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			receiveLength = socket->receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
 			if (receiveLength == 0) {
 				// Socket was closed by other end
 				goto restart;
@@ -215,10 +199,9 @@ subParse:  // TODO: Get rid of this
 		}
 
 		if (jsonResponce.count("error") > 0) {
-			cerr << "\ti = " << i << endl << endl; //TODO: REMOVE!
 			throw ResourceRequestFailedException(
 				"ipc_subscription_listener_thread(): Got an error responce to eth_subscribe!\n"
-				"Signature: " + signatures[i] + "\n"
+				"Signature: " + contractLogSignatures[i].second + "\n"
  				"Request: " + data + "\n"
 				"Responce: " + message + "\n"
 			);
@@ -234,20 +217,35 @@ subParse:  // TODO: Get rid of this
 		}
 		string result = jsonResponce["result"];
 
-		subscriptionToEventName[result] = events[i];
+		subscriptionToEventName[result] = contractLogSignatures[i].first;
 	}
 
 	boost::trim(subscribeParse);
 	if (subscribeParse.length() > 0) goto subParse;
+}
+
+
+
+void EventLogWaitManager::ipc_subscription_listener_thread(void) {
+	char receiveBuffer[IPC_BUFFER_LENGTH];
+	int receiveLength;
+	Json jsonData, resultJsonObject;
+	string data, message, method, subscription, transactionHash;
+	vector<string> topics;
+
+#ifdef _DEBUG
+	cout << "ipc_subscription_listener_thread()" << endl;
+#endif //_DEBUG
+
+	ipc_subscription_listener_setup();
 
 	for (;;) {
 		while (receiveParse.find_first_of('\n', 0) == string::npos) {
-			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			receiveLength = socket->receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
 			if (receiveLength == 0) {
 				// Socket was closed by other end
-				socket.close(); // TODO: What happens if this socket is already closed?
-				subscriptionToEventName.clear();
-				goto restart;
+				socket->close(); // TODO: What happens if this socket is already closed?
+				ipc_subscription_listener_setup();
 			}
 			receiveBuffer[receiveLength] = 0;
 			receiveParse += receiveBuffer;
@@ -305,9 +303,8 @@ subParse:  // TODO: Get rid of this
 				<< endl
 				<< endl;
 
-			socket.close();
-			subscriptionToEventName.clear();
-			goto restart; // TODO: Refactor to remove this
+			socket->close();
+			ipc_subscription_listener_setup();
 		}
 
 		unordered_map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
@@ -329,7 +326,7 @@ subParse:  // TODO: Get rid of this
 #endif //_DEBUG
 
 	}
-	socket.close();
+	socket->close();
 }
 
 

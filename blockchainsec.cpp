@@ -46,6 +46,24 @@ BlockchainSecLib::~BlockchainSecLib() {}
 
 
 
+vector<pair<string, string>> BlockchainSecLib::contractLogSignatures(void) {
+	vector<pair<string, string>> vecLogSigs;
+	vecLogSigs.push_back(pair<string, string>("Add_Device",               "91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01"));
+	vecLogSigs.push_back(pair<string, string>("Add_Gateway",              "ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671"));
+	vecLogSigs.push_back(pair<string, string>("Remove_Device",            "c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363"));
+	vecLogSigs.push_back(pair<string, string>("Remove_Gateway",           "0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9"));
+	vecLogSigs.push_back(pair<string, string>("Push_Data",                "bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9"));
+	vecLogSigs.push_back(pair<string, string>("Update_DataReceiver",      "e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf"));
+	vecLogSigs.push_back(pair<string, string>("Set_Default_DataReceiver", "adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287"));
+	vecLogSigs.push_back(pair<string, string>("Update_Addr",              "8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80"));
+	vecLogSigs.push_back(pair<string, string>("Update_PublicKey",         "9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f"));
+	vecLogSigs.push_back(pair<string, string>("Authorize_Admin",          "134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf"));
+	vecLogSigs.push_back(pair<string, string>("Deauthorize_Admin",        "e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"));
+	return vecLogSigs;
+}
+
+
+
 BlockchainSecLib::BlockchainSecLib(bool compile) {
 
 	if (sodium_init() < 0) {
@@ -130,8 +148,12 @@ BlockchainSecLib::BlockchainSecLib(bool compile) {
 	cout << "Config contains contractAddress" << endl;
 	cfg.lookupValue("contractAddress", contractAddress); // TODO Check return value
 
-	eventLogWaitManager = new EventLogWaitManager(getClientAddress().substr(2), getContractAddress().substr(2), ipcPath);
-	subscriptionListener = new thread(&EventLogWaitManager::ipc_subscription_listener_thread, eventLogWaitManager);
+	eventLogWaitManager = new EventLogWaitManager(
+		getClientAddress().substr(2),
+		getContractAddress().substr(2),
+		ipcPath,
+		contractLogSignatures()
+	);
 
 	loadLocalDeviceParameters();
 }
@@ -988,7 +1010,7 @@ string BlockchainSecLib::eth_getTransactionReceipt(string const& transactionHash
 
 
 void BlockchainSecLib::joinThreads(void) {
-	subscriptionListener->join();
+	eventLogWaitManager->joinThread();
 }
 
 

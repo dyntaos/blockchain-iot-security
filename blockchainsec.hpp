@@ -109,8 +109,9 @@ class BlockchainSecLib {
 		unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
 		unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES + 1], txSharedKey[crypto_kx_SESSIONKEYBYTES + 1];
 
-		std::thread *subscriptionListener;
 		EventLogWaitManager *eventLogWaitManager;
+
+		std::vector<std::pair<std::string, std::string>> contractLogSignatures(void);
 
 		std::string getFrom(std::string const& funcName, std::string const& ethabiEncodeArgs);
 		std::string getFromDeviceID(std::string const& funcName, uint32_t deviceID);
@@ -132,9 +133,8 @@ class BlockchainSecLib {
 		std::string eth_createContract(std::string const& data);
 		std::string eth_getTransactionReceipt(std::string const& transactionHash);
 
-
-
 };
+
 
 }
 

@@ -3,8 +3,10 @@
 
 #include <string>
 #include <map>
+#include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <boost/asio.hpp>
 
 
 namespace blockchainSec {
@@ -12,14 +14,30 @@ namespace blockchainSec {
 
 class EventLogWaitManager {
 	public:
-		EventLogWaitManager(std::string const& clientAddress, std::string const& contractAddress, std::string const& ipcPath);
+
+		EventLogWaitManager(
+			std::string const& clientAddress,
+			std::string const& contractAddress,
+			std::string const& ipcPath,
+			std::vector<std::pair<std::string, std::string>> const& contractLogSignatures
+		);
 		std::unique_ptr<std::unordered_map<std::string, std::string>> getEventLog(std::string const& logID);
 		void setEventLog(std::string const& logID, std::unordered_map<std::string, std::string> const& eventLog);
+		void joinThread(void);
 
 		// Thread main function for geth log monitor thread
 		void ipc_subscription_listener_thread(void);
 
 	private:
+		std::thread *subscriptionListener = NULL;
+
+		std::vector<std::pair<std::string, std::string>> contractLogSignatures;
+		std::map<std::string, std::string> subscriptionToEventName;
+		boost::asio::io_service io_service;
+		boost::asio::local::stream_protocol::endpoint *ep = NULL;
+		boost::asio::local::stream_protocol::socket *socket = NULL;
+		std::string receiveParse;
+
 		std::string contractAddress;
 		std::string clientAddress;
 		std::string ipcPath;
@@ -49,6 +67,8 @@ class EventLogWaitManager {
 
 		std::mutex mtx;
 		std::unordered_map<std::string, std::unique_ptr<EventLogWaitElement>> eventLogMap;
+
+		void ipc_subscription_listener_setup(void);
 };
 
 
