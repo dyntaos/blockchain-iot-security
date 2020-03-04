@@ -97,8 +97,8 @@ contract DeviceMgmt {
 	// Keccak256 Signature: adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287
 	event Set_Default_DataReceiver	(address indexed msgSender, uint32 device_id);
 
-	// Keccak256 Signature: 8489be1d551a279fae5e4ed28b2a0aab728d48550f6a64375f627ac809ac2a80
-	event Update_Addr				(address indexed msgSender, uint32 device_id, uint addrType, string addr);
+	// Keccak256 Signature: f873df4dfb480f3a05c2bde3cae4779f61d6b60c3f6a0f1ab57aac0fe021a686
+	event Update_Addr				(address indexed msgSender, uint32 device_id, uint32 addrType, string addr);
 
 	// Keccak256 Signature: 9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f
 	event Update_PublicKey			(address indexed msgSender, uint32 device_id, string newPublicKey);

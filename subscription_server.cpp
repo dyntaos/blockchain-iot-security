@@ -129,7 +129,10 @@ void EventLogWaitManager::setEventLog(string const& logID, unordered_map<string,
 
 
 
-void EventLogWaitManager::ipc_subscription_listener_setup(void) {
+void EventLogWaitManager::ipc_subscription_listener_setup(
+	boost::asio::local::stream_protocol::socket & socket,
+	boost::asio::local::stream_protocol::endpoint & ep) {
+
 	char receiveBuffer[IPC_BUFFER_LENGTH];
 	string subscribeParse, data, message;
 	Json jsonResponce;
@@ -139,11 +142,9 @@ void EventLogWaitManager::ipc_subscription_listener_setup(void) {
 	subscriptionToEventName.clear();
 
 restart: // TODO: Get rid of this
-	if (ep == NULL) ep = new boost::asio::local::stream_protocol::endpoint(ipcPath);
-	if (socket == NULL) socket = new boost::asio::local::stream_protocol::socket(io_service);
 
 	try {
-		socket->connect(*ep);
+		socket.connect(ep);
 	} catch (...) {
 		throw ResourceRequestFailedException(
 			"Failed to open Unix Domain Socket with Geth Ethereum client via "
@@ -165,12 +166,14 @@ restart: // TODO: Get rid of this
 					"]"
 				"}";
 
-		socket->send(boost::asio::buffer(data.c_str(), data.length()));
 
+		socket.send(boost::asio::buffer(data.c_str(), data.length()));
+		cout << "ipc_subscription_listener_setup(): I sended data: \"" << data << "\"" << endl;
 subscribeReceive: // TODO: Get rid of this
 
 		while (subscribeParse.find_first_of('\n', 0) == string::npos) {
-			receiveLength = socket->receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			cout << "ipc_subscription_listener_setup(): I gotted data: \"" << receiveBuffer << "\"" << endl;
 			if (receiveLength == 0) {
 				// Socket was closed by other end
 				goto restart;
@@ -227,6 +230,9 @@ subParse:  // TODO: Get rid of this
 
 
 void EventLogWaitManager::ipc_subscription_listener_thread(void) {
+	boost::asio::io_service io_service;
+	boost::asio::local::stream_protocol::endpoint ep(ipcPath);
+	boost::asio::local::stream_protocol::socket socket(io_service);
 	char receiveBuffer[IPC_BUFFER_LENGTH];
 	int receiveLength;
 	Json jsonData, resultJsonObject;
@@ -237,20 +243,24 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
-	ipc_subscription_listener_setup();
+	ipc_subscription_listener_setup(socket, ep);
 
 	for (;;) {
 		while (receiveParse.find_first_of('\n', 0) == string::npos) {
-			receiveLength = socket->receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			cout << "ipc_subscription_listener_thread(): receiveParse: \"" << receiveParse << "\"" << endl;
+			cout << "ipc_subscription_listener_thread(): Entering receive..." << endl;
+			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			cout << "ipc_subscription_listener_thread(): Done receive..." << endl;
 			if (receiveLength == 0) {
 				// Socket was closed by other end
-				socket->close(); // TODO: What happens if this socket is already closed?
-				ipc_subscription_listener_setup();
+				cout << "ipc_subscription_listener_thread(): Received 0 bytes..." << endl;
+				socket.close(); // TODO: What happens if this socket is already closed?
+				ipc_subscription_listener_setup(socket, ep);
 			}
 			receiveBuffer[receiveLength] = 0;
 			receiveParse += receiveBuffer;
 		}
-
+		cout << "ipc_subscription_listener_thread(): Have message..." << endl;
 		message = receiveParse.substr(0, receiveParse.find_first_of('\n', 0));
 		receiveParse = receiveParse.substr(receiveParse.find_first_of('\n', 0) + 1);
 
@@ -303,8 +313,8 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 				<< endl
 				<< endl;
 
-			socket->close();
-			ipc_subscription_listener_setup();
+			socket.close();
+			ipc_subscription_listener_setup(socket, ep);
 		}
 
 		unordered_map<string, string> log = ethabi_decode_log(ETH_CONTRACT_ABI, subscriptionToEventName[subscription], topics, data.substr(2));
@@ -326,7 +336,7 @@ void EventLogWaitManager::ipc_subscription_listener_thread(void) {
 #endif //_DEBUG
 
 	}
-	socket->close();
+	socket.close();
 }
 
 

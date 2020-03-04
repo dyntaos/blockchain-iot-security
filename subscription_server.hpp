@@ -33,9 +33,9 @@ class EventLogWaitManager {
 
 		std::vector<std::pair<std::string, std::string>> contractLogSignatures;
 		std::map<std::string, std::string> subscriptionToEventName;
-		boost::asio::io_service io_service;
-		boost::asio::local::stream_protocol::endpoint *ep = NULL;
-		boost::asio::local::stream_protocol::socket *socket = NULL;
+		//boost::asio::io_service io_service;
+		//boost::asio::local::stream_protocol::endpoint *ep = NULL;
+		//boost::asio::local::stream_protocol::socket *socket = NULL;
 		std::string receiveParse;
 
 		std::string contractAddress;
@@ -68,7 +68,10 @@ class EventLogWaitManager {
 		std::mutex mtx;
 		std::unordered_map<std::string, std::unique_ptr<EventLogWaitElement>> eventLogMap;
 
-		void ipc_subscription_listener_setup(void);
+		void ipc_subscription_listener_setup(
+			boost::asio::local::stream_protocol::socket & socket,
+			boost::asio::local::stream_protocol::endpoint & ep
+		);
 };
 
 
