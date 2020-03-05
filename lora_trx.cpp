@@ -19,6 +19,7 @@ namespace blockchainSec
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 
+
 LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
 {
 	if (blockchainSec == NULL)
@@ -47,6 +48,7 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
 			 << endl;
 	}
 }
+
 
 
 bool
@@ -507,12 +509,21 @@ LoraTrx::verifySignature(struct packet* p)
 
 	try
 	{
-		senderPubKeyHex = hexToBytes(blockchainSec->get_SignKey(p->from));
+		string hexSignKey = blockchainSec->get_SignKey(p->from);
+		if (hexSignKey.length() != crypto_sign_PUBLICKEYBYTES * 2)
+		{
+			cerr << "Valid signature public key does not exist on blockchain for device ID "
+				 << p->from
+				 << endl;
+			return false;
+		}
+		senderPubKeyHex = hexToBytes(hexSignKey);
 	}
 	catch (EthException& e)
 	{
 		return false;
 	}
+
 	memcpy(senderPubKey, string(senderPubKeyHex.begin(), senderPubKeyHex.end()).c_str(), crypto_sign_PUBLICKEYBYTES);
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
