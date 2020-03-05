@@ -28,14 +28,13 @@ ethabi(string const& args)
 	cout << "ethabi(): Requested '" << args << "'" << endl;
 #endif //_DEBUG
 
-	FILE *ethabi_pipe = popen(("ethabi " + args).c_str(), "r");
+	FILE* ethabi_pipe = popen(("ethabi " + args).c_str(), "r");
 	if (ethabi_pipe == NULL)
 	{
 		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
 		throw ResourceRequestFailedException(
 			"ethabi(): Failed to popen() pipe to ethabi binary. "
-			"Is the binary installed and in the $PATH environment variable?"
-		);
+			"Is the binary installed and in the $PATH environment variable?");
 	}
 	while (fgets(pipe_buffer.data(), IPC_BUFFER_LENGTH, ethabi_pipe) != NULL)
 	{
@@ -45,9 +44,10 @@ ethabi(string const& args)
 	{
 		throw ResourceRequestFailedException(
 			"ethabi(): ethabi binary exited with a failure status!\n"
-			"Args: " + args + "\n"
-			"Output: " + result + "\n"
-		);
+			"Args: "
+			+ args + "\n"
+					 "Output: "
+			+ result + "\n");
 	}
 
 #ifdef _DEBUG
@@ -55,8 +55,10 @@ ethabi(string const& args)
 	cout << "ethabi(): Returning: " << boost::trim_copy(result) << endl;
 #endif //_DEBUG
 
-	return boost::trim_copy(result);;
+	return boost::trim_copy(result);
+	;
 }
+
 
 
 //TODO: Should I be using unique_ptr<unordered_map<...>> ?
@@ -64,7 +66,7 @@ unordered_map<string, string>
 ethabi_decode_log(
 	string const& abiFile,
 	string const& eventName,
-	vector<string> & topics,
+	vector<string>& topics,
 	string const& data)
 {
 	string query, responce;
@@ -182,7 +184,6 @@ ethabi_decode_uint32_array(string const& abiFile, string const& eventName, strin
 	}
 	return arrayUInt32;
 }
-
 
 
 } //namespace

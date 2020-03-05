@@ -1,6 +1,6 @@
-#include <iostream>
-#include <ctime>
 #include <boost/algorithm/string/trim.hpp>
+#include <ctime>
+#include <iostream>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,13 +19,16 @@ using namespace blockchainSec;
 bool compileFlag = false;
 bool gatewayFlag = false;
 
-BlockchainSecLib *sec;
+BlockchainSecLib* sec;
 
 
 
-cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
+cxxopts::ParseResult
+parseFlags(int argc, char* argv[])
+{
 	bool helpFlag;
-	try {
+	try
+	{
 		cxxopts::Options options(argv[0], "");
 		options
 			.positional_help("[optional args]")
@@ -33,21 +36,20 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 
 		options
 			.allow_unrecognised_options()
-			.add_options()
-			("h,help", "Display help", cxxopts::value<bool>(helpFlag))
-			("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compileFlag))
-			("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gatewayFlag));
+			.add_options()("h,help", "Display help", cxxopts::value<bool>(helpFlag))("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compileFlag))("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gatewayFlag));
 
 		auto result = options.parse(argc, argv);
 
-		if (helpFlag) {
-			cout << options.help({"", "Group"}) << endl;
+		if (helpFlag)
+		{
+			cout << options.help({ "", "Group" }) << endl;
 			exit(EXIT_SUCCESS);
 		}
 
 		return result;
-
-	} catch (const cxxopts::OptionException& e) {
+	}
+	catch (const cxxopts::OptionException& e)
+	{
 		cout << "Error parsing flags: " << e.what() << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -55,112 +57,152 @@ cxxopts::ParseResult parseFlags(int argc, char* argv[]) {
 
 
 
-void printStrVector(vector<string> v) {
-	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it) {
+void
+printStrVector(vector<string> v)
+{
+	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it)
+	{
 		cout << "\t" << *it << endl;
 	}
 }
 
 
-void printIntVector(vector<uint32_t> v) {
-	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it) {
+void
+printIntVector(vector<uint32_t> v)
+{
+	for (vector<uint32_t>::iterator it = v.begin(); it != v.end(); ++it)
+	{
 		cout << "\t" << unsigned(*it) << endl;
 	}
 }
 
 
 
-string runBinary(string cmd) {
+string
+runBinary(string cmd)
+{
 	string result;
-	FILE *inFd;
+	FILE* inFd;
 	array<char, SENSOR_PIPE_BUFFER_LEN> pipeBuffer;
 
 	inFd = popen(cmd.c_str(), "r");
 
-	if (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) == NULL) {
+	if (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) == NULL)
+	{
 		throw ResourceRequestFailedException("runBinary(\"" + cmd + "\"): Error: Failed to read from pipe!");
 	}
 
 	result += pipeBuffer.data();
 
-	while (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) != NULL) {
+	while (fgets(pipeBuffer.data(), SENSOR_PIPE_BUFFER_LEN, inFd) != NULL)
+	{
 		result += pipeBuffer.data();
 	}
 
-	if (pclose(inFd) < 0) {
+	if (pclose(inFd) < 0)
+	{
 		throw ResourceRequestFailedException("runBinary(\"" + cmd + "\"): Failed to pclose()!");
 	}
 	return result;
 }
 
 
-string querySensor(void) {
+string
+querySensor(void)
+{
 	string data;
 
 	data = "uname -a\n";
 
-	try {
+	try
+	{
 		data += runBinary("uname -a");
-	} catch (ResourceRequestFailedException &e) {
+	}
+	catch (ResourceRequestFailedException& e)
+	{
 		data += e.what();
 	}
 
 	data += "\nnproc\n";
 
-	try {
+	try
+	{
 		data += runBinary("nproc");
-	} catch (ResourceRequestFailedException &e) {
+	}
+	catch (ResourceRequestFailedException& e)
+	{
 		data += e.what();
 	}
 
 	data += "\nuptime\n";
 
-	try {
+	try
+	{
 		data += runBinary("uptime");
-	} catch (ResourceRequestFailedException &e) {
+	}
+	catch (ResourceRequestFailedException& e)
+	{
 		data += e.what();
 	}
 
 	data += "\nfree -h\n";
 
-	try {
+	try
+	{
 		data += runBinary("free -h");
-	} catch (ResourceRequestFailedException &e) {
+	}
+	catch (ResourceRequestFailedException& e)
+	{
 		data += e.what();
 	}
 	return data;
 }
 
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char* argv[])
+{
 
 	auto flags = parseFlags(argc, argv);
 
-	cout << endl << "\t.:Blockchain Security Framework Client:." << endl << endl;
+	cout << endl
+		 << "\t.:Blockchain Security Framework Client:." << endl
+		 << endl;
 
-	if (compileFlag) {
+	if (compileFlag)
+	{
 		cout << "Compiling smart contract..." << endl;
 	}
 	sec = new BlockchainSecLib(compileFlag);
 
-	if (gatewayFlag) {
+	if (gatewayFlag)
+	{
 		cout << "This binary does not support running as a LoRa gateway!" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	for (;;) {
+	for (;;)
+	{
 
-		while (sec->get_my_device_id() == 0) {
+		while (sec->get_my_device_id() == 0)
+		{
 			uint32_t dev;
 
-			cerr << "This device does not have an associated device ID..." << endl << "Creating device..." << endl;
+			cerr << "This device does not have an associated device ID..." << endl
+				 << "Creating device..." << endl;
 
-			cout << endl << "Adding this address as a device..." << endl;
+			cout << endl
+				 << "Adding this address as a device..." << endl;
 			dev = sec->add_device(sec->getClientAddress(), "Client_Receiver1", "RECEIVERMAC1", false);
-			if (dev == 0) {
-				cout << "Failed to add local device!" << endl << endl;
-			} else {
-				cout << "Successfully added local device as deviceID " << dev << "!" << endl << endl;
+			if (dev == 0)
+			{
+				cout << "Failed to add local device!" << endl
+					 << endl;
+			}
+			else
+			{
+				cout << "Successfully added local device as deviceID " << dev << "!" << endl
+					 << endl;
 			}
 
 			sec->update_datareceiver(dev, dev);
@@ -172,15 +214,18 @@ int main(int argc, char *argv[]) {
 		}
 		sec->loadLocalDeviceParameters();
 
-		cout << "Found device ID #" << sec->get_my_device_id() << endl << endl;
+		cout << "Found device ID #" << sec->get_my_device_id() << endl
+			 << endl;
 
 
-		for (;;) {
+		for (;;)
+		{
 			vector<uint32_t> receivedDevices;
 			string data = querySensor();
 			uint32_t myDeviceID = sec->get_my_device_id();
 
-			if (myDeviceID == 0) {
+			if (myDeviceID == 0)
+			{
 				cerr << "This device does not have a registered device ID! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;
@@ -188,29 +233,39 @@ int main(int argc, char *argv[]) {
 
 			cout << "Obtaining vector of all devices received by this device..." << endl;
 
-			try {
+			try
+			{
 				receivedDevices = sec->getReceivedDevices(sec->get_my_device_id());
-
-			} catch (EthException &e) {
-				cerr << "Error while retrieving received devices from the blockchain!" << endl << e.what() << endl << endl;
+			}
+			catch (EthException& e)
+			{
+				cerr << "Error while retrieving received devices from the blockchain!" << endl
+					 << e.what() << endl
+					 << endl;
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;
 			}
 
-			cout << receivedDevices.size() << " devices received by this device" << endl << endl;
+			cout << receivedDevices.size() << " devices received by this device" << endl
+				 << endl;
 
 
 			string chainData;
 			time_t dataTimestamp;
 
 
-			for (vector<uint32_t>::iterator it = receivedDevices.begin(); it != receivedDevices.end(); ++it) {
-				try {
+			for (vector<uint32_t>::iterator it = receivedDevices.begin(); it != receivedDevices.end(); ++it)
+			{
+				try
+				{
 					chainData = sec->getDataAndDecrypt(myDeviceID);
 					dataTimestamp = sec->get_dataTimestamp(myDeviceID);
-
-				} catch (EthException &e) {
-					cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl << endl;
+				}
+				catch (EthException& e)
+				{
+					cerr << "Error while retrieving data from the blockchain!" << endl
+						 << e.what() << endl
+						 << endl;
 					sleep(INVALID_DEVICE_TRY_INTERVAL);
 					break;
 				}
@@ -218,12 +273,13 @@ int main(int argc, char *argv[]) {
 				string timestamp = asctime(localtime(&dataTimestamp));
 				boost::trim(timestamp);
 
-				cout << "Got data from device #" << *it << " timestamped " << timestamp << ":" << endl << endl << chainData << endl;
+				cout << "Got data from device #" << *it << " timestamped " << timestamp << ":" << endl
+					 << endl
+					 << chainData << endl;
 			}
 
 			sleep(DATA_PUSH_INTERVAL);
 		}
-
 	}
 
 

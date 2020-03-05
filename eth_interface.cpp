@@ -1,19 +1,19 @@
-#include <string>
 #include <array>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <sstream>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
+#include <string>
 
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <blockchainsec.hpp>
-#include <ethabi.hpp>
-#include <misc.hpp>  // TODO: Needed in eth_interface?
 #include <cpp-base64/base64.h>
+#include <ethabi.hpp>
+#include <misc.hpp> // TODO: Needed in eth_interface?
 
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
@@ -52,8 +52,7 @@ EthInterface::initialize(
 		this->clientAddress,
 		this->contractAddress,
 		ipcPath,
-		contractEventSignatures
-	);
+		contractEventSignatures);
 }
 
 
@@ -81,10 +80,7 @@ EthInterface::getFrom(string const& funcName, string const& ethabiEncodeArgs)
 	string data, result;
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " +
-		funcName +
-		ethabiEncodeArgs
-	);
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs);
 
 #ifdef _DEBUG
 	cout << "getFrom(): " << funcName << "  " << ethabiEncodeArgs << endl;
@@ -160,15 +156,15 @@ EthInterface::contract_helper(string const& data)
 	if (findResult == transactionJsonData.end())
 	{
 		throw TransactionFailedException(
-			"Transaction hash was not present in responce to eth_sendTransaction!"
-		);
+			"Transaction hash was not present in responce to eth_sendTransaction!");
 	}
 
 	transactionHash = findResult.value();
 	transactionReceipt = getTransactionReceipt(transactionHash);
 #ifdef _DEBUG
 	cout << "contract_helper(): Calling eventLogWaitManager->getEventLog()..."
-		<< endl << endl;
+		 << endl
+		 << endl;
 #endif //_DEBUG
 	return eventLogWaitManager->getEventLog(transactionHash);
 }
@@ -181,24 +177,23 @@ bool
 EthInterface::callMutatorContract(
 	string const& funcName,
 	string const& ethabiEncodeArgs,
-	unique_ptr<unordered_map<string, string>> & eventLog)
+	unique_ptr<unordered_map<string, string>>& eventLog)
 {
 	//unique_ptr<unordered_map<string, string>> eventLog;  // TODO
 	string data;
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs
-	);
+		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs);
 
 	try
 	{
 		eventLog = contract_helper(data);
 	}
-	catch (const CallFailedException &e)
+	catch (const CallFailedException& e)
 	{
 		return false;
 	}
-	catch (const TransactionFailedException &e)
+	catch (const TransactionFailedException& e)
 	{
 		return false;
 	}
@@ -213,10 +208,10 @@ EthInterface::callMutatorContract(
 	logStr = logStr.substr(0, logStr.length() - 2);
 	logStr += " }";
 	cout << funcName
-		<< "() successful!"
-		<< endl
-		<< logStr
-		<< endl;
+		 << "() successful!"
+		 << endl
+		 << logStr
+		 << endl;
 #endif //_DEBUG
 
 	return true;
@@ -230,23 +225,21 @@ string
 EthInterface::create_contract(void)
 {
 	string contractBin,
-			transactionJsonStr,
-			transactionHash,
-			transactionReceipt,
-			contractAddress;
+		transactionJsonStr,
+		transactionHash,
+		transactionReceipt,
+		contractAddress;
 	Json transactionJsonData, receiptJsonData;
 
 	if (system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'") != 0)
 	{
 		throw ResourceRequestFailedException(
-			"solc failed to compile contract to binary format!"
-		);
+			"solc failed to compile contract to binary format!");
 	}
 	if (system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'") != 0)
 	{
 		throw ResourceRequestFailedException(
-			"solc failed to compile contract to abi format!"
-		);
+			"solc failed to compile contract to abi format!");
 	}
 
 	contractBin = boost::trim_copy(readFile2(ETH_CONTRACT_BIN));
@@ -262,14 +255,13 @@ EthInterface::create_contract(void)
 		// TODO: What if "result" is not a string
 		throw TransactionFailedException(
 			"create_contract(): Transaction hash was not "
-			"present in responce to eth_sendTransaction!"
-		);
+			"present in responce to eth_sendTransaction!");
 	}
 
 	transactionHash = jsonFindResult.value();
 
 	cout << "Parsed contract creation transaction hash: "
-		<< transactionHash << endl;
+		 << transactionHash << endl;
 
 	transactionReceipt = this->getTransactionReceipt(transactionHash);
 
@@ -279,8 +271,7 @@ EthInterface::create_contract(void)
 	if (!jsonFindResult.value().is_object())
 	{
 		throw TransactionFailedException(
-			"create_contract(): \"result\" was not a JSON object!"
-		);
+			"create_contract(): \"result\" was not a JSON object!");
 	}
 	auto subJsonFindResult = jsonFindResult.value().find("contractAddress");
 
@@ -289,8 +280,7 @@ EthInterface::create_contract(void)
 		// "contractAddress" not in JSON responce
 		// TODO: What if "contractAddress" is not a string
 		throw TransactionFailedException(
-			"create_contract(): \"contractAddress\" was not present in responce!"
-		);
+			"create_contract(): \"contractAddress\" was not present in responce!");
 	}
 
 	contractAddress = subJsonFindResult.value();
@@ -298,8 +288,7 @@ EthInterface::create_contract(void)
 	if (contractAddress.compare("null") == 0)
 	{
 		throw TransactionFailedException(
-			"create_contract(): \"contractAddress\" was null!"
-		);
+			"create_contract(): \"contractAddress\" was null!");
 	}
 
 	cout << "Contract Address: " << contractAddress << endl;
@@ -321,14 +310,15 @@ EthInterface::getTransactionReceipt(string const& transactionHash)
 	string transactionReceipt, result;
 	Json jsonData;
 
-	while(retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES)
+	while (retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES)
 	{
 		transactionReceipt = this->eth_getTransactionReceipt(transactionHash);
 		retries++;
 
 #ifdef _DEBUG
 		cout << "Try #" << retries << endl;
-		cout << transactionReceipt << endl << endl;
+		cout << transactionReceipt << endl
+			 << endl;
 #endif //_DEBUG
 
 		jsonData = Json::parse(transactionReceipt);
@@ -345,17 +335,18 @@ EthInterface::getTransactionReceipt(string const& transactionHash)
 		}
 
 #ifdef _DEBUG
-		cout << "getTransactionReceipt(): returning..." << endl << endl;
+		cout << "getTransactionReceipt(): returning..." << endl
+			 << endl;
 #endif //_DEBUG
 
 		return transactionReceipt;
 	}
 
 	throw TransactionFailedException(
-			"Failed to obtain transaction result in getTransactionReceipt() "
-			"for transaction hash \"" + transactionHash + "\"; "
-			"transaction may or may not have been mined!"
-	);
+		"Failed to obtain transaction result in getTransactionReceipt() "
+		"for transaction hash \""
+		+ transactionHash + "\"; "
+							"transaction may or may not have been mined!");
 }
 
 
@@ -373,17 +364,15 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 	cout << "eth_ipc_request(): " << jsonRequest << endl;
 #endif //_DEBUG
 
-	FILE *ipc = popen(
+	FILE* ipc = popen(
 		("echo '" + jsonRequest + "' | nc -U '" + ipcPath + "'").c_str(),
-		"r"
-	);
+		"r");
 	if (ipc == NULL)
 	{
 		// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
 		throw ResourceRequestFailedException(
 			"eth_ipc_request(): Failed to popen() unix domain "
-			"socket for IPC with geth! Is geth running?"
-		);
+			"socket for IPC with geth! Is geth running?");
 	}
 
 	ipcFd = fileno(ipc);
@@ -391,8 +380,7 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 	if (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) == NULL)
 	{
 		throw ResourceRequestFailedException(
-			"eth_ipc_request(): Error: Failed to read from IPC!"
-		);
+			"eth_ipc_request(): Error: Failed to read from IPC!");
 	}
 
 	json += ipcBuffer.data();
@@ -406,7 +394,7 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 
 #ifdef _DEBUG
 		cout << "eth_ipc_request(): Read: ''"
-			<< ipcBuffer.data() << "'" << endl;
+			 << ipcBuffer.data() << "'" << endl;
 #endif //_DEBUG
 
 		json += ipcBuffer.data();
@@ -415,8 +403,7 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 	if (pclose(ipc) < 0)
 	{
 		throw ResourceRequestFailedException(
-			"eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!"
-		);
+			"eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!");
 	}
 
 #ifdef _DEBUG
@@ -432,12 +419,13 @@ string
 EthInterface::eth_call(string const& abiData)
 {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
-								"\"method\":\"eth_call\","
-								"\"params\":[{"
-									//"\"from\":\"0x" + clientAddress + "\","
-									"\"to\":\"0x" + contractAddress + "\","
-									"\"data\":\"0x" + abiData +
-								"\"},\"latest\"],\"id\":1}";
+						 "\"method\":\"eth_call\","
+						 "\"params\":[{"
+						 //"\"from\":\"0x" + clientAddress + "\","
+						 "\"to\":\"0x"
+		+ contractAddress + "\","
+							"\"data\":\"0x"
+		+ abiData + "\"},\"latest\"],\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_call()" << endl;
@@ -452,15 +440,17 @@ string
 EthInterface::eth_sendTransaction(string const& abiData)
 {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
-								"\"method\":\"eth_sendTransaction\""
-								",\"params\":[{"
-									"\"from\":\"0x" + clientAddress + "\","
-									"\"to\":\"0x" + contractAddress + "\","
-									"\"gas\":\"0x14F46B\"," //TODO: WHERE THE THE BLOCK GAS LIMIT SET? Choose this value more intentionally
-									"\"gasPrice\":\"0x0\","
-									"\"data\":\"0x" + abiData +
-								"\"}],"
-								"\"id\":1}";
+						 "\"method\":\"eth_sendTransaction\""
+						 ",\"params\":[{"
+						 "\"from\":\"0x"
+		+ clientAddress + "\","
+						  "\"to\":\"0x"
+		+ contractAddress + "\","
+							"\"gas\":\"0x14F46B\"," //TODO: WHERE THE THE BLOCK GAS LIMIT SET? Choose this value more intentionally
+							"\"gasPrice\":\"0x0\","
+							"\"data\":\"0x"
+		+ abiData + "\"}],"
+					"\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_sendTransaction()" << endl;
@@ -475,14 +465,15 @@ string
 EthInterface::eth_createContract(string const& data)
 {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
-								"\"method\":\"eth_sendTransaction\""
-								",\"params\":[{"
-									"\"from\":\"0x" + clientAddress + "\","
-									//"\"gas\":0,"
-									//"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
-									"\"data\":\"0x" + data +
-								"\"}],"
-								"\"id\":1}";
+						 "\"method\":\"eth_sendTransaction\""
+						 ",\"params\":[{"
+						 "\"from\":\"0x"
+		+ clientAddress + "\","
+						  //"\"gas\":0,"
+						  //"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
+						  "\"data\":\"0x"
+		+ data + "\"}],"
+				 "\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_createContract()" << endl;
@@ -497,10 +488,11 @@ string
 EthInterface::eth_getTransactionReceipt(string const& transactionHash)
 {
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
-								"\"method\":\"eth_getTransactionReceipt\","
-								"\"params\":["
-									"\"" + transactionHash + "\""
-								"],\"id\":1}";
+						 "\"method\":\"eth_getTransactionReceipt\","
+						 "\"params\":["
+						 "\""
+		+ transactionHash + "\""
+							"],\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_getTransactionReceipt()" << endl;

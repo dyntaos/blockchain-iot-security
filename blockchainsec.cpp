@@ -1,18 +1,18 @@
-#include <string>
 #include <array>
-#include <iostream>
-#include <sstream>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <blockchainsec.hpp>
+#include <cpp-base64/base64.h>
 #include <ethabi.hpp>
 #include <misc.hpp>
-#include <cpp-base64/base64.h>
 
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
@@ -28,7 +28,10 @@ namespace blockchainSec
 
 
 
-BlockchainSecLib::BlockchainSecLib(void) : BlockchainSecLib(false) {}
+BlockchainSecLib::BlockchainSecLib(void)
+	: BlockchainSecLib(false)
+{
+}
 
 
 
@@ -44,32 +47,30 @@ BlockchainSecLib::BlockchainSecLib(bool compile)
 	}
 
 	cfg.setOptions(Config::OptionFsync
-				| Config::OptionSemicolonSeparators
-				| Config::OptionColonAssignmentForGroups
-				| Config::OptionOpenBraceOnSeparateLine);
+		| Config::OptionSemicolonSeparators
+		| Config::OptionColonAssignmentForGroups
+		| Config::OptionOpenBraceOnSeparateLine);
 
 	cout << "Reading config file..." << endl;
 
 	try
 	{
 		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
-
 	}
-	catch(const FileIOException &e)
+	catch (const FileIOException& e)
 	{
 		cerr << "IO error reading config file!" << endl;
 		exit(EXIT_FAILURE);
-
 	}
-	catch(const ParseException &e)
+	catch (const ParseException& e)
 	{
 		cerr << "BlockchainSec: Config file error "
-			<< e.getFile()
-			<< ":"
-			<< e.getLine()
-			<< " - "
-			<< e.getError()
-			<< endl;
+			 << e.getFile()
+			 << ":"
+			 << e.getLine()
+			 << " - "
+			 << e.getError()
+			 << endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -94,10 +95,10 @@ BlockchainSecLib::BlockchainSecLib(bool compile)
 	if (!compile && !cfg.exists("contractAddress"))
 	{
 		cerr << "Config doesnt have contractAddress"
-			<< endl
-			<< "Either add a contract address to the conf file or "
-			"create a new contract using the `--compile` flag"
-			<< endl;
+			 << endl
+			 << "Either add a contract address to the conf file or "
+				"create a new contract using the `--compile` flag"
+			 << endl;
 
 		exit(EXIT_FAILURE);
 	}
@@ -112,27 +113,27 @@ BlockchainSecLib::BlockchainSecLib(bool compile)
 		/* We will compile the contract with solc, upload it
 		 * to the chain and save the address to the config file */
 		cout << "Compiling and uploading contract..."
-			<< endl
-			<< endl;
+			 << endl
+			 << endl;
 
 		try
 		{
 			contractAddress = this->create_contract();
 
-			if (cfgRoot->exists("contractAddress")) cfgRoot->remove("contractAddress");
+			if (cfgRoot->exists("contractAddress"))
+				cfgRoot->remove("contractAddress");
 			cfgRoot->add("contractAddress", Setting::TypeString) = contractAddress;
 			cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 
 			cout << "Successfully compiled and uploaded contract"
-				<< endl
-				<< "The new contract address has been "
-				"written to the configuration file"
-				<< endl;
+				 << endl
+				 << "The new contract address has been "
+					"written to the configuration file"
+				 << endl;
 
 			exit(EXIT_SUCCESS);
-
 		}
-		catch(const TransactionFailedException &e)
+		catch (const TransactionFailedException& e)
 		{
 			throw e; // TODO
 			cerr << "Failed to create contract!" << endl;
@@ -149,17 +150,17 @@ vector<pair<string, string>>
 BlockchainSecLib::contractEventSignatures(void)
 {
 	vector<pair<string, string>> vecLogSigs;
-	vecLogSigs.push_back(pair<string, string>("Add_Device",               "91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01"));
-	vecLogSigs.push_back(pair<string, string>("Add_Gateway",              "ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671"));
-	vecLogSigs.push_back(pair<string, string>("Remove_Device",            "c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363"));
-	vecLogSigs.push_back(pair<string, string>("Remove_Gateway",           "0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9"));
-	vecLogSigs.push_back(pair<string, string>("Push_Data",                "bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9"));
-	vecLogSigs.push_back(pair<string, string>("Update_DataReceiver",      "e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf"));
+	vecLogSigs.push_back(pair<string, string>("Add_Device", "91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01"));
+	vecLogSigs.push_back(pair<string, string>("Add_Gateway", "ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671"));
+	vecLogSigs.push_back(pair<string, string>("Remove_Device", "c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363"));
+	vecLogSigs.push_back(pair<string, string>("Remove_Gateway", "0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9"));
+	vecLogSigs.push_back(pair<string, string>("Push_Data", "bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9"));
+	vecLogSigs.push_back(pair<string, string>("Update_DataReceiver", "e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf"));
 	vecLogSigs.push_back(pair<string, string>("Set_Default_DataReceiver", "adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287"));
-	vecLogSigs.push_back(pair<string, string>("Update_Addr",              "f873df4dfb480f3a05c2bde3cae4779f61d6b60c3f6a0f1ab57aac0fe021a686"));
-	vecLogSigs.push_back(pair<string, string>("Update_PublicKey",         "9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f"));
-	vecLogSigs.push_back(pair<string, string>("Authorize_Admin",          "134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf"));
-	vecLogSigs.push_back(pair<string, string>("Deauthorize_Admin",        "e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"));
+	vecLogSigs.push_back(pair<string, string>("Update_Addr", "f873df4dfb480f3a05c2bde3cae4779f61d6b60c3f6a0f1ab57aac0fe021a686"));
+	vecLogSigs.push_back(pair<string, string>("Update_PublicKey", "9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f"));
+	vecLogSigs.push_back(pair<string, string>("Authorize_Admin", "134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf"));
+	vecLogSigs.push_back(pair<string, string>("Deauthorize_Admin", "e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"));
 	return vecLogSigs;
 }
 
@@ -172,7 +173,7 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 	{
 		localDeviceID = get_my_device_id();
 	}
-	catch (DeviceNotAssignedException & e)
+	catch (DeviceNotAssignedException& e)
 	{
 		localDeviceID = 0; // DeviceID of 0 means DeviceID is no assigned
 	}
@@ -195,8 +196,8 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 		if (cfgRoot->exists("privateKey") && publicKey == "")
 		{
 			cerr << "Client has private key, but no public "
-				"key exists on the blockchain for device ID "
-				<< localDeviceID << endl;
+					"key exists on the blockchain for device ID "
+				 << localDeviceID << endl;
 			// TODO: Throw?
 			// TODO: CLI Flag to force generate new keys?
 			exit(EXIT_FAILURE);
@@ -205,7 +206,8 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 		if (!cfgRoot->exists("privateKey") && publicKey != "")
 		{
 			cerr << "Client has public key on the blockchain, "
-				"but no private key exists locally!" << endl;
+					"but no private key exists locally!"
+				 << endl;
 
 			// TODO: Throw?
 			// TODO: CLI Flag to force generate new keys?
@@ -217,14 +219,13 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 			if (updateLocalKeys())
 			{
 				cout << "Successfully generated keypair for local client (device ID "
-					<< localDeviceID << ")..." << endl;
+					 << localDeviceID << ")..." << endl;
 			}
 			else
 			{
 				cerr << "Failed to create keys for local client (device ID "
-					<< localDeviceID << ")..." << endl;
+					 << localDeviceID << ")..." << endl;
 			}
-
 		}
 		else
 		{
@@ -264,11 +265,12 @@ BlockchainSecLib::loadDataReceiverPublicKey(uint32_t deviceID)
 		}
 		dataReceiverPublicKey = get_key(dataReceiver);
 	}
-	catch (EthException &e)
+	catch (EthException& e)
 	{
 		return false;
 	}
-	if (boost::trim_copy(dataReceiverPublicKey) == "") return false;
+	if (boost::trim_copy(dataReceiverPublicKey) == "")
+		return false;
 
 	byteVector = hexToBytes(dataReceiverPublicKey);
 	memcpy(dataReceiver_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
@@ -307,8 +309,7 @@ BlockchainSecLib::getStringFromDeviceID(string const& funcName, uint32_t deviceI
 	return ethabi_decode_result(
 		ETH_CONTRACT_ABI,
 		funcName,
-		getFromDeviceID(funcName, deviceID)
-	);
+		getFromDeviceID(funcName, deviceID));
 }
 
 
@@ -320,8 +321,7 @@ BlockchainSecLib::getStringsFromDeviceID(string const& funcName, uint32_t device
 	return ethabi_decode_results(
 		ETH_CONTRACT_ABI,
 		funcName,
-		getFromDeviceID(funcName, deviceID)
-	);
+		getFromDeviceID(funcName, deviceID));
 }
 
 
@@ -375,8 +375,7 @@ BlockchainSecLib::get_my_device_id(void)
 	if (deviceId == 0)
 	{
 		throw DeviceNotAssignedException(
-			"This client has no device ID assigned"
-		);
+			"This client has no device ID assigned");
 	}
 	return getIntFromContract("get_my_device_id");
 }
@@ -450,7 +449,7 @@ BlockchainSecLib::get_mac(uint32_t deviceID)
 vector<string>
 BlockchainSecLib::get_data(uint32_t deviceID)
 {
-	vector <string> result = getStringsFromDeviceID("get_data", deviceID);
+	vector<string> result = getStringsFromDeviceID("get_data", deviceID);
 	result[1] = to_string(strtol(result[1].c_str(), nullptr, 16));
 
 	return result;
@@ -510,8 +509,7 @@ BlockchainSecLib::get_active_admins(void)
 	return ethabi_decode_results(
 		ETH_CONTRACT_ABI,
 		"get_active_admins",
-		getArrayFromContract("get_active_admins")
-	);
+		getArrayFromContract("get_active_admins"));
 }
 
 
@@ -523,8 +521,7 @@ BlockchainSecLib::get_authorized_devices(void)
 	return ethabi_decode_uint32_array(
 		ETH_CONTRACT_ABI,
 		"get_authorized_devices",
-		getArrayFromContract("get_authorized_devices")
-	);
+		getArrayFromContract("get_authorized_devices"));
 }
 
 
@@ -536,8 +533,7 @@ BlockchainSecLib::get_authorized_gateways(void)
 	return ethabi_decode_uint32_array(
 		ETH_CONTRACT_ABI,
 		"get_authorized_gateways",
-		getArrayFromContract("get_authorized_gateways")
-	);
+		getArrayFromContract("get_authorized_gateways"));
 }
 
 
@@ -562,14 +558,10 @@ BlockchainSecLib::add_device(
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME)
 	{
 		throw InvalidArgumentException(
-			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
-		);
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + deviceAddress +
-						"' -p '" + escapeSingleQuotes(name) +
-						"' -p '" + escapeSingleQuotes(mac) +
-						"' -p " + (gatewayManaged ? "true" : "false");
+	ethabiEncodeArgs = " -p '" + deviceAddress + "' -p '" + escapeSingleQuotes(name) + "' -p '" + escapeSingleQuotes(mac) + "' -p " + (gatewayManaged ? "true" : "false");
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
@@ -594,13 +586,10 @@ BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, 
 	if (name.length() > BLOCKCHAINSEC_MAX_DEV_NAME)
 	{
 		throw InvalidArgumentException(
-			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME."
-		);
+			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + gatewayAddress +
-						"' -p '" + escapeSingleQuotes(name) +
-						"' -p '" + escapeSingleQuotes(mac) + "'";
+	ethabiEncodeArgs = " -p '" + gatewayAddress + "' -p '" + escapeSingleQuotes(name) + "' -p '" + escapeSingleQuotes(mac) + "'";
 
 	if (callMutatorContract("add_gateway", ethabiEncodeArgs, eventLog))
 	{
@@ -652,8 +641,7 @@ BlockchainSecLib::update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
-	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '" + boost::lexical_cast<string>(dataReceiverID) + "'";
 
 	return callMutatorContract("update_datareceiver", ethabiEncodeArgs, eventLog);
 }
@@ -686,9 +674,7 @@ BlockchainSecLib::update_addr(
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
-	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + boost::lexical_cast<string>(addrType) +
-						"' -p '" + escapeSingleQuotes(addr) + "'";
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '" + boost::lexical_cast<string>(addrType) + "' -p '" + escapeSingleQuotes(addr) + "'";
 
 	return callMutatorContract("update_addr", ethabiEncodeArgs, eventLog);
 }
@@ -701,8 +687,7 @@ BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicKey)
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
-	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) +
-						"' -p '" + escapeSingleQuotes(publicKey) + "'";
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '" + escapeSingleQuotes(publicKey) + "'";
 
 	return callMutatorContract("update_publickey", ethabiEncodeArgs, eventLog);
 }
@@ -714,20 +699,20 @@ BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicKey)
 bool
 BlockchainSecLib::push_data(
 	uint32_t deviceID,
-	string & data,
+	string& data,
 	uint16_t dataLen,
-	string & nonce)
+	string& nonce)
 {
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
 
-	string dataAscii = base64_encode((unsigned char*) data.c_str(), data.length());
-	string nonceAscii = base64_encode((unsigned char*) nonce.c_str(), nonce.length());
+	string dataAscii = base64_encode((unsigned char*)data.c_str(), data.length());
+	string nonceAscii = base64_encode((unsigned char*)nonce.c_str(), nonce.length());
 
-	ethabiEncodeArgs  = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '";
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '";
 	ethabiEncodeArgs += dataAscii;
-	ethabiEncodeArgs +=  "' -p '" + boost::lexical_cast<string>(dataLen) + "' -p '";
-	ethabiEncodeArgs +=  nonceAscii;
+	ethabiEncodeArgs += "' -p '" + boost::lexical_cast<string>(dataLen) + "' -p '";
+	ethabiEncodeArgs += nonceAscii;
 	ethabiEncodeArgs += "'";
 
 	return callMutatorContract("push_data", ethabiEncodeArgs, eventLog);
@@ -783,8 +768,7 @@ BlockchainSecLib::updateLocalKeys(void)
 	derriveSharedSecret = true;
 	crypto_kx_keypair(pk, sk);
 
-	pk[crypto_kx_PUBLICKEYBYTES] =
-		sk[crypto_kx_SECRETKEYBYTES] = 0;
+	pk[crypto_kx_PUBLICKEYBYTES] = sk[crypto_kx_SECRETKEYBYTES] = 0;
 	//	rx[crypto_kx_SESSIONKEYBYTES] =
 	//	tx[crypto_kx_SESSIONKEYBYTES] = 0;
 
@@ -800,13 +784,14 @@ BlockchainSecLib::updateLocalKeys(void)
 	{ // TODO: TRY CATCH!!!!!
 
 #ifdef _DEBUG
-	cout << "updateLocalKeys(): update_publickey() returned TRUE." << endl;
+		cout << "updateLocalKeys(): update_publickey() returned TRUE." << endl;
 #endif //_DEBUG
 
 		memcpy(client_pk, pk, crypto_kx_PUBLICKEYBYTES + 1);
 		memcpy(client_sk, sk, crypto_kx_SECRETKEYBYTES + 1);
 
-		if (cfgRoot->exists("privateKey")) cfgRoot->remove("privateKey");
+		if (cfgRoot->exists("privateKey"))
+			cfgRoot->remove("privateKey");
 		cfgRoot->add("privateKey", Setting::TypeString) = skHex;
 
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
@@ -826,7 +811,7 @@ BlockchainSecLib::encryptAndPushData(string const& data)
 {
 	const uint16_t cipherLen = data.length();
 	unsigned char nonce[crypto_secretbox_NONCEBYTES];
-	unsigned char *cipher{new unsigned char[cipherLen]{}};
+	unsigned char* cipher{ new unsigned char[cipherLen]{} };
 	string cipherStr, nonceStr;
 
 	if (derriveSharedSecret)
@@ -843,14 +828,13 @@ BlockchainSecLib::encryptAndPushData(string const& data)
 
 	crypto_stream_xchacha20_xor( // TODO: Check return value?
 		cipher,
-		(unsigned char*) data.c_str(),
+		(unsigned char*)data.c_str(),
 		data.length(),
 		nonce,
-		txSharedKey
-	);
+		txSharedKey);
 
-	cipherStr = string((char*) cipher, cipherLen);
-	nonceStr = string((char*) nonce, crypto_secretbox_NONCEBYTES);
+	cipherStr = string((char*)cipher, cipherLen);
+	nonceStr = string((char*)nonce, crypto_secretbox_NONCEBYTES);
 
 	push_data(localDeviceID, cipherStr, data.length(), nonceStr);
 
@@ -871,8 +855,7 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 	if (get_my_device_id() != get_datareceiver(deviceID))
 	{
 		throw CryptographicKeyMissmatchException(
-			"Cannot decrypt the requested data with current keys"
-		);
+			"Cannot decrypt the requested data with current keys");
 	}
 
 	nodePublicKeyStr = get_key(deviceID);
@@ -890,20 +873,19 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 	chainData = get_data(deviceID);
 	msgLen = stoi(chainData[1]);
 
-	unsigned char *message{new unsigned char[msgLen]{}};
+	unsigned char* message{ new unsigned char[msgLen]{} };
 
 	string cipherStr = base64_decode(chainData[0]);
 	string nonceStr = base64_decode(chainData[2]);
 
 	crypto_stream_xchacha20_xor( // TODO: Check return value
 		message,
-		(unsigned char*) cipherStr.c_str(),
+		(unsigned char*)cipherStr.c_str(),
 		msgLen,
-		(unsigned char*) nonceStr.c_str(),
-		rxKey
-	);
+		(unsigned char*)nonceStr.c_str(),
+		rxKey);
 
-	string result = string((char*) message, msgLen);
+	string result = string((char*)message, msgLen);
 	delete[] message;
 
 	return result;
@@ -920,7 +902,8 @@ BlockchainSecLib::getReceivedDevices(uint32_t deviceID)
 
 	for (vector<uint32_t>::iterator it = authorized.begin(); it != authorized.end(); ++it)
 	{
-		if (get_datareceiver(*it) == deviceID) result.push_back(*it);
+		if (get_datareceiver(*it) == deviceID)
+			result.push_back(*it);
 	}
 	return result;
 }

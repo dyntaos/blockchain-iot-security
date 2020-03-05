@@ -1,11 +1,11 @@
-#include <string>
-#include <fstream>
-#include <vector>
-#include <sstream>
-#include <iomanip>
-#include <cstdint>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cstdint>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <misc.hpp>
 
@@ -37,9 +37,10 @@ readFile2(string const& fileName)
 bool
 isHex(string const& str)
 {
-	for (char *s = (char*) str.c_str(); *s != 0; s++)
+	for (char* s = (char*)str.c_str(); *s != 0; s++)
 	{
-		if ((*s < 48) || (*s > 70 && *s < 97) || (*s > 102)) return false;
+		if ((*s < 48) || (*s > 70 && *s < 97) || (*s > 102))
+			return false;
 	}
 	return true;
 }
@@ -71,7 +72,7 @@ hexToBytes(string const& hex)
 	for (unsigned int i = 0; i < hex.length(); i += 2)
 	{
 		string byteString = hex.substr(i, 2);
-		char byte = (char) strtol(byteString.c_str(), NULL, 16);
+		char byte = (char)strtol(byteString.c_str(), NULL, 16);
 		bytes.push_back(byte);
 	}
 	return bytes;
@@ -81,7 +82,7 @@ hexToBytes(string const& hex)
 
 // https://stackoverflow.com/questions/14050452/how-to-convert-byte-array-to-hex-string-in-visual-c#14051107
 string
-hexStr(unsigned char *data, uint16_t len)
+hexStr(unsigned char* data, uint16_t len)
 {
 	std::stringstream ss;
 	ss << std::hex;
@@ -96,7 +97,7 @@ hexStr(unsigned char *data, uint16_t len)
 
 
 bool
-isInt(string & s)
+isInt(string& s)
 {
 	try
 	{
@@ -110,4 +111,4 @@ isInt(string & s)
 }
 
 
-}
+} //namespace

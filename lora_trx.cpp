@@ -1,41 +1,47 @@
 #include <iostream>
 #include <string>
 
-#include <sys/types.h>
-#include <string.h>
 #include <fcntl.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include <cpp-base64/base64.h>
-#include <misc.hpp>
 #include <lora_trx.hpp>
+#include <misc.hpp>
 
 
 using namespace std;
 
-namespace blockchainSec {
+namespace blockchainSec
+{
 
 
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 
-LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
-	if (blockchainSec == NULL) {
+LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
+{
+	if (blockchainSec == NULL)
+	{
 		throw InvalidArgumentException(
 			"blockchainSec argument to LoraTrx"
-			" constructor is a null pointer"
-		);
+			" constructor is a null pointer");
 	}
 	this->gatewayDeviceId = gatewayDeviceId;
 	this->blockchainSec = blockchainSec;
 
-	try {
-		if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id())) {
+	try
+	{
+		if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id()))
+		{
 			cerr
 				<< "WARNING: This device was started as a LoRa gateway"
 				<< " but is not registered as a gateway on Ethereum!"
 				<< endl;
 		}
-	} catch (DeviceNotAssignedException & e) {
+	}
+	catch (DeviceNotAssignedException& e)
+	{
 		// Thrown by get_my_device_id()
 		cerr
 			<< "WARNING: This device was started as a LoRa gateway"
@@ -45,11 +51,15 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib *blockchainSec) {
 }
 
 
-bool LoraTrx::setup(void) {
+bool
+LoraTrx::setup(void)
+{
 	string msg;
 
-	if (!bcm2835_init()) {
-		cerr << __BASE_FILE__ << " bcm2835_init() Failed" << endl << endl;
+	if (!bcm2835_init())
+	{
+		cerr << __BASE_FILE__ << " bcm2835_init() Failed" << endl
+			 << endl;
 		return 1;
 	}
 
@@ -74,9 +84,13 @@ bool LoraTrx::setup(void) {
 	bcm2835_delay(100);
 #endif
 
-	if (!rf95.init()) {
-		cerr << endl << "RF95 module init failed, Please verify wiring/module" << endl;
-	} else {
+	if (!rf95.init())
+	{
+		cerr << endl
+			 << "RF95 module init failed, Please verify wiring/module" << endl;
+	}
+	else
+	{
 		rf95.setTxPower(14, false);
 
 		// You can optionally require this module to wait until Channel Activity
@@ -107,7 +121,9 @@ bool LoraTrx::setup(void) {
 
 
 
-void LoraTrx::server_init(void) {
+void
+LoraTrx::server_init(void)
+{
 
 	halt_server = false;
 
@@ -119,111 +135,132 @@ void LoraTrx::server_init(void) {
 		std::ref(tx_queue_mutex),
 		std::ref(rx_queue_condvar),
 		std::ref(halt_server),
-		std::ref(*this)
-	);
+		std::ref(*this));
 
 	forwarder_thread = new thread(
 		this->forwarderThread,
 		std::ref(halt_server),
-		std::ref(*this)
-	);
+		std::ref(*this));
 }
 
 
 
-void LoraTrx::close_server(void) {
+void
+LoraTrx::close_server(void)
+{
 	halt_server = true;
 	rx_queue_condvar.notify_all();
 
-	if (server_thread != NULL) server_thread->join();
-	if (forwarder_thread != NULL) forwarder_thread->join();
+	if (server_thread != NULL)
+		server_thread->join();
+	if (forwarder_thread != NULL)
+		forwarder_thread->join();
 }
 
 
 
-void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*> &tx_queue, mutex &rx_queue_mutex, mutex &tx_queue_mutex, condition_variable &rx_queue_condvar, bool &halt_server, LoraTrx &trx) {
+void
+LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx_queue, mutex& rx_queue_mutex, mutex& tx_queue_mutex, condition_variable& rx_queue_condvar, bool& halt_server, LoraTrx& trx)
+{
 	string msg;
 	struct packet *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
-	if (!trx.hardwareInitialized) {
-		if (!trx.setup()) {
+	if (!trx.hardwareInitialized)
+	{
+		if (!trx.setup())
+		{
 			halt_server = true;
 			cerr << "The gateway server was unable to initialize hardware!" << endl;
 		}
 	}
 
-	while (!halt_server) {
+	while (!halt_server)
+	{
 
-		if (msg_buffer == NULL) {
+		if (msg_buffer == NULL)
+		{
 			msg_buffer = new struct packet;
 		}
 
 		tx_queue_mutex.lock();
-		if (!tx_queue.empty()) {
+		if (!tx_queue.empty())
+		{
 			tx_buffer = tx_queue.front();
 			tx_queue.pop();
 			tx_queue_mutex.unlock();
 
-			if (!tx_mode) {
+			if (!tx_mode)
+			{
 				rf95.setModeTx();
 				tx_mode = true;
 			}
 
 			rf95.setHeaderTo(tx_buffer->to);
 
-			if (!rf95.send((uint8_t*) &tx_buffer->payload.bytes, tx_buffer->len + 13)) { // TODO: Magic numbers -- May need to remove constant
+			if (!rf95.send((uint8_t*)&tx_buffer->payload.bytes, tx_buffer->len + 13))
+			{ // TODO: Magic numbers -- May need to remove constant
 				cerr << "Error transmitting packet..." << endl;
 				// TODO: Discard or retry packet? Keep track of attempts of packet and try X times?
-			} else {
+			}
+			else
+			{
 				rf95.waitPacketSent();
 			}
 
 			delete tx_buffer;
 			tx_buffer = NULL;
-		} else tx_queue_mutex.unlock();
+		}
+		else
+			tx_queue_mutex.unlock();
 
-		if (tx_mode) {
+		if (tx_mode)
+		{
 			rf95.setModeRx();
 			tx_mode = false;
 		}
 
-		if (rf95.available()) {
+		if (rf95.available())
+		{
 
 			uint8_t buf[RH_RF95_MAX_MESSAGE_LEN + 1];
-			msg_buffer->len      = RH_RF95_MAX_MESSAGE_LEN;
+			msg_buffer->len = RH_RF95_MAX_MESSAGE_LEN;
 
-			if (rf95.recv(buf, &msg_buffer->len)) {
+			if (rf95.recv(buf, &msg_buffer->len))
+			{
 
-				msg_buffer->from     = rf95.headerFrom();
-				msg_buffer->to       = rf95.headerTo();
-				msg_buffer->id       = rf95.headerId();
+				msg_buffer->from = rf95.headerFrom();
+				msg_buffer->to = rf95.headerTo();
+				msg_buffer->id = rf95.headerId();
 				msg_buffer->fragment = rf95.headerFragment();
-				msg_buffer->flags    = rf95.headerFlags();
-				msg_buffer->rssi     = rf95.lastRssi();
+				msg_buffer->flags = rf95.headerFlags();
+				msg_buffer->rssi = rf95.lastRssi();
 
 				memcpy(msg_buffer->payload.bytes, buf, msg_buffer->len);
 
-//#ifdef _DEBUG
+				//#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
-					<< "\tLength: " << unsigned(msg_buffer->len) << endl
-					<< "\tFrom: " << unsigned(msg_buffer->from) << endl
-					<< "\tTo: " << unsigned(msg_buffer->to) << endl
-					<< "\tID: " << unsigned(msg_buffer->id) << endl
-					<< "\tFragment: " << unsigned(msg_buffer->fragment) << endl
-					<< "\tFlags: " << unsigned(msg_buffer->flags) << endl
-					<< "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
-					<< "\tPayload Hex: " << printbuffer << endl
-					<< "\tPayload ASCII: " << string((char*) msg_buffer->payload.bytes, msg_buffer->len - 13) // TODO: Magic number
-					<< endl << endl
-					<< "\t   Good received packet count: " << unsigned(rf95.rxGood()) << endl
-					<< "\t    Bad received packet count: " << unsigned(rf95.rxBad()) << endl
-					<< "\tGood transmitted packet count: " << unsigned(rf95.txGood())
-					<< endl << endl;
-//#endif // _DEBUG
-
-			} else {
+					 << "\tLength: " << unsigned(msg_buffer->len) << endl
+					 << "\tFrom: " << unsigned(msg_buffer->from) << endl
+					 << "\tTo: " << unsigned(msg_buffer->to) << endl
+					 << "\tID: " << unsigned(msg_buffer->id) << endl
+					 << "\tFragment: " << unsigned(msg_buffer->fragment) << endl
+					 << "\tFlags: " << unsigned(msg_buffer->flags) << endl
+					 << "\tRSSI: " << unsigned(msg_buffer->rssi) << endl
+					 << "\tPayload Hex: " << printbuffer << endl
+					 << "\tPayload ASCII: " << string((char*)msg_buffer->payload.bytes, msg_buffer->len - 13) // TODO: Magic number
+					 << endl
+					 << endl
+					 << "\t   Good received packet count: " << unsigned(rf95.rxGood()) << endl
+					 << "\t    Bad received packet count: " << unsigned(rf95.rxBad()) << endl
+					 << "\tGood transmitted packet count: " << unsigned(rf95.txGood())
+					 << endl
+					 << endl;
+				//#endif // _DEBUG
+			}
+			else
+			{
 				cerr << "Error receiving packet..." << endl;
 				continue;
 			}
@@ -245,16 +282,19 @@ void LoraTrx::serverThread(queue<struct packet*> &rx_queue, queue<struct packet*
 
 
 
-void LoraTrx::forwarderThread(bool &halt_server, LoraTrx &trx) {
-	struct packet *p;
+void
+LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
+{
+	struct packet* p;
 
-// #ifdef _DEBUG // TODO: Uncomment
+	// #ifdef _DEBUG // TODO: Uncomment
 	cout
 		<< "LoRa forwarder thread initialized"
 		<< endl;
-// #endif // _DEBUG
+	// #endif // _DEBUG
 
-	while (!halt_server) {
+	while (!halt_server)
+	{
 		p = trx.readMessage();
 		trx.processPacket(p);
 		delete p;
@@ -263,15 +303,19 @@ void LoraTrx::forwarderThread(bool &halt_server, LoraTrx &trx) {
 
 
 
-struct packet *LoraTrx::readMessage(void) {
-	struct packet *msg;
+struct packet*
+LoraTrx::readMessage(void)
+{
+	struct packet* msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
 
 start:
-	while (rx_queue.empty()) rx_queue_condvar.wait(ulock);
+	while (rx_queue.empty())
+		rx_queue_condvar.wait(ulock);
 
 	rx_queue_mutex.lock();
-	if (rx_queue.empty()) {
+	if (rx_queue.empty())
+	{
 		rx_queue_mutex.unlock();
 		goto start;
 	}
@@ -286,10 +330,13 @@ start:
 
 
 
-bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
-	struct packet *msg;
+bool
+LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId)
+{
+	struct packet* msg;
 
-	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN) {
+	if (msg_str.length() > RH_RF95_MAX_MESSAGE_LEN)
+	{
 		return false;
 	}
 
@@ -309,17 +356,20 @@ bool LoraTrx::sendMessage(string msg_str, uint32_t toDeviceId) {
 
 
 
-void LoraTrx::processPacket(struct packet *p) {
+void
+LoraTrx::processPacket(struct packet* p)
+{
 	uint8_t maskedFlags;
 
-	if (p == NULL) {
+	if (p == NULL)
+	{
 		throw InvalidArgumentException("Packet struct is a null pointer");
 	}
 
-	string dataStr = string((char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); // TODO: Magic number
-	string dataHexStr = hexStr((unsigned char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); //TODO: Magic num
-	string sigHexStr = hexStr((unsigned char*) p->payload.data.signature, crypto_sign_BYTES);
-	string nonceHexStr = hexStr((unsigned char*) p->payload.data.crypto_nonce, crypto_stream_xchacha20_NONCEBYTES);
+	string dataStr = string((char*)p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); // TODO: Magic number
+	string dataHexStr = hexStr((unsigned char*)p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); //TODO: Magic num
+	string sigHexStr = hexStr((unsigned char*)p->payload.data.signature, crypto_sign_BYTES);
+	string nonceHexStr = hexStr((unsigned char*)p->payload.data.crypto_nonce, crypto_stream_xchacha20_NONCEBYTES);
 
 	cout
 		<< "Data: " << dataStr << endl
@@ -328,26 +378,28 @@ void LoraTrx::processPacket(struct packet *p) {
 		<< "Nonce Hex: " << nonceHexStr << endl;
 
 	maskedFlags = p->flags & 0xF;
-	switch (maskedFlags) {
+	switch (maskedFlags)
+	{
 		case PACKET_TYPE_ACK:
 			cerr
 				<< "Received currently unsupported message "
-				"type PACKET_TYPE_ACK"
+				   "type PACKET_TYPE_ACK"
 				<< endl;
 			break;
 
 		case PACKET_TYPE_DATA_FIRST:
-			if (!verifySignature(p)) {
+			if (!verifySignature(p))
+			{
 				cerr << "Packet from device ID "
-					<< unsigned(p->from)
-					<< " was discarded due to invalid signature"
-					<< endl;
+					 << unsigned(p->from)
+					 << " was discarded due to invalid signature"
+					 << endl;
 				return;
 			}
 #ifdef _DEBUG
 			cout
 				<< "Received LoRa PACKET_TYPE_DATA_FIRST packet "
-				"with valid signature from device ID "
+				   "with valid signature from device ID "
 				<< unsigned(p->from)
 				<< endl;
 #endif // _DEBUG
@@ -355,25 +407,30 @@ void LoraTrx::processPacket(struct packet *p) {
 			// Ensure this device is a gateway before even trying to push data
 			if (
 				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
-			) {
-				try {
-					string data = string((char*) p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
-					string nonce = string((char*) p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+			)
+			{
+				try
+				{
+					string data = string((char*)p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
+					string nonce = string((char*)p->payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 					blockchainSec->push_data(
 						p->from,
 						data,
 						data.length(),
-						nonce
-					);
-				} catch (ResourceRequestFailedException & e) {
+						nonce);
+				}
+				catch (ResourceRequestFailedException& e)
+				{
 					cerr
 						<< "Failed to encode transaction request when attempting"
-						" to forward LoRa packet data for device ID "
+						   " to forward LoRa packet data for device ID "
 						<< unsigned(p->from)
 						<< " to the blockchain"
 						<< endl;
 					return;
-				} catch (TransactionFailedException & e) {
+				}
+				catch (TransactionFailedException& e)
+				{
 					cerr
 						<< "Failed to forward LoRa packet data to blockchain;"
 						<< endl
@@ -382,25 +439,26 @@ void LoraTrx::processPacket(struct packet *p) {
 						<< " gateway managed?"
 						<< endl;
 					return;
-				} catch (EthException & e) {
+				}
+				catch (EthException& e)
+				{
 					// Catch any exceptions not caught above
 					cerr
 						<< "Caught unknown exception when forwarding "
-						"LoRa packet data from device ID "
+						   "LoRa packet data from device ID "
 						<< unsigned(p->from)
 						<< " to the blockchain"
 						<< endl;
 					return;
 				}
-//#ifdef _DEBUG  // TODO: Uncomment
-			cout
-				<< "Successfully forwarded LoRa packet data "
-				"from device ID "
-				<< unsigned(p->from)
-				<< " to the blockchain"
-				<< endl;
-//#endif // _DEBUG
-
+				//#ifdef _DEBUG  // TODO: Uncomment
+				cout
+					<< "Successfully forwarded LoRa packet data "
+					   "from device ID "
+					<< unsigned(p->from)
+					<< " to the blockchain"
+					<< endl;
+				//#endif // _DEBUG
 			}
 
 			break;
@@ -408,28 +466,28 @@ void LoraTrx::processPacket(struct packet *p) {
 		case PACKET_TYPE_DATA_INTERMEDIARY:
 			cerr
 				<< "Received currently unsupported message "
-				"type PACKET_TYPE_DATA_INTERMEDIARY"
+				   "type PACKET_TYPE_DATA_INTERMEDIARY"
 				<< endl;
 			break;
 
 		case PACKET_TYPE_DATA_LAST:
 			cerr
 				<< "Received currently unsupported message "
-				"type PACKET_TYPE_DATA_LAST"
+				   "type PACKET_TYPE_DATA_LAST"
 				<< endl;
 			break;
 
 		case PACKET_TYPE_GET_RECEIVER_KEY:
 			cerr
 				<< "Received currently unsupported message "
-				"type PACKET_TYPE_GET_RECEIVER_KEY"
+				   "type PACKET_TYPE_GET_RECEIVER_KEY"
 				<< endl;
 			break;
 
 		case PACKET_TYPE_UPDATE_KEY:
 			cerr
 				<< "Received currently unsupported message "
-				"type PACKET_TYPE_UPDATE_KEY"
+				   "type PACKET_TYPE_UPDATE_KEY"
 				<< endl;
 			break;
 
@@ -444,24 +502,30 @@ void LoraTrx::processPacket(struct packet *p) {
 
 
 
-bool LoraTrx::verifySignature(struct packet *p) {
+bool
+LoraTrx::verifySignature(struct packet* p)
+{
 	vector<char> senderPubKeyHex;
 	unsigned char senderPubKey[crypto_sign_PUBLICKEYBYTES];
 	crypto_sign_state state;
 	uint8_t maskedFlags;
 
-	if (p == NULL) return false;
+	if (p == NULL)
+		return false;
 
-	try {
+	try
+	{
 		senderPubKeyHex = hexToBytes(blockchainSec->get_key(p->from));
-	} catch (EthException & e) {
+	}
+	catch (EthException& e)
+	{
 		return false;
 	}
 	memcpy(senderPubKey, string(senderPubKeyHex.begin(), senderPubKeyHex.end()).c_str(), crypto_sign_PUBLICKEYBYTES);
 
 	crypto_sign_init(&state); // TODO/NOTE: The example code omitted semicolons...
 	//crypto_sign_update(&state, &p->to, sizeof(p->to)); // TODO: To field is ignored so any gateway can process this
-	crypto_sign_update(&state, (unsigned char*) &p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
+	crypto_sign_update(&state, (unsigned char*)&p->from, sizeof(p->from)); // TODO: Probably should convert these to network byte order
 	crypto_sign_update(&state, &p->id, sizeof(p->id));
 	crypto_sign_update(&state, &p->fragment, sizeof(p->fragment));
 	maskedFlags = p->flags & 0xF;
@@ -472,38 +536,38 @@ bool LoraTrx::verifySignature(struct packet *p) {
 	// signatures are for the stream of messages and this
 	// function needs to be modified accordingly.
 
-	if (maskedFlags == PACKET_TYPE_DATA_FIRST) {
+	if (maskedFlags == PACKET_TYPE_DATA_FIRST)
+	{
 		crypto_sign_update(
 			&state,
 			p->payload.data.crypto_nonce,
-			sizeof(p->payload.data.crypto_nonce)
-		);
+			sizeof(p->payload.data.crypto_nonce));
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)
-		);
-	} else {
+			p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature));
+	}
+	else
+	{
 		crypto_sign_update(
 			&state,
 			p->payload.data.data,
-			p->len - 13
-		);
+			p->len - 13);
 	}
 
 	string hexS = hexStr(p->payload.data.signature, crypto_sign_BYTES);
-	cout << "Message Signature: " << hexS << endl << "Sender PubKey: " << hexStr(senderPubKey, crypto_sign_PUBLICKEYBYTES) << endl;
+	cout << "Message Signature: " << hexS << endl
+		 << "Sender PubKey: " << hexStr(senderPubKey, crypto_sign_PUBLICKEYBYTES) << endl;
 	if (crypto_sign_final_verify(
 			&state,
 			p->payload.data.signature,
-			senderPubKey
-		) != 0
-	) {
+			senderPubKey)
+		!= 0)
+	{
 		return false;
 	}
 	return true;
 }
 
 
-
-}
+} //namespace
