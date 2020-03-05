@@ -387,4 +387,4 @@ EventLogWaitManager::ipc_subscription_listener_thread(void)
 
 
 
-}
+} //namespace

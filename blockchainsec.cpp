@@ -134,20 +134,11 @@ BlockchainSecLib::BlockchainSecLib(bool compile)
 		}
 		catch(const TransactionFailedException &e)
 		{
-			throw e;
+			throw e; // TODO
 			cerr << "Failed to create contract!" << endl;
 			exit(EXIT_FAILURE);
 		}
 	}
-
-
-
-	/*eventLogWaitManager = new EventLogWaitManager(
-		getClientAddress().substr(2),
-		getContractAddress().substr(2),
-		ipcPath,
-		contractLogSignatures()
-	);*/
 
 	loadLocalDeviceParameters();
 }
@@ -936,4 +927,4 @@ BlockchainSecLib::getReceivedDevices(uint32_t deviceID)
 
 
 
-} //namespace blockchainSec
+} //namespace

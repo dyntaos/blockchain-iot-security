@@ -38,6 +38,6 @@ std::vector<uint32_t> ethabi_decode_uint32_array(
 );
 
 
-}
+} //namespace
 
 #endif // __ETHABI_HPP

@@ -85,6 +85,6 @@ class CryptographicKeyMissmatchException : public CryptographicException {
 
 
 
-}
+} //namespace
 
-#endif // __ETH_INTERFACE_EXCEPT_HPP
+#endif //__ETH_INTERFACE_EXCEPT_HPP

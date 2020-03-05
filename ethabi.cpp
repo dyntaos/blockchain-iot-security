@@ -2,9 +2,7 @@
 #include <vector>
 
 #ifdef _DEBUG
-
 #include <iostream>
-
 #endif //_DEBUG
 
 #include <boost/algorithm/string.hpp>
@@ -15,11 +13,14 @@
 
 using namespace std;
 
-namespace blockchainSec {
+namespace eth_interface
+{
 
 
 
-string ethabi(string const& args) {
+string
+ethabi(string const& args)
+{
 	string result;
 	array<char, IPC_BUFFER_LENGTH> pipe_buffer;
 
@@ -28,14 +29,20 @@ string ethabi(string const& args) {
 #endif //_DEBUG
 
 	FILE *ethabi_pipe = popen(("ethabi " + args).c_str(), "r");
-	if (ethabi_pipe == NULL) {
+	if (ethabi_pipe == NULL)
+	{
 		// Failed to open pipe to ethabi -- is the binary installed and in $PATH?
-		throw ResourceRequestFailedException("ethabi(): Failed to popen() pipe to ethabi binary. Is the binary installed and in the $PATH environment variable?");
+		throw ResourceRequestFailedException(
+			"ethabi(): Failed to popen() pipe to ethabi binary. "
+			"Is the binary installed and in the $PATH environment variable?"
+		);
 	}
-	while (fgets(pipe_buffer.data(), IPC_BUFFER_LENGTH, ethabi_pipe) != NULL) {
+	while (fgets(pipe_buffer.data(), IPC_BUFFER_LENGTH, ethabi_pipe) != NULL)
+	{
 		result += pipe_buffer.data();
 	}
-	if (pclose(ethabi_pipe) != 0) {
+	if (pclose(ethabi_pipe) != 0)
+	{
 		throw ResourceRequestFailedException(
 			"ethabi(): ethabi binary exited with a failure status!\n"
 			"Args: " + args + "\n"
@@ -53,13 +60,20 @@ string ethabi(string const& args) {
 
 
 //TODO: Should I be using unique_ptr<unordered_map<...>> ?
-unordered_map<string, string> ethabi_decode_log(string const& abiFile, string const& eventName, vector<string> & topics, string const& data) {
+unordered_map<string, string>
+ethabi_decode_log(
+	string const& abiFile,
+	string const& eventName,
+	vector<string> & topics,
+	string const& data)
+{
 	string query, responce;
 	vector<string> lines;
 	unordered_map<string, string> parsedLog;
 	string topic_query;
 
-	for (vector<string>::iterator iter = topics.begin(); iter != topics.end(); ++iter) {
+	for (vector<string>::iterator iter = topics.begin(); iter != topics.end(); ++iter)
+	{
 		topic_query += "-l " + *iter + " ";
 	}
 
@@ -68,8 +82,10 @@ unordered_map<string, string> ethabi_decode_log(string const& abiFile, string co
 
 	boost::split(lines, responce, boost::is_any_of("\n"));
 
-	for (vector<string>::iterator iter = lines.begin(); iter != lines.end(); ++iter) {
-		if (boost::trim_copy(*iter).compare("") == 0) {
+	for (vector<string>::iterator iter = lines.begin(); iter != lines.end(); ++iter)
+	{
+		if (boost::trim_copy(*iter).compare("") == 0)
+		{
 			continue;
 		}
 		//TODO: What if there is no space to sepatate key and value?
@@ -82,7 +98,9 @@ unordered_map<string, string> ethabi_decode_log(string const& abiFile, string co
 
 
 
-string ethabi_decode_result(string const& abiFile, string const& eventName, string const& data) {
+string
+ethabi_decode_result(string const& abiFile, string const& eventName, string const& data)
+{
 	string query, responce;
 
 	query = "decode function " + abiFile + " " + eventName + " " + data; //TODO: Check data does not have "0x"...
@@ -92,7 +110,8 @@ string ethabi_decode_result(string const& abiFile, string const& eventName, stri
 	cout << "ethabi_decode_result() responce:" << responce << endl;
 #endif //_DEBUG
 
-	if (responce.find_first_of(" ") == string::npos) {
+	if (responce.find_first_of(" ") == string::npos)
+	{
 		return "";
 	}
 	return responce.substr(responce.find_first_of(" ") + 1);
@@ -100,7 +119,9 @@ string ethabi_decode_result(string const& abiFile, string const& eventName, stri
 
 
 
-vector<string> ethabi_decode_results(string const& abiFile, string const& eventName, string const& data) {
+vector<string>
+ethabi_decode_results(string const& abiFile, string const& eventName, string const& data)
+{
 	vector<string> array;
 	string query, responce;
 
@@ -113,10 +134,14 @@ vector<string> ethabi_decode_results(string const& abiFile, string const& eventN
 
 	boost::split(array, responce, boost::is_any_of("\n"));
 
-	for (vector<string>::iterator it = array.begin(); it != array.end(); ++it) {
-		if (responce.find_first_of(" ") == string::npos) {
+	for (vector<string>::iterator it = array.begin(); it != array.end(); ++it)
+	{
+		if (responce.find_first_of(" ") == string::npos)
+		{
 			*it = "";
-		} else {
+		}
+		else
+		{
 			*it = (*it).substr((*it).find_first_of(" ") + 1);
 		}
 	}
@@ -125,7 +150,9 @@ vector<string> ethabi_decode_results(string const& abiFile, string const& eventN
 
 
 
-vector<string> ethabi_decode_string_array(string const& abiFile, string const& eventName, string const& data) {
+vector<string>
+ethabi_decode_string_array(string const& abiFile, string const& eventName, string const& data)
+{
 	vector<string> array;
 	string responce;
 
@@ -138,7 +165,9 @@ vector<string> ethabi_decode_string_array(string const& abiFile, string const& e
 
 
 
-vector<uint32_t> ethabi_decode_uint32_array(string const& abiFile, string const& eventName, string const& data) {
+vector<uint32_t>
+ethabi_decode_uint32_array(string const& abiFile, string const& eventName, string const& data)
+{
 	vector<string> arrayStr;
 	vector<uint32_t> arrayUInt32;
 	string responce;
@@ -147,7 +176,8 @@ vector<uint32_t> ethabi_decode_uint32_array(string const& abiFile, string const&
 	responce = responce.substr(1, responce.length() - 2);
 	boost::split(arrayStr, responce, boost::is_any_of(","));
 
-	for (vector<string>::iterator it = arrayStr.begin(); it != arrayStr.end(); ++it) {
+	for (vector<string>::iterator it = arrayStr.begin(); it != arrayStr.end(); ++it)
+	{
 		arrayUInt32.push_back(strtoul(((*it).c_str()), nullptr, 16));
 	}
 	return arrayUInt32;
@@ -155,4 +185,4 @@ vector<uint32_t> ethabi_decode_uint32_array(string const& abiFile, string const&
 
 
 
-}
+} //namespace

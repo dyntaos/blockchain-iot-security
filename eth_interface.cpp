@@ -34,7 +34,7 @@ EthInterface::initialize(
 	string contractAddress,
 	vector<pair<string, string>> contractEventSignatures)
 {
-	this->ipcPath = boost::to_upper_copy(boost::trim_copy(ipcPath));
+	this->ipcPath = boost::trim_copy(ipcPath);
 
 	this->clientAddress = boost::to_upper_copy(boost::trim_copy(clientAddress));
 	if (this->clientAddress.substr(0, 2) == "0X")
@@ -304,13 +304,12 @@ EthInterface::create_contract(void)
 
 	cout << "Contract Address: " << contractAddress << endl;
 
-	this->contractAddress = contractAddress;
+	this->contractAddress = boost::to_upper_copy(boost::trim_copy(contractAddress));
+	if (this->contractAddress.substr(0, 2) == "0X")
+	{
+		this->contractAddress = this->contractAddress.substr(2);
+	}
 	return contractAddress;
-
-	/*if (cfgRoot->exists("contractAddress")) cfgRoot->remove("contractAddress");
-	cfgRoot->add("contractAddress", Setting::TypeString) = contractAddress;
-	this->contractAddress = contractAddress;
-	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);*/
 }
 
 
@@ -520,4 +519,4 @@ EthInterface::joinThreads(void)
 
 
 
-} // namespace eth_interface
+} //namespace

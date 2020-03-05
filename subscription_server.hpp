@@ -79,7 +79,7 @@ class EventLogWaitManager
 
 
 
-}
+} //namespace
 
 
 #endif //__SUBSCRIPTION_SERVER_HPP

@@ -1090,4 +1090,4 @@ void BlockchainSecConsole::cmd_help(vector<string> & cmds, BlockchainSecLib & bl
 }
 
 
-}
+} //namespace

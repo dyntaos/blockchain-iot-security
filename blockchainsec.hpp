@@ -104,6 +104,7 @@ class BlockchainSecLib : public eth_interface::EthInterface
 };
 
 
-}
+} //namespace
 
-#endif // __BLOCKCHAINSEC_HPP
+
+#endif //__BLOCKCHAINSEC_HPP
