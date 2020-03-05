@@ -13,9 +13,6 @@
 
 #define BLOCKCHAINSEC_CONFIG_F "blockchainsec.conf"
 #define BLOCKCHAINSEC_MAX_DEV_NAME 32
-#define BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES 25
-#define BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY 1
-
 
 #define ETH_CONTRACT_SOL "dev_mgmt_contract.sol"
 #define ETH_CONTRACT_BIN "dev_mgmt_contract.bin"

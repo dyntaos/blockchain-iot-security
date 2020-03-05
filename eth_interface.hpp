@@ -1,15 +1,18 @@
 #ifndef __ETH_INTERFACE_HPP
 #define __ETH_INTERFACE_HPP
 
+#include <thread>
+#include <mutex>
+
 #include "json/include/nlohmann/json.hpp"
 #include <libconfig.h++>
-#include <mutex>
 #include <sodium.h>
-#include <thread>
 
 #include <eth_interface_except.hpp>
 #include <subscription_server.hpp>
 
+#define ETH_GET_TRANSRECEIPT_MAX_RETRIES 25
+#define ETH_GET_TRANSRECEIPT_RETRY_DELAY 1
 
 #define IPC_BUFFER_LENGTH 128
 
@@ -26,6 +29,11 @@ namespace eth_interface
 class EthInterface
 {
 	public:
+	EthInterface(
+		std::string ethContractSOL,
+		std::string ethContractABI,
+		std::string ethContractBIN);
+
 	void initialize(
 		std::string ipcPath,
 		std::string clientAddress,
@@ -34,6 +42,9 @@ class EthInterface
 
 	std::string getClientAddress(void);
 	std::string getContractAddress(void);
+	std::string getEthContractSOL(void);
+	std::string getEthContractABI(void);
+	std::string getEthContractBIN(void);
 
 	void joinThreads(void);
 
@@ -41,6 +52,9 @@ class EthInterface
 	std::string ipcPath;
 	std::string clientAddress;
 	std::string contractAddress;
+	std::string ethContractSOL;
+	std::string ethContractABI;
+	std::string ethContractBIN;
 
 	EventLogWaitManager* eventLogWaitManager;
 

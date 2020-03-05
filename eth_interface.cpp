@@ -10,10 +10,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <blockchainsec.hpp>
+#include <eth_interface.hpp>
 #include <cpp-base64/base64.h>
 #include <ethabi.hpp>
-#include <misc.hpp> // TODO: Needed in eth_interface?
+#include <misc.hpp>
 
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
@@ -24,6 +24,18 @@ using namespace std;
 
 namespace eth_interface
 {
+
+
+
+EthInterface::EthInterface(
+	string ethContractSOL,
+	string ethContractABI,
+	string ethContractBIN)
+{
+	this->ethContractSOL = ethContractSOL;
+	this->ethContractABI = ethContractABI;
+	this->ethContractBIN = ethContractBIN;
+}
 
 
 
@@ -73,6 +85,30 @@ EthInterface::getContractAddress(void)
 
 
 
+string
+EthInterface::getEthContractSOL(void)
+{
+	return this->ethContractSOL;
+}
+
+
+
+string
+EthInterface::getEthContractABI(void)
+{
+	return this->ethContractABI;
+}
+
+
+
+string
+EthInterface::getEthContractBIN(void)
+{
+	return this->ethContractBIN;
+}
+
+
+
 // Throws ResourceRequestFailedException from ethabi()
 string
 EthInterface::getFrom(string const& funcName, string const& ethabiEncodeArgs)
@@ -80,7 +116,7 @@ EthInterface::getFrom(string const& funcName, string const& ethabiEncodeArgs)
 	string data, result;
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs);
+		"encode -l function " + this->ethContractABI + " " + funcName + ethabiEncodeArgs);
 
 #ifdef _DEBUG
 	cout << "getFrom(): " << funcName << "  " << ethabiEncodeArgs << endl;
@@ -183,7 +219,7 @@ EthInterface::callMutatorContract(
 	string data;
 
 	data = ethabi(
-		"encode -l function " ETH_CONTRACT_ABI " " + funcName + ethabiEncodeArgs);
+		"encode -l function " + this->ethContractABI + " " + funcName + ethabiEncodeArgs);
 
 	try
 	{
@@ -228,21 +264,43 @@ EthInterface::create_contract(void)
 		transactionJsonStr,
 		transactionHash,
 		transactionReceipt,
-		contractAddress;
+		contractAddress,
+		shellCall;
 	Json transactionJsonData, receiptJsonData;
 
-	if (system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'") != 0)
+	shellCall = "solc --bin '";
+	shellCall += this->ethContractSOL;
+	shellCall += "' | tail -n +4 > '";
+	shellCall += this->ethContractBIN;
+	shellCall += "'";
+
+#ifdef _DEBUG
+	cout << "create_contract(): system(\"" << shellCall << "\")" << endl;
+#endif //_DEBUG
+
+	if (system(shellCall.c_str()) != 0)
 	{
 		throw ResourceRequestFailedException(
 			"solc failed to compile contract to binary format!");
 	}
-	if (system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'") != 0)
+
+	shellCall = "solc --abi '";
+	shellCall += this->ethContractSOL;
+	shellCall += "' | tail -n +4 > '";
+	shellCall += this->ethContractABI;
+	shellCall += "'";
+
+#ifdef _DEBUG
+	cout << "create_contract(): system(\"" << shellCall << "\")" << endl;
+#endif //_DEBUG
+
+	if (system(shellCall.c_str()) != 0)
 	{
 		throw ResourceRequestFailedException(
 			"solc failed to compile contract to abi format!");
 	}
 
-	contractBin = boost::trim_copy(readFile2(ETH_CONTRACT_BIN));
+	contractBin = boost::trim_copy(readFile2(this->ethContractBIN));
 
 	transactionJsonStr = this->eth_createContract(contractBin);
 
@@ -310,7 +368,7 @@ EthInterface::getTransactionReceipt(string const& transactionHash)
 	string transactionReceipt, result;
 	Json jsonData;
 
-	while (retries <= BLOCKCHAINSEC_GETTRANSRECEIPT_MAXRETRIES)
+	while (retries <= ETH_GET_TRANSRECEIPT_MAX_RETRIES)
 	{
 		transactionReceipt = this->eth_getTransactionReceipt(transactionHash);
 		retries++;
@@ -325,12 +383,12 @@ EthInterface::getTransactionReceipt(string const& transactionHash)
 		auto jsonFindResult = jsonData.find("result");
 		if (jsonFindResult == jsonData.end())
 		{
-			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+			sleep(ETH_GET_TRANSRECEIPT_RETRY_DELAY);
 			continue;
 		}
 		else if (jsonFindResult.value().is_null())
 		{
-			sleep(BLOCKCHAINSEC_GETTRANSRECEIPT_RETRY_DELAY);
+			sleep(ETH_GET_TRANSRECEIPT_RETRY_DELAY);
 			continue;
 		}
 

@@ -16,8 +16,6 @@
 
 
 //TODO: Make a function to verify ethereum address formatting! (Apply to configuration file validation)
-//TODO: Make function to see if "0x" needs to be prepended to function arguments
-//TODO: Make all stored addresses NOT store "0x"
 
 
 using namespace std;
@@ -36,6 +34,7 @@ BlockchainSecLib::BlockchainSecLib(void)
 
 
 BlockchainSecLib::BlockchainSecLib(bool compile)
+	: EthInterface(ETH_CONTRACT_SOL, ETH_CONTRACT_ABI, ETH_CONTRACT_BIN)
 {
 	std::string ipcPath;
 	std::string clientAddress;
@@ -307,7 +306,7 @@ string
 BlockchainSecLib::getStringFromDeviceID(string const& funcName, uint32_t deviceID)
 {
 	return ethabi_decode_result(
-		ETH_CONTRACT_ABI,
+		getEthContractABI(),
 		funcName,
 		getFromDeviceID(funcName, deviceID));
 }
@@ -319,7 +318,7 @@ vector<string>
 BlockchainSecLib::getStringsFromDeviceID(string const& funcName, uint32_t deviceID)
 {
 	return ethabi_decode_results(
-		ETH_CONTRACT_ABI,
+		getEthContractABI(),
 		funcName,
 		getFromDeviceID(funcName, deviceID));
 }
@@ -507,7 +506,7 @@ vector<string>
 BlockchainSecLib::get_active_admins(void)
 {
 	return ethabi_decode_results(
-		ETH_CONTRACT_ABI,
+		getEthContractABI(),
 		"get_active_admins",
 		getArrayFromContract("get_active_admins"));
 }
@@ -519,7 +518,7 @@ vector<uint32_t>
 BlockchainSecLib::get_authorized_devices(void)
 {
 	return ethabi_decode_uint32_array(
-		ETH_CONTRACT_ABI,
+		getEthContractABI(),
 		"get_authorized_devices",
 		getArrayFromContract("get_authorized_devices"));
 }
@@ -531,7 +530,7 @@ vector<uint32_t>
 BlockchainSecLib::get_authorized_gateways(void)
 {
 	return ethabi_decode_uint32_array(
-		ETH_CONTRACT_ABI,
+		getEthContractABI(),
 		"get_authorized_gateways",
 		getArrayFromContract("get_authorized_gateways"));
 }
