@@ -29,8 +29,8 @@ contract DeviceMgmt {
 		bool active;
 		bool is_gateway;                        //
 		uint32 device_id;                       // Integer ID of this device
-		uint creationTimestamp;                 // Time this device was first created
-		uint dataTimestamp;                     //
+		uint32 creationTimestamp;                 // Time this device was first created
+		uint32 dataTimestamp;                     //
 
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
 		uint16 dataLen;
@@ -86,8 +86,6 @@ contract DeviceMgmt {
 	// Keccak256 Signature: 0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9
 	event Remove_Gateway			(address indexed msgSender, address gateway_addr, uint32 device_id);
 
-	//// Keccak256 Signature: 0924baadbe7a09acb87f9108bb215dea5664035966d186b4fa71905d11fe1b51
-	//event Push_Data					(address indexed msgSender, uint32 device_id, uint timestamp, string data);
 	// Keccak256 Signature: bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9
 	event Push_Data					(address indexed msgSender, uint32 device_id);
 
@@ -381,7 +379,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].dataTimestamp = 0;
 		id_to_device[device_id].publicKey = "";
 		id_to_device[device_id].dataReceiverID = defaultDataReceiver;
-		id_to_device[device_id].creationTimestamp = now;
+		id_to_device[device_id].creationTimestamp = uint32(now);
 		id_to_device[device_id].gateway_managed = gateway_managed;
 
 		authorized_devices.push(device_id);
@@ -431,7 +429,7 @@ contract DeviceMgmt {
 		id_to_device[device_id].dataTimestamp = 0;
 		id_to_device[device_id].publicKey = "";
 		id_to_device[device_id].dataReceiverID = defaultDataReceiver;
-		id_to_device[device_id].creationTimestamp = now;
+		id_to_device[device_id].creationTimestamp = uint32(now);
 		id_to_device[device_id].gateway_managed = false;
 		id_to_device[device_id].eth_addr = clientAddr;
 		id_to_device[device_id].has_eth_addr = true;
@@ -528,7 +526,7 @@ contract DeviceMgmt {
 	 * @param addr
 	 * @return
 	 */
-	function update_addr(uint32 device_id, uint addrType, string calldata addr) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
+	function update_addr(uint32 device_id, uint32 addrType, string calldata addr) external _authorizedDeviceOrGateway _mutator(device_id) returns(bool) {
 		id_to_device[device_id].addrType = AddrType(addrType);
 		id_to_device[device_id].addr = addr;
 
@@ -561,9 +559,9 @@ contract DeviceMgmt {
 		id_to_device[device_id].data = data;
 		id_to_device[device_id].dataLen = dataLen;
 		id_to_device[device_id].nonce = nonce;
-		id_to_device[device_id].dataTimestamp = now;
+		id_to_device[device_id].dataTimestamp = uint32(now);
 
-		//emit Push_Data(msg.sender, device_id, now, data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
+		//emit Push_Data(msg.sender, device_id, uint32(now), data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
 		emit Push_Data(msg.sender, device_id);
 		return true;
 	}

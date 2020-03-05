@@ -114,7 +114,7 @@ void BlockchainSecConsole::console(blockchainSec::BlockchainSecLib & blockchainS
 	string input;
 
 	for (; !self.haltThread;) {
-		if (blockchainSec.is_admin(blockchainSec.getClientAddress().substr(2))) {
+		if (blockchainSec.is_admin(blockchainSec.getClientAddress())) {
 			cout << " ## ";
 		} else {
 			cout << " $$ ";
