@@ -49,10 +49,12 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	// Blockchain accessor methods
 	bool is_device(uint32_t deviceID);
 	bool is_gateway(uint32_t deviceID);
+	bool is_gateway_managed(uint32_t deviceID);
 	uint32_t get_my_device_id(void);
 	uint32_t get_datareceiver(uint32_t deviceID);
 	uint32_t get_default_datareceiver(void);
 	std::string get_key(uint32_t deviceID);
+	std::string get_signKey(uint32_t deviceID);
 	AddrType get_addrtype(uint32_t deviceID);
 	std::string get_addr(uint32_t deviceID);
 	std::string get_name(uint32_t deviceID);
@@ -76,6 +78,7 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	bool set_default_datareceiver(uint32_t dataReceiverID);
 	bool update_addr(uint32_t deviceID, AddrType addrType, std::string const& addr);
 	bool update_publickey(uint32_t deviceID, std::string const& publicKey);
+	bool update_signPublickey(uint32_t deviceID, std::string const& signPublicKey);
 	bool push_data(uint32_t deviceID, std::string& data, uint16_t dataLen, std::string& nonce);
 	bool authorize_admin(std::string const& adminAddr);
 	bool deauthorize_admin(std::string const& adminAddr);

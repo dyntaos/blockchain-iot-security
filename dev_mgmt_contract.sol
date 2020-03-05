@@ -29,8 +29,8 @@ contract DeviceMgmt {
 		bool active;
 		bool is_gateway;                        //
 		uint32 device_id;                       // Integer ID of this device
-		uint32 creationTimestamp;                 // Time this device was first created
-		uint32 dataTimestamp;                     //
+		uint32 creationTimestamp;               // Time this device was first created
+		uint32 dataTimestamp;                   //
 
 		string data;                            // Data can point to swarm address or just contain raw IoT device data such as sensor information (encrypted)
 		uint16 dataLen;
@@ -41,6 +41,7 @@ contract DeviceMgmt {
 		string mac;                             // MAC address for further identification
 
 		string publicKey;                       // Devices public encryption key
+		string signPublicKey;                   //
 		uint32 dataReceiverID;                  //
 		bool gateway_managed;                   // Is this deviced managed by the set of gateway accounts
 		uint32 authorizedDevicesIndex;          //
@@ -100,6 +101,9 @@ contract DeviceMgmt {
 
 	// Keccak256 Signature: 9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f
 	event Update_PublicKey			(address indexed msgSender, uint32 device_id, string newPublicKey);
+
+	// Keccak256 Signature: 3b22974627f390f3699ade68dafe43b30b2606f905eafec45482294aabc181e8
+	event Update_SignPublicKey		(address indexed msgSender, uint32 device_id, string newSignPublicKey);
 
 	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
 	event Authorize_Admin			(address indexed msgSender, address newAdminAddr);
@@ -228,11 +232,21 @@ contract DeviceMgmt {
 	}
 
 
-	 /*
-	  * @dev
-	  * @param
-	  * @return
-	  */
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function is_gateway_managed(uint32 device_id) external view _authorized returns(bool) {
+		return id_to_device[device_id].gateway_managed;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
 	function get_default_datareceiver() external view _authorized returns(uint32) {
 		return defaultDataReceiver;
 	}
@@ -267,6 +281,17 @@ contract DeviceMgmt {
 	function get_key(uint32 device_id) external view _authorized returns(string memory) {
 		require(id_to_device[device_id].active);
 		return id_to_device[device_id].publicKey;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @return
+	 */
+	function get_signkey(uint32 device_id) external view _authorized returns(string memory) {
+		require(id_to_device[device_id].active);
+		return id_to_device[device_id].signPublicKey;
 	}
 
 
@@ -545,6 +570,20 @@ contract DeviceMgmt {
 		id_to_device[device_id].publicKey = newPublicKey;
 
 		emit Update_PublicKey(msg.sender, device_id, newPublicKey);
+		return true;
+	}
+
+
+	/*
+	 * @dev
+	 * @param
+	 * @param newSignPublicKey
+	 * @return
+	 */
+	function update_signpublickey(uint32 device_id, string calldata newSignPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
+		id_to_device[device_id].signPublicKey = newSignPublicKey;
+
+		emit Update_SignPublicKey(msg.sender, device_id, newSignPublicKey);
 		return true;
 	}
 

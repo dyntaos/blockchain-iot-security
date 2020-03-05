@@ -158,6 +158,7 @@ BlockchainSecLib::contractEventSignatures(void)
 	vecLogSigs.push_back(pair<string, string>("Set_Default_DataReceiver", "adf201dc3ee5a3915c67bf861b4c0ec432dded7b6a82938956e1f411c5636287"));
 	vecLogSigs.push_back(pair<string, string>("Update_Addr", "f873df4dfb480f3a05c2bde3cae4779f61d6b60c3f6a0f1ab57aac0fe021a686"));
 	vecLogSigs.push_back(pair<string, string>("Update_PublicKey", "9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f"));
+	vecLogSigs.push_back(pair<string, string>("Update_SignPublicKey", "3b22974627f390f3699ade68dafe43b30b2606f905eafec45482294aabc181e8"));
 	vecLogSigs.push_back(pair<string, string>("Authorize_Admin", "134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf"));
 	vecLogSigs.push_back(pair<string, string>("Deauthorize_Admin", "e96008d87980c624fca6a2c0ecc59bcef2ef54659e80a1333aff845ea113f160"));
 	return vecLogSigs;
@@ -367,6 +368,15 @@ BlockchainSecLib::is_gateway(uint32_t deviceID)
 
 
 // Throws ResourceRequestFailedException from ethabi()
+bool
+BlockchainSecLib::is_gateway_managed(uint32_t deviceID)
+{
+	return getIntFromDeviceID("is_gateway_managed", deviceID) != 0;
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
 uint32_t
 BlockchainSecLib::get_my_device_id(void)
 {
@@ -404,6 +414,15 @@ string
 BlockchainSecLib::get_key(uint32_t deviceID)
 {
 	return getStringFromDeviceID("get_key", deviceID);
+}
+
+
+
+// Throws ResourceRequestFailedException from ethabi()
+string
+BlockchainSecLib::get_signKey(uint32_t deviceID)
+{
+	return getStringFromDeviceID("get_signKey", deviceID);
 }
 
 
@@ -689,6 +708,19 @@ BlockchainSecLib::update_publickey(uint32_t deviceID, string const& publicKey)
 	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '" + escapeSingleQuotes(publicKey) + "'";
 
 	return callMutatorContract("update_publickey", ethabiEncodeArgs, eventLog);
+}
+
+
+
+bool
+BlockchainSecLib::update_signpublickey(uint32_t deviceID, string const& signPublicKey)
+{
+	string ethabiEncodeArgs;
+	unique_ptr<unordered_map<string, string>> eventLog;
+
+	ethabiEncodeArgs = " -p '" + boost::lexical_cast<string>(deviceID) + "' -p '" + escapeSingleQuotes(signPublicKey) + "'";
+
+	return callMutatorContract("update_signPublickey", ethabiEncodeArgs, eventLog);
 }
 
 

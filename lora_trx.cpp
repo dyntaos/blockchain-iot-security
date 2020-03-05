@@ -34,19 +34,17 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
 	{
 		if (!blockchainSec->is_gateway(blockchainSec->get_my_device_id()))
 		{
-			cerr
-				<< "WARNING: This device was started as a LoRa gateway"
-				<< " but is not registered as a gateway on Ethereum!"
-				<< endl;
+			cerr << "WARNING: This device was started as a LoRa gateway"
+				 << " but is not registered as a gateway on Ethereum!"
+				 << endl;
 		}
 	}
 	catch (DeviceNotAssignedException& e)
 	{
 		// Thrown by get_my_device_id()
-		cerr
-			<< "WARNING: This device was started as a LoRa gateway"
-			<< " but is not registered as a gateway on Ethereum!"
-			<< endl;
+		cerr << "WARNING: This device was started as a LoRa gateway"
+			 << " but is not registered as a gateway on Ethereum!"
+			 << endl;
 	}
 }
 
@@ -288,9 +286,8 @@ LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
 	struct packet* p;
 
 	// #ifdef _DEBUG // TODO: Uncomment
-	cout
-		<< "LoRa forwarder thread initialized"
-		<< endl;
+	cout << "LoRa forwarder thread initialized"
+		 << endl;
 	// #endif // _DEBUG
 
 	while (!halt_server)
@@ -371,20 +368,27 @@ LoraTrx::processPacket(struct packet* p)
 	string sigHexStr = hexStr((unsigned char*)p->payload.data.signature, crypto_sign_BYTES);
 	string nonceHexStr = hexStr((unsigned char*)p->payload.data.crypto_nonce, crypto_stream_xchacha20_NONCEBYTES);
 
-	cout
-		<< "Data: " << dataStr << endl
-		<< "Data Hex: " << dataHexStr << endl
-		<< "Signature Hex: " << sigHexStr << endl
-		<< "Nonce Hex: " << nonceHexStr << endl;
+	if (!blockchainSec->is_gateway_managed(p->from))
+	{
+		cerr << "Packet marked as from device ID "
+			 << p->from
+			 << " is not a gateway managed device ID..."
+			 << endl;
+		return;
+	}
+
+	cout << "Data: " << dataStr << endl
+		 << "Data Hex: " << dataHexStr << endl
+		 << "Signature Hex: " << sigHexStr << endl
+		 << "Nonce Hex: " << nonceHexStr << endl;
 
 	maskedFlags = p->flags & 0xF;
 	switch (maskedFlags)
 	{
 		case PACKET_TYPE_ACK:
-			cerr
-				<< "Received currently unsupported message "
-				   "type PACKET_TYPE_ACK"
-				<< endl;
+			cerr << "Received currently unsupported message "
+					"type PACKET_TYPE_ACK"
+				 << endl;
 			break;
 
 		case PACKET_TYPE_DATA_FIRST:
@@ -397,17 +401,14 @@ LoraTrx::processPacket(struct packet* p)
 				return;
 			}
 #ifdef _DEBUG
-			cout
-				<< "Received LoRa PACKET_TYPE_DATA_FIRST packet "
-				   "with valid signature from device ID "
-				<< unsigned(p->from)
-				<< endl;
+			cout << "Received LoRa PACKET_TYPE_DATA_FIRST packet "
+					"with valid signature from device ID "
+				 << unsigned(p->from)
+				 << endl;
 #endif // _DEBUG
 
 			// Ensure this device is a gateway before even trying to push data
-			if (
-				blockchainSec->is_gateway(blockchainSec->get_my_device_id()) // TODO: New contract function for is_gateway_managed() and check here
-			)
+			if (blockchainSec->is_gateway(blockchainSec->get_my_device_id()))
 			{
 				try
 				{
@@ -421,81 +422,72 @@ LoraTrx::processPacket(struct packet* p)
 				}
 				catch (ResourceRequestFailedException& e)
 				{
-					cerr
-						<< "Failed to encode transaction request when attempting"
-						   " to forward LoRa packet data for device ID "
-						<< unsigned(p->from)
-						<< " to the blockchain"
-						<< endl;
+					cerr << "Failed to encode transaction request when attempting"
+							" to forward LoRa packet data for device ID "
+						 << unsigned(p->from)
+						 << " to the blockchain"
+						 << endl;
 					return;
 				}
 				catch (TransactionFailedException& e)
 				{
-					cerr
-						<< "Failed to forward LoRa packet data to blockchain;"
-						<< endl
-						<< "\tIs this gateway authorized and is device ID "
-						<< unsigned(p->from)
-						<< " gateway managed?"
-						<< endl;
+					cerr << "Failed to forward LoRa packet data to blockchain;"
+						 << endl
+						 << "\tIs this gateway authorized and is device ID "
+						 << unsigned(p->from)
+						 << " gateway managed?"
+						 << endl;
 					return;
 				}
 				catch (EthException& e)
 				{
 					// Catch any exceptions not caught above
-					cerr
-						<< "Caught unknown exception when forwarding "
-						   "LoRa packet data from device ID "
-						<< unsigned(p->from)
-						<< " to the blockchain"
-						<< endl;
+					cerr << "Caught unknown exception when forwarding "
+							"LoRa packet data from device ID "
+						 << unsigned(p->from)
+						 << " to the blockchain"
+						 << endl;
 					return;
 				}
 				//#ifdef _DEBUG  // TODO: Uncomment
-				cout
-					<< "Successfully forwarded LoRa packet data "
-					   "from device ID "
-					<< unsigned(p->from)
-					<< " to the blockchain"
-					<< endl;
+				cout << "Successfully forwarded LoRa packet data "
+						"from device ID "
+					 << unsigned(p->from)
+					 << " to the blockchain"
+					 << endl;
 				//#endif // _DEBUG
 			}
 
 			break;
 
 		case PACKET_TYPE_DATA_INTERMEDIARY:
-			cerr
-				<< "Received currently unsupported message "
-				   "type PACKET_TYPE_DATA_INTERMEDIARY"
-				<< endl;
+			cerr << "Received currently unsupported message "
+					"type PACKET_TYPE_DATA_INTERMEDIARY"
+				 << endl;
 			break;
 
 		case PACKET_TYPE_DATA_LAST:
-			cerr
-				<< "Received currently unsupported message "
-				   "type PACKET_TYPE_DATA_LAST"
-				<< endl;
+			cerr << "Received currently unsupported message "
+					"type PACKET_TYPE_DATA_LAST"
+				 << endl;
 			break;
 
 		case PACKET_TYPE_GET_RECEIVER_KEY:
-			cerr
-				<< "Received currently unsupported message "
-				   "type PACKET_TYPE_GET_RECEIVER_KEY"
-				<< endl;
+			cerr << "Received currently unsupported message "
+					"type PACKET_TYPE_GET_RECEIVER_KEY"
+				 << endl;
 			break;
 
 		case PACKET_TYPE_UPDATE_KEY:
-			cerr
-				<< "Received currently unsupported message "
-				   "type PACKET_TYPE_UPDATE_KEY"
-				<< endl;
+			cerr << "Received currently unsupported message "
+					"type PACKET_TYPE_UPDATE_KEY"
+				 << endl;
 			break;
 
 		default:
-			cerr
-				<< "Unknown message LoRa message type "
-				<< unsigned(maskedFlags)
-				<< endl;
+			cerr << "Unknown message LoRa message type "
+				 << unsigned(maskedFlags)
+				 << endl;
 			return; // TODO: Can this stay as a return or can we just fall through?
 	}
 }
@@ -515,7 +507,7 @@ LoraTrx::verifySignature(struct packet* p)
 
 	try
 	{
-		senderPubKeyHex = hexToBytes(blockchainSec->get_key(p->from));
+		senderPubKeyHex = hexToBytes(blockchainSec->get_SignKey(p->from));
 	}
 	catch (EthException& e)
 	{
