@@ -382,7 +382,7 @@ void LoraTrx::processPacket(struct packet *p) {
 						<< " gateway managed?"
 						<< endl;
 					return;
-				} catch (BlockchainSecLibException & e) {
+				} catch (EthException & e) {
 					// Catch any exceptions not caught above
 					cerr
 						<< "Caught unknown exception when forwarding "
@@ -454,7 +454,7 @@ bool LoraTrx::verifySignature(struct packet *p) {
 
 	try {
 		senderPubKeyHex = hexToBytes(blockchainSec->get_key(p->from));
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		return false;
 	}
 	memcpy(senderPubKey, string(senderPubKeyHex.begin(), senderPubKeyHex.end()).c_str(), crypto_sign_PUBLICKEYBYTES);

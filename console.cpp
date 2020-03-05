@@ -7,20 +7,22 @@
 #include <vector>
 
 #include <blockchainsec.hpp>
-#include <blockchainsec_except.hpp>
+#include <eth_interface_except.hpp>
 #include <console.hpp>
 #include <misc.hpp>
 #include <cpp-base64/base64.h>
 
+
 using namespace std;
+using namespace eth_interface;
+
+namespace blockchainSec
+{
 
 
 
-namespace blockchainSec {
-
-
-
-BlockchainSecConsole::BlockchainSecConsole(void) {
+BlockchainSecConsole::BlockchainSecConsole(void)
+{
 	boost::assign::insert(cmd_map)
 		("is_admin",                  cmd_is_admin)
 		("is_authd",                  cmd_is_authd)
@@ -58,18 +60,20 @@ BlockchainSecConsole::BlockchainSecConsole(void) {
 		("get_received_devices",      cmd_get_received_devices)
 		("update_local_keys",         cmd_update_local_keys)
 		("update_public_key",         cmd_update_public_key)
-		("help",                      cmd_help)
-	;
+		("help",                      cmd_help);
 }
 
 
 
-vector<string> BlockchainSecConsole::tokenize(string input) {
+vector<string>
+BlockchainSecConsole::tokenize(string input)
+{
 	vector<string> v;
 	boost::escaped_list_separator<char> escapedListSep("\\", " ", "\"");
 	boost::tokenizer<boost::escaped_list_separator<char>> tok(input, escapedListSep);
 
-	for (boost::tokenizer<boost::escaped_list_separator<char>>::iterator it = tok.begin(); it != tok.end(); ++it) {
+	for (boost::tokenizer<boost::escaped_list_separator<char>>::iterator it = tok.begin(); it != tok.end(); ++it)
+	{
 		v.push_back(*it);
 	}
 	return v;
@@ -77,11 +81,15 @@ vector<string> BlockchainSecConsole::tokenize(string input) {
 
 
 
-void BlockchainSecConsole::startThread(blockchainSec::BlockchainSecLib & blockchainSec) {
+void
+BlockchainSecConsole::startThread(blockchainSec::BlockchainSecLib & blockchainSec)
+{
 	if (initialized)
-		throw blockchainSec::ThreadExistsException(
+	{
+		throw ThreadExistsException(
 			"An instance of the console thread already exists for this object."
 		);
+	}
 
 	haltThread = false;
 	initialized = true;
@@ -161,7 +169,7 @@ void BlockchainSecConsole::cmd_is_admin(vector<string> & cmds, BlockchainSecLib 
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Invalid argument provided" << endl << endl;
 	}
 }
@@ -183,7 +191,7 @@ void BlockchainSecConsole::cmd_is_authd(vector<string> & cmds, BlockchainSecLib 
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Invalid argument provided" << endl << endl;
 	}
 }
@@ -205,7 +213,7 @@ void BlockchainSecConsole::cmd_is_device(vector<string> & cmds, BlockchainSecLib
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Invalid argument provided" << endl << endl;
 	}
 }
@@ -227,7 +235,7 @@ void BlockchainSecConsole::cmd_is_gateway(vector<string> & cmds, BlockchainSecLi
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Invalid argument provided" << endl << endl;
 	}
 }
@@ -241,7 +249,7 @@ void BlockchainSecConsole::cmd_get_my_device_id(vector<string> & cmds, Blockchai
 	}
 	try {
 		cout << blockchainSec.get_my_device_id() << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "No device ID associated with address \""
 			<< blockchainSec.getClientAddress()
@@ -265,7 +273,7 @@ void BlockchainSecConsole::cmd_get_data_receiver(vector<string> & cmds, Blockcha
 		cout
 			<< blockchainSec.get_datareceiver(strtoul(cmds[1].c_str(), nullptr, 10))
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -283,7 +291,7 @@ void BlockchainSecConsole::cmd_get_default_data_receiver(vector<string> & cmds, 
 	}
 	try {
 		cout << blockchainSec.get_default_datareceiver() << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl << endl;
@@ -305,7 +313,7 @@ void BlockchainSecConsole::cmd_get_key(vector<string> & cmds, BlockchainSecLib &
 		cout
 			<< blockchainSec.get_key(strtoul(cmds[1].c_str(), nullptr, 10))
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -353,7 +361,7 @@ void BlockchainSecConsole::cmd_get_addr_type(vector<string> & cmds, BlockchainSe
 				break;
 		}
 		cout  << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -377,7 +385,7 @@ void BlockchainSecConsole::cmd_get_addr(vector<string> & cmds, BlockchainSecLib 
 		cout
 			<< blockchainSec.get_addr(strtoul(cmds[1].c_str(), nullptr, 10))
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -401,7 +409,7 @@ void BlockchainSecConsole::cmd_get_name(vector<string> & cmds, BlockchainSecLib 
 		cout
 			<< blockchainSec.get_name(strtoul(cmds[1].c_str(), nullptr, 10))
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -425,7 +433,7 @@ void BlockchainSecConsole::cmd_get_mac(vector<string> & cmds, BlockchainSecLib &
 		cout
 			<< blockchainSec.get_mac(strtoul(cmds[1].c_str(), nullptr, 10))
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -455,7 +463,7 @@ void BlockchainSecConsole::cmd_get_data(vector<string> & cmds, BlockchainSecLib 
 		cout << "Base 64 Data: " << v[0] << endl;
 		cout << "Data Length: " << v[1] << endl;
 		cout << "Crypto NONCE: " << v[2] << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -481,7 +489,7 @@ void BlockchainSecConsole::cmd_get_data_timestamp(vector<string> & cmds, Blockch
 			<< unsigned(t) << endl
 			<< ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -507,7 +515,7 @@ void BlockchainSecConsole::cmd_get_creation_timestamp(vector<string> & cmds, Blo
 			<< unsigned(t) << endl
 			<< ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
 			<< endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Device ID "
 			<< cmds[1]
@@ -525,7 +533,7 @@ void BlockchainSecConsole::cmd_get_num_admin(vector<string> & cmds, BlockchainSe
 	}
 	try {
 		cout << blockchainSec.get_num_admin() << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive number of authorized administrators"
 			<< endl << endl;
@@ -541,7 +549,7 @@ void BlockchainSecConsole::cmd_get_num_devices(vector<string> & cmds, Blockchain
 	}
 	try {
 		cout << blockchainSec.get_num_devices() << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive number of authorized devices"
 			<< endl << endl;
@@ -557,7 +565,7 @@ void BlockchainSecConsole::cmd_get_num_gateways(vector<string> & cmds, Blockchai
 	}
 	try {
 		cout << blockchainSec.get_num_gateways() << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive number of authorized gateways"
 			<< endl << endl;
@@ -578,7 +586,7 @@ void BlockchainSecConsole::cmd_get_active_admins(vector<string> & cmds, Blockcha
 			cout << *it << endl;
 		}
 		cout << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl << endl;
@@ -604,7 +612,7 @@ void BlockchainSecConsole::cmd_get_authorized_devices(vector<string> & cmds, Blo
 			cout << unsigned(*it);
 		}
 		cout << "]" << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl << endl;
@@ -630,7 +638,7 @@ void BlockchainSecConsole::cmd_get_authorized_gateways(vector<string> & cmds, Bl
 			cout << unsigned(*it);
 		}
 		cout << "]" << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive default data receiver"
 			<< endl << endl;
@@ -664,7 +672,7 @@ void BlockchainSecConsole::cmd_add_device(vector<string> & cmds, BlockchainSecLi
 	try {
 		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], "", gatewayManaged); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Failed to add new device" << endl << endl;
 	}
 }
@@ -687,7 +695,7 @@ void BlockchainSecConsole::cmd_add_gateway(vector<string> & cmds, BlockchainSecL
 	try {
 		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2], ""); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Failed to add new gateway" << endl << endl;
 	}
 }
@@ -709,7 +717,7 @@ void BlockchainSecConsole::cmd_remove_device(vector<string> & cmds, BlockchainSe
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -731,7 +739,7 @@ void BlockchainSecConsole::cmd_remove_gateway(vector<string> & cmds, BlockchainS
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -761,7 +769,7 @@ void BlockchainSecConsole::cmd_update_data_receiver(vector<string> & cmds, Block
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -786,7 +794,7 @@ void BlockchainSecConsole::cmd_set_default_data_receiver(vector<string> & cmds, 
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -834,7 +842,7 @@ void BlockchainSecConsole::cmd_update_addr(vector<string> & cmds, BlockchainSecL
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -857,7 +865,7 @@ void BlockchainSecConsole::cmd_authorize_admin(vector<string> & cmds, Blockchain
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -880,7 +888,7 @@ void BlockchainSecConsole::cmd_deauthorize_admin(vector<string> & cmds, Blockcha
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -901,7 +909,7 @@ void BlockchainSecConsole::cmd_encrypt_and_push_data(vector<string> & cmds, Bloc
 		} else {
 			cout << "FALSE" << endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -924,7 +932,7 @@ void BlockchainSecConsole::cmd_get_data_and_decrypt(vector<string> & cmds, Block
 	try {
 		string d = blockchainSec.getDataAndDecrypt(strtoul(cmds[1].c_str(), nullptr, 10));
 		cout << "Data: \"" << d << "\"" << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr << "Error completing command" << endl << endl;
 	}
 }
@@ -952,7 +960,7 @@ void BlockchainSecConsole::cmd_get_received_devices(vector<string> & cmds, Block
 			cout << unsigned(*it);
 		}
 		cout << "]" << endl << endl;
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to retreive list of received devices"
 			<< endl << endl;
@@ -978,7 +986,7 @@ void BlockchainSecConsole::cmd_update_local_keys(vector<string> & cmds, Blockcha
 				<< "Failed to create new key pair!"
 				<< endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to update local key pair"
 			<< endl << endl;
@@ -1024,7 +1032,7 @@ void BlockchainSecConsole::cmd_update_public_key(vector<string> & cmds, Blockcha
 				<< cmds[1]
 				<< endl << endl;
 		}
-	} catch (BlockchainSecLibException & e) {
+	} catch (EthException & e) {
 		cerr
 			<< "Unable to update public key"
 			<< endl << endl;

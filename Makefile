@@ -94,6 +94,9 @@ $(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
 
 ### Static Library ###
 
+$(OBJ)/eth_interface.o: eth_interface.cpp
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
@@ -124,7 +127,14 @@ $(OBJ)/misc.o: misc.cpp
 $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a: $(LORA_OBJ) $(OBJ)/blockchainsec.o $(OBJ)/subscription_server.o $(OBJ)/console.o $(OBJ)/ethabi.o $(OBJ)/misc.o $(OBJ)/base64.o
+$(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
+							$(OBJ)/eth_interface.o \
+							$(OBJ)/blockchainsec.o \
+							$(OBJ)/subscription_server.o \
+							$(OBJ)/console.o \
+							$(OBJ)/ethabi.o \
+							$(OBJ)/misc.o \
+							$(OBJ)/base64.o
 	ar rcs $@ $(LORA_OBJ) $^
 
 

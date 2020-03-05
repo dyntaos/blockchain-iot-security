@@ -9,10 +9,13 @@
 #include <boost/asio.hpp>
 
 
-namespace blockchainSec {
+
+namespace eth_interface
+{
 
 
-class EventLogWaitManager {
+class EventLogWaitManager
+{
 	public:
 
 		EventLogWaitManager(
@@ -33,16 +36,14 @@ class EventLogWaitManager {
 
 		std::vector<std::pair<std::string, std::string>> contractLogSignatures;
 		std::map<std::string, std::string> subscriptionToEventName;
-		//boost::asio::io_service io_service;
-		//boost::asio::local::stream_protocol::endpoint *ep = NULL;
-		//boost::asio::local::stream_protocol::socket *socket = NULL;
 		std::string receiveParse;
 
 		std::string contractAddress;
 		std::string clientAddress;
 		std::string ipcPath;
 
-		struct EventLogWaitElement {
+		struct EventLogWaitElement
+		{
 			std::mutex cvLockMtx;
 			std::unique_lock<std::mutex> cvLock;
 			std::condition_variable cv;
@@ -50,13 +51,15 @@ class EventLogWaitManager {
 			bool hasEventLog = false;
 			std::unique_ptr<std::unordered_map<std::string, std::string>> eventLog; //TODO: Should this be a pointer?
 
-			EventLogWaitElement() {
+			EventLogWaitElement()
+			{
 				cvLock = std::unique_lock<std::mutex>(cvLockMtx);
 			}
 
 			std::string toString(void) {
 				std::string str = "{ ";
-				for (std::pair<std::string, std::string> kv : *eventLog.get()) {
+				for (std::pair<std::string, std::string> kv : *eventLog.get())
+				{
 					str += "\"" + kv.first + "\":\"" + kv.second + "\", ";
 				}
 				str = str.substr(0, str.length() - 2);
@@ -77,5 +80,6 @@ class EventLogWaitManager {
 
 
 }
+
 
 #endif //__SUBSCRIPTION_SERVER_HPP

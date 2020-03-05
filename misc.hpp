@@ -5,8 +5,8 @@
 #include <vector>
 
 
-namespace blockchainSec {
-
+namespace eth_interface
+{
 
 
 // https://stackoverflow.com/questions/116038/how-do-i-read-an-entire-file-into-a-stdstring-in-c
@@ -19,8 +19,7 @@ std::vector<char> hexToBytes(std::string const& hex);
 std::string hexStr(unsigned char *data, uint16_t len);
 bool isInt(std::string & s);
 
+
 }
 
-
-
-#endif //__MISC_HPP
+#endif // __MISC_HPP

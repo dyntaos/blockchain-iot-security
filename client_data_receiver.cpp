@@ -12,6 +12,7 @@
 
 
 using namespace std;
+using namespace eth_interface;
 using namespace blockchainSec;
 
 //TODO: Globals are bad
@@ -190,7 +191,7 @@ int main(int argc, char *argv[]) {
 			try {
 				receivedDevices = sec->getReceivedDevices(sec->get_my_device_id());
 
-			} catch (BlockchainSecLibException &e) {
+			} catch (EthException &e) {
 				cerr << "Error while retrieving received devices from the blockchain!" << endl << e.what() << endl << endl;
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
 					chainData = sec->getDataAndDecrypt(myDeviceID);
 					dataTimestamp = sec->get_dataTimestamp(myDeviceID);
 
-				} catch (BlockchainSecLibException &e) {
+				} catch (EthException &e) {
 					cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl << endl;
 					sleep(INVALID_DEVICE_TRY_INTERVAL);
 					break;

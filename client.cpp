@@ -14,8 +14,11 @@
 #include <lora_trx.hpp>
 #endif
 
+
 using namespace std;
+using namespace eth_interface;
 using namespace blockchainSec;
+
 
 //TODO: Globals are bad
 bool compileFlag = false;
@@ -217,7 +220,7 @@ int main(int argc, char *argv[]) {
 				chainData = sec->getDataAndDecrypt(myDeviceID);
 				dataTimestamp = sec->get_dataTimestamp(myDeviceID);
 
-			} catch (BlockchainSecLibException &e) {
+			} catch (EthException &e) {
 				cerr << "Error while retrieving data from the blockchain!" << endl << e.what() << endl;
 				sleep(INVALID_DEVICE_TRY_INTERVAL);
 				break;

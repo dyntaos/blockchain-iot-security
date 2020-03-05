@@ -27,6 +27,37 @@ namespace eth_interface
 
 
 
+void
+EthInterface::initialize(
+	string ipcPath,
+	string clientAddress,
+	string contractAddress,
+	vector<pair<string, string>> contractEventSignatures)
+{
+	this->ipcPath = boost::to_upper_copy(boost::trim_copy(ipcPath));
+
+	this->clientAddress = boost::to_upper_copy(boost::trim_copy(clientAddress));
+	if (this->clientAddress.substr(0, 2) == "0X")
+	{
+		this->clientAddress = this->clientAddress.substr(2);
+	}
+
+	this->contractAddress = boost::to_upper_copy(boost::trim_copy(contractAddress));
+	if (this->contractAddress.substr(0, 2) == "0X")
+	{
+		this->contractAddress = this->contractAddress.substr(2);
+	}
+
+	eventLogWaitManager = new EventLogWaitManager(
+		this->clientAddress,
+		this->contractAddress,
+		ipcPath,
+		contractEventSignatures
+	);
+}
+
+
+
 string
 EthInterface::getClientAddress(void)
 {
@@ -39,36 +70,6 @@ string
 EthInterface::getContractAddress(void)
 {
 	return contractAddress;
-}
-
-
-
-EthInterface::EthInterface(
-	string ipcPath,
-	string clientAddress,
-	string contractAddress,
-	vector<pair<string, string>> contractEventSignatures)
-{
-	this->ipcPath = boost::to_upper(boost::trim_copy(ipcPath));
-
-	this->clientAddress = boost::to_upper(boost::trim_copy(clientAddress));
-	if (this->clientAddress.substr(0, 2) == "0X")
-	{
-		this->clientAddress = this->clientAddress.substr(2);
-	}
-
-	this->contractAddress = boost::to_upper(boost::trim_copy(contractAddress));
-	if (this->contractAddress.substr(0, 2) == "0X")
-	{
-		this->contractAddress = this->contractAddress.substr(2);
-	}
-
-	eventLogWaitManager = new EventLogWaitManager(
-		this->clientAddress,
-		this->contractAddress,
-		ipcPath,
-		contractEventSignatures
-	);
 }
 
 
@@ -98,15 +99,6 @@ EthInterface::getFrom(string const& funcName, string const& ethabiEncodeArgs)
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string
-EthInterface::getFromDeviceID(string const& funcName, uint32_t deviceID)
-{
-	return getFrom(funcName, " -p '" + boost::lexical_cast<string>(deviceID) + "'");
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
 uint64_t
 EthInterface::getIntFromContract(string const& funcName)
 {
@@ -117,44 +109,6 @@ EthInterface::getIntFromContract(string const& funcName)
 	ss >> result;
 
 	return result;
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
-uint64_t
-EthInterface::getIntFromDeviceID(string const& funcName, uint32_t deviceID)
-{
-	string value;
-
-	value = getFromDeviceID(funcName, deviceID);
-	return stoul(value, nullptr, 16);
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
-string
-EthInterface::getStringFromDeviceID(string const& funcName, uint32_t deviceID)
-{
-	return ethabi_decode_result(
-		ETH_CONTRACT_ABI,
-		funcName,
-		getFromDeviceID(funcName, deviceID)
-	);
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
-vector<string>
-EthInterface::getStringsFromDeviceID(string const& funcName, uint32_t deviceID)
-{
-	return ethabi_decode_results(
-		ETH_CONTRACT_ABI,
-		funcName,
-		getFromDeviceID(funcName, deviceID)
-	);
 }
 
 
@@ -213,7 +167,8 @@ EthInterface::contract_helper(string const& data)
 	transactionHash = findResult.value();
 	transactionReceipt = getTransactionReceipt(transactionHash);
 #ifdef _DEBUG
-	cout << "contract_helper(): Calling eventLogWaitManager->getEventLog()..." << endl << endl;
+	cout << "contract_helper(): Calling eventLogWaitManager->getEventLog()..."
+		<< endl << endl;
 #endif //_DEBUG
 	return eventLogWaitManager->getEventLog(transactionHash);
 }
@@ -271,7 +226,7 @@ EthInterface::callMutatorContract(
 
 // Throws TransactionFailedException from eth_sendTransaction() and locally
 // Throws ResourceRequestFailedException
-void
+string
 EthInterface::create_contract(void)
 {
 	string contractBin,
@@ -283,11 +238,15 @@ EthInterface::create_contract(void)
 
 	if (system("solc --bin '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_BIN "'") != 0)
 	{
-		throw ResourceRequestFailedException("solc failed to compile contract to binary format!");
+		throw ResourceRequestFailedException(
+			"solc failed to compile contract to binary format!"
+		);
 	}
 	if (system("solc --abi '" ETH_CONTRACT_SOL "' | tail -n +4 > '" ETH_CONTRACT_ABI "'") != 0)
 	{
-		throw ResourceRequestFailedException("solc failed to compile contract to abi format!");
+		throw ResourceRequestFailedException(
+			"solc failed to compile contract to abi format!"
+		);
 	}
 
 	contractBin = boost::trim_copy(readFile2(ETH_CONTRACT_BIN));
@@ -301,13 +260,16 @@ EthInterface::create_contract(void)
 	{
 		// "result" not in JSON responce
 		// TODO: What if "result" is not a string
-		throw TransactionFailedException("create_contract(): Transaction hash was not present in responce to eth_sendTransaction!");
+		throw TransactionFailedException(
+			"create_contract(): Transaction hash was not "
+			"present in responce to eth_sendTransaction!"
+		);
 	}
 
 	transactionHash = jsonFindResult.value();
 
-	cout << "Parsed contract creation transaction hash: " <<
-		transactionHash << endl;
+	cout << "Parsed contract creation transaction hash: "
+		<< transactionHash << endl;
 
 	transactionReceipt = this->getTransactionReceipt(transactionHash);
 
@@ -316,7 +278,9 @@ EthInterface::create_contract(void)
 
 	if (!jsonFindResult.value().is_object())
 	{
-		throw TransactionFailedException("create_contract(): \"result\" was not a JSON object!");
+		throw TransactionFailedException(
+			"create_contract(): \"result\" was not a JSON object!"
+		);
 	}
 	auto subJsonFindResult = jsonFindResult.value().find("contractAddress");
 
@@ -324,22 +288,29 @@ EthInterface::create_contract(void)
 	{
 		// "contractAddress" not in JSON responce
 		// TODO: What if "contractAddress" is not a string
-		throw TransactionFailedException("create_contract(): \"contractAddress\" was not present in responce!");
+		throw TransactionFailedException(
+			"create_contract(): \"contractAddress\" was not present in responce!"
+		);
 	}
 
 	contractAddress = subJsonFindResult.value();
 
 	if (contractAddress.compare("null") == 0)
 	{
-		throw TransactionFailedException("create_contract(): \"contractAddress\" was null!");
+		throw TransactionFailedException(
+			"create_contract(): \"contractAddress\" was null!"
+		);
 	}
 
 	cout << "Contract Address: " << contractAddress << endl;
 
-	if (cfgRoot->exists("contractAddress")) cfgRoot->remove("contractAddress");
+	this->contractAddress = contractAddress;
+	return contractAddress;
+
+	/*if (cfgRoot->exists("contractAddress")) cfgRoot->remove("contractAddress");
 	cfgRoot->add("contractAddress", Setting::TypeString) = contractAddress;
 	this->contractAddress = contractAddress;
-	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
+	cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);*/
 }
 
 
@@ -403,18 +374,26 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 	cout << "eth_ipc_request(): " << jsonRequest << endl;
 #endif //_DEBUG
 
-	FILE *ipc = popen(("echo '" + jsonRequest + "' | nc -U '" + ipcPath + "'").c_str(), "r");
+	FILE *ipc = popen(
+		("echo '" + jsonRequest + "' | nc -U '" + ipcPath + "'").c_str(),
+		"r"
+	);
 	if (ipc == NULL)
 	{
 		// Failed to open Unix domain socket for IPC -- Perhaps geth is not running?
-		throw ResourceRequestFailedException("eth_ipc_request(): Failed to popen() unix domain socket for IPC with geth! Is geth running?");
+		throw ResourceRequestFailedException(
+			"eth_ipc_request(): Failed to popen() unix domain "
+			"socket for IPC with geth! Is geth running?"
+		);
 	}
 
 	ipcFd = fileno(ipc);
 
 	if (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) == NULL)
 	{
-		throw ResourceRequestFailedException("eth_ipc_request(): Error: Failed to read from IPC!");
+		throw ResourceRequestFailedException(
+			"eth_ipc_request(): Error: Failed to read from IPC!"
+		);
 	}
 
 	json += ipcBuffer.data();
@@ -427,7 +406,8 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 	{
 
 #ifdef _DEBUG
-		cout << "eth_ipc_request(): Read: ''" << ipcBuffer.data() << "'" << endl;
+		cout << "eth_ipc_request(): Read: ''"
+			<< ipcBuffer.data() << "'" << endl;
 #endif //_DEBUG
 
 		json += ipcBuffer.data();
@@ -435,7 +415,9 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 
 	if (pclose(ipc) < 0)
 	{
-		throw ResourceRequestFailedException("eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!");
+		throw ResourceRequestFailedException(
+			"eth_ipc_request(): Failed to pclose() unix domain socket for IPC with geth!"
+		);
 	}
 
 #ifdef _DEBUG
@@ -538,4 +520,4 @@ EthInterface::joinThreads(void)
 
 
 
-} //namespace eth_interface
+} // namespace eth_interface

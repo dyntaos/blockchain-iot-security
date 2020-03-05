@@ -21,7 +21,9 @@ EventLogWaitManager::EventLogWaitManager(
 {
 	if (contractLogSignatures.size() < 1)
 	{
-		throw InvalidArgumentException("contractLogSignatures has no log signatures to subscribe to");
+		throw InvalidArgumentException(
+			"contractLogSignatures has no log signatures to subscribe to"
+		);
 	}
 
 	this->clientAddress = clientAddress;

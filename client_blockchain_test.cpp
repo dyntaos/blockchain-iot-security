@@ -16,6 +16,7 @@
 #endif
 
 using namespace std;
+using namespace eth_interface;
 using namespace blockchainSec;
 
 //TODO: Globals are bad
@@ -127,12 +128,6 @@ int main(int argc, char *argv[]) {
 #endif //LORA_GATEWAY
 	}
 
-
-/*
-#ifdef _DEBUG
-	sec->test();
-#endif //_DEBUG
-*/
 
 	if (consoleFlag) {
 		cout << "Console enabled..." << endl;

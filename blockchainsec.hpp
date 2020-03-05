@@ -8,7 +8,8 @@
 #include "json/include/nlohmann/json.hpp"
 
 #include <subscription_server.hpp>
-#include <blockchainsec_except.hpp>
+#include <eth_interface_except.hpp>
+#include <eth_interface.hpp>
 
 #define BLOCKCHAINSEC_CONFIG_F						"blockchainsec.conf"
 #define BLOCKCHAINSEC_MAX_DEV_NAME					32
@@ -20,28 +21,22 @@
 #define ETH_CONTRACT_BIN							"dev_mgmt_contract.bin"
 #define ETH_CONTRACT_ABI							"dev_mgmt_contract.abi"
 
-#define IPC_BUFFER_LENGTH							128
 
-#define ETH_DEFAULT_GAS								"0x7A120"
+using namespace eth_interface;
 
-
-using Json = nlohmann::json;
-
-namespace blockchainSec {
+namespace blockchainSec
+{
 
 
 
-class BlockchainSecLib {
+class BlockchainSecLib : public eth_interface::EthInterface
+{
 	public:
 		enum AddrType_e {UNSET, IPV4, IPV6, LORA, OTHER};
 		typedef AddrType_e AddrType;
 
-		BlockchainSecLib(bool compile);
 		BlockchainSecLib(void);
-		~BlockchainSecLib();
-
-		std::string getClientAddress(void);
-		std::string getContractAddress(void);
+		BlockchainSecLib(bool compile);
 
 		// Blockchain boolean methods
 		bool is_admin(std::string const& isAdminAddress);
@@ -89,16 +84,7 @@ class BlockchainSecLib {
 		std::string getDataAndDecrypt(uint32_t const deviceID);
 		std::vector<uint32_t> getReceivedDevices(uint32_t deviceID);
 
-		void joinThreads(void);
-
-#ifdef _DEBUG
-		void test(void);
-#endif //_DEBUG
-
 	private:
-		std::string ipcPath;
-		std::string clientAddress;
-		std::string contractAddress;
 		uint32_t localDeviceID;
 
 		libconfig::Config cfg;
@@ -109,33 +95,15 @@ class BlockchainSecLib {
 		unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
 		unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES + 1], txSharedKey[crypto_kx_SESSIONKEYBYTES + 1];
 
-		EventLogWaitManager *eventLogWaitManager;
+		std::vector<std::pair<std::string, std::string>> contractEventSignatures(void);
 
-		std::vector<std::pair<std::string, std::string>> contractLogSignatures(void);
-
-		std::string getFrom(std::string const& funcName, std::string const& ethabiEncodeArgs);
 		std::string getFromDeviceID(std::string const& funcName, uint32_t deviceID);
 		uint64_t getIntFromDeviceID(std::string const& funcName, uint32_t deviceID);
-		uint64_t getIntFromContract(std::string const& funcName);
 		std::string getStringFromDeviceID(std::string const& funcName, uint32_t deviceID);
 		std::vector<std::string> getStringsFromDeviceID(std::string const& funcName, uint32_t deviceID);
-		std::string getArrayFromContract(std::string const& funcName);
-		Json call_helper(std::string const& data);
-		std::unique_ptr<std::unordered_map<std::string, std::string>> contract_helper(std::string const& data);
-		bool callMutatorContract(std::string const& funcName, std::string const& ethabiEncodeArgs, std::unique_ptr<std::unordered_map<std::string, std::string>> & eventLog);
-
-		void create_contract(void);
-		std::string getTransactionReceipt(std::string const& transactionHash);
-
-		std::string eth_ipc_request(std::string const& jsonRequest);
-		std::string eth_call(std::string const& abiData);
-		std::string eth_sendTransaction(std::string const& abiData);
-		std::string eth_createContract(std::string const& data);
-		std::string eth_getTransactionReceipt(std::string const& transactionHash);
-
 };
 
 
 }
 
-#endif //__BLOCKCHAINSEC_HPP
+#endif // __BLOCKCHAINSEC_HPP
