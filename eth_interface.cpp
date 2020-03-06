@@ -309,6 +309,11 @@ EthInterface::create_contract(void)
 
 	if (jsonFindResult == transactionJsonData.end())
 	{
+
+#ifdef _DEBUG
+		cout << "create_contract(): Transaction responce: \"" << transactionJsonStr << "\"" << endl;
+#endif //_DEBUG
+
 		// "result" not in JSON responce
 		// TODO: What if "result" is not a string
 		throw TransactionFailedException(
@@ -527,8 +532,8 @@ EthInterface::eth_createContract(string const& data)
 						 ",\"params\":[{"
 						 "\"from\":\"0x"
 		+ clientAddress + "\","
-						  //"\"gas\":0,"
-						  //"\"gasPrice\":\"" + ETH_DEFAULT_GAS + "\","
+						  //"\"gasPrice\":0,"
+						  "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
 						  "\"data\":\"0x"
 		+ data + "\"}],"
 				 "\"id\":1}";
