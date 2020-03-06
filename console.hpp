@@ -36,6 +36,7 @@ class BlockchainSecConsole
 	static void cmd_get_data_receiver(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_default_data_receiver(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_get_sign_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_addr_type(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_addr(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_name(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
@@ -63,6 +64,7 @@ class BlockchainSecConsole
 	static void cmd_get_received_devices(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_update_local_keys(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_update_public_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_update_sign_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_help(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 
 

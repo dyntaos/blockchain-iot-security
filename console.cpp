@@ -451,6 +451,39 @@ BlockchainSecConsole::cmd_get_key(vector<string>& cmds, BlockchainSecLib& blockc
 
 
 void
+BlockchainSecConsole::cmd_get_sign_key(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 2)
+	{
+		cout << "Usage: get_sign_key deviceID" << endl
+			 << endl;
+		return;
+	}
+	if (!isInt(cmds[1]))
+	{
+		cerr << "\"" << cmds[1] << "\" is not a valid device ID" << endl
+			 << endl;
+		return;
+	}
+	try
+	{
+		cout << blockchainSec.get_key(strtoul(cmds[1].c_str(), nullptr, 10))
+			 << endl
+			 << endl;
+	}
+	catch (EthException& e)
+	{
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
+	}
+}
+
+
+
+void
 BlockchainSecConsole::cmd_get_addr_type(vector<string>& cmds, BlockchainSecLib& blockchainSec)
 {
 	if (cmds.size() != 2)
@@ -529,19 +562,17 @@ BlockchainSecConsole::cmd_get_addr(vector<string>& cmds, BlockchainSecLib& block
 	}
 	try
 	{
-		cout
-			<< blockchainSec.get_addr(strtoul(cmds[1].c_str(), nullptr, 10))
-			<< endl
-			<< endl;
+		cout << blockchainSec.get_addr(strtoul(cmds[1].c_str(), nullptr, 10))
+			 << endl
+			 << endl;
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -564,19 +595,17 @@ BlockchainSecConsole::cmd_get_name(vector<string>& cmds, BlockchainSecLib& block
 	}
 	try
 	{
-		cout
-			<< blockchainSec.get_name(strtoul(cmds[1].c_str(), nullptr, 10))
-			<< endl
-			<< endl;
+		cout << blockchainSec.get_name(strtoul(cmds[1].c_str(), nullptr, 10))
+			 << endl
+			 << endl;
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -599,19 +628,17 @@ BlockchainSecConsole::cmd_get_mac(vector<string>& cmds, BlockchainSecLib& blockc
 	}
 	try
 	{
-		cout
-			<< blockchainSec.get_mac(strtoul(cmds[1].c_str(), nullptr, 10))
-			<< endl
-			<< endl;
+		cout << blockchainSec.get_mac(strtoul(cmds[1].c_str(), nullptr, 10))
+			 << endl
+			 << endl;
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -648,12 +675,11 @@ BlockchainSecConsole::cmd_get_data(vector<string>& cmds, BlockchainSecLib& block
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -677,20 +703,18 @@ BlockchainSecConsole::cmd_get_data_timestamp(vector<string>& cmds, BlockchainSec
 	try
 	{
 		time_t t = blockchainSec.get_dataTimestamp(strtoul(cmds[1].c_str(), nullptr, 10));
-		cout
-			<< unsigned(t) << endl
-			<< ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
-			<< endl
-			<< endl;
+		cout << unsigned(t) << endl
+			 << ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
+			 << endl
+			 << endl;
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -714,20 +738,18 @@ BlockchainSecConsole::cmd_get_creation_timestamp(vector<string>& cmds, Blockchai
 	try
 	{
 		time_t t = blockchainSec.get_creationTimestamp(strtoul(cmds[1].c_str(), nullptr, 10));
-		cout
-			<< unsigned(t) << endl
-			<< ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
-			<< endl
-			<< endl;
+		cout << unsigned(t) << endl
+			 << ctime(&t) // TODO: Does the return value of ctime() need to be free'd?
+			 << endl
+			 << endl;
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Device ID "
-			<< cmds[1]
-			<< " does not exist"
-			<< endl
-			<< endl;
+		cerr << "Device ID "
+			 << cmds[1]
+			 << " does not exist"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -749,10 +771,9 @@ BlockchainSecConsole::cmd_get_num_admin(vector<string>& cmds, BlockchainSecLib& 
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive number of authorized administrators"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive number of authorized administrators"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -774,10 +795,9 @@ BlockchainSecConsole::cmd_get_num_devices(vector<string>& cmds, BlockchainSecLib
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive number of authorized devices"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive number of authorized devices"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -799,10 +819,9 @@ BlockchainSecConsole::cmd_get_num_gateways(vector<string>& cmds, BlockchainSecLi
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive number of authorized gateways"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive number of authorized gateways"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -830,10 +849,9 @@ BlockchainSecConsole::cmd_get_active_admins(vector<string>& cmds, BlockchainSecL
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive default data receiver"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive default data receiver"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -867,10 +885,9 @@ BlockchainSecConsole::cmd_get_authorized_devices(vector<string>& cmds, Blockchai
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive default data receiver"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive default data receiver"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -904,10 +921,9 @@ BlockchainSecConsole::cmd_get_authorized_gateways(vector<string>& cmds, Blockcha
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive default data receiver"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive default data receiver"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -918,12 +934,11 @@ BlockchainSecConsole::cmd_add_device(vector<string>& cmds, BlockchainSecLib& blo
 {
 	if (cmds.size() != 4)
 	{
-		cout
-			<< "Usage: add_device address name gatewayManaged" << endl
-			<< "\t       address - Ethereum address of authorized client for this device." << endl
-			<< "\t          name - An arbitrary name to identify this device by. Does not have to be unique." << endl
-			<< "\tgatewayManaged - [true/false] May gateways act on the behalf of this device?" << endl
-			<< endl;
+		cout << "Usage: add_device address name gatewayManaged" << endl
+			 << "\t       address - Ethereum address of authorized client for this device." << endl
+			 << "\t          name - An arbitrary name to identify this device by. Does not have to be unique." << endl
+			 << "\tgatewayManaged - [true/false] May gateways act on the behalf of this device?" << endl
+			 << endl;
 		return;
 	}
 	if (!isEthereumAddress(cmds[1]))
@@ -967,12 +982,11 @@ BlockchainSecConsole::cmd_add_gateway(vector<string>& cmds, BlockchainSecLib& bl
 {
 	if (cmds.size() != 3)
 	{
-		cout
-			<< "Usage: add_gateway address name" << endl
-			<< "\t       address - Ethereum address of authorized client for this device." << endl
-			<< "\t          name - An arbitrary name to identify this device by. Does not have to be unique."
-			<< endl
-			<< endl;
+		cout << "Usage: add_gateway address name" << endl
+			 << "\t       address - Ethereum address of authorized client for this device." << endl
+			 << "\t          name - An arbitrary name to identify this device by. Does not have to be unique."
+			 << endl
+			 << endl;
 		return;
 	}
 	if (!isEthereumAddress(cmds[1]))
@@ -1158,12 +1172,11 @@ BlockchainSecConsole::cmd_update_addr(vector<string>& cmds, BlockchainSecLib& bl
 {
 	if (cmds.size() != 4)
 	{
-		cout
-			<< "Usage: update_addr deviceID addrType addr" << endl
-			<< "\tdeviceID - Device ID of the device to modify" << endl
-			<< "\taddrType - [Unset, IPv4, IPv6, LoRa, Other] Protocol of the address" << endl
-			<< "\t    addr - The new address to store" << endl
-			<< endl;
+		cout << "Usage: update_addr deviceID addrType addr" << endl
+			 << "\tdeviceID - Device ID of the device to modify" << endl
+			 << "\taddrType - [Unset, IPv4, IPv6, LoRa, Other] Protocol of the address" << endl
+			 << "\t    addr - The new address to store" << endl
+			 << endl;
 		return;
 	}
 	if (!isInt(cmds[1]))
@@ -1195,10 +1208,9 @@ BlockchainSecConsole::cmd_update_addr(vector<string>& cmds, BlockchainSecLib& bl
 	}
 	else
 	{
-		cerr
-			<< "addrType must be \"UNSET\", \"IPV4\", \"IPV6\", \"LORA\",  or \"OTHER\""
-			<< endl
-			<< endl;
+		cerr << "addrType must be \"UNSET\", \"IPV4\", \"IPV6\", \"LORA\",  or \"OTHER\""
+			 << endl
+			 << endl;
 		return;
 	}
 	try
@@ -1231,9 +1243,8 @@ BlockchainSecConsole::cmd_authorize_admin(vector<string>& cmds, BlockchainSecLib
 {
 	if (cmds.size() != 2)
 	{
-		cout
-			<< "Usage: authorize_admin address" << endl
-			<< endl;
+		cout << "Usage: authorize_admin address" << endl
+			 << endl;
 		return;
 	}
 	if (!isEthereumAddress(cmds[1]))
@@ -1269,9 +1280,8 @@ BlockchainSecConsole::cmd_deauthorize_admin(vector<string>& cmds, BlockchainSecL
 {
 	if (cmds.size() != 2)
 	{
-		cout
-			<< "Usage: deauthorize_admin address" << endl
-			<< endl;
+		cout << "Usage: deauthorize_admin address" << endl
+			 << endl;
 		return;
 	}
 	if (!isEthereumAddress(cmds[1]))
@@ -1307,12 +1317,11 @@ BlockchainSecConsole::cmd_encrypt_and_push_data(vector<string>& cmds, Blockchain
 {
 	if (cmds.size() != 2)
 	{
-		cout
-			<< "Usage: encrypt_and_push_data data" << endl
-			<< "\tEncrypt and store the data on the blockchain. "
-			   "Data will be stored for this device ID."
-			<< endl
-			<< endl;
+		cout << "Usage: encrypt_and_push_data data" << endl
+			 << "\tEncrypt and store the data on the blockchain. "
+				"Data will be stored for this device ID."
+			 << endl
+			 << endl;
 		return;
 	}
 	try
@@ -1342,13 +1351,12 @@ BlockchainSecConsole::cmd_get_data_and_decrypt(vector<string>& cmds, BlockchainS
 {
 	if (cmds.size() != 2)
 	{
-		cout
-			<< "Usage: get_data_and_decrypt deviceID" << endl
-			<< "\tRetreive and decrypt the data of a given device ID. "
-			   "This can only be done if this device is the data receiver "
-			   "of the given device ID."
-			<< endl
-			<< endl;
+		cout << "Usage: get_data_and_decrypt deviceID" << endl
+			 << "\tRetreive and decrypt the data of a given device ID. "
+				"This can only be done if this device is the data receiver "
+				"of the given device ID."
+			 << endl
+			 << endl;
 		return;
 	}
 	if (!isInt(cmds[1]))
@@ -1406,10 +1414,9 @@ BlockchainSecConsole::cmd_get_received_devices(vector<string>& cmds, BlockchainS
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to retreive list of received devices"
-			<< endl
-			<< endl;
+		cerr << "Unable to retreive list of received devices"
+			 << endl
+			 << endl;
 	}
 }
 
@@ -1426,34 +1433,30 @@ BlockchainSecConsole::cmd_update_local_keys(vector<string>& cmds, BlockchainSecL
 	}
 	if (cmds[1] != "confirm")
 	{
-		cerr
-			<< "Provide \"confirm\" as an argument to confirm creation of new key pair"
-			<< endl
-			<< endl;
+		cerr << "Provide \"confirm\" as an argument to confirm creation of new key pair"
+			 << endl
+			 << endl;
 		return;
 	}
 	try
 	{
 		if (!blockchainSec.updateLocalKeys())
 		{
-			cerr
-				<< "Failed to create new key pair!"
-				<< endl
-				<< endl;
+			cerr << "Failed to create new key pair!"
+				 << endl
+				 << endl;
 		}
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to update local key pair"
-			<< endl
-			<< endl;
+		cerr << "Unable to update local key pair"
+			 << endl
+			 << endl;
 		return;
 	}
-	cout
-		<< "Successfully created new key pair and pushed public key to Ethereum"
-		<< endl
-		<< endl;
+	cout << "Successfully created new key pair and pushed public key to Ethereum"
+		 << endl
+		 << endl;
 }
 
 
@@ -1479,16 +1482,15 @@ BlockchainSecConsole::cmd_update_public_key(vector<string>& cmds, BlockchainSecL
 			 << endl;
 		return;
 	}
-	if (cmds[2].length() != crypto_sign_PUBLICKEYBYTES * 2)
+	if (cmds[2].length() != crypto_kx_PUBLICKEYBYTES * 2)
 	{
-		cerr
-			<< "Public key should be "
-			<< crypto_sign_PUBLICKEYBYTES * 2
-			<< " characters ("
-			<< crypto_sign_PUBLICKEYBYTES
-			<< " bytes)"
-			<< endl
-			<< endl;
+		cerr << "Public key should be "
+			 << crypto_kx_PUBLICKEYBYTES * 2
+			 << " characters ("
+			 << crypto_kx_PUBLICKEYBYTES
+			 << " bytes)"
+			 << endl
+			 << endl;
 		return;
 	}
 	try
@@ -1497,26 +1499,82 @@ BlockchainSecConsole::cmd_update_public_key(vector<string>& cmds, BlockchainSecL
 				strtoul(cmds[1].c_str(), nullptr, 10),
 				cmds[2]))
 		{
-			cerr
-				<< "Failed to update public key for device ID "
-				<< cmds[1]
-				<< endl
-				<< endl;
+			cerr << "Failed to update public key for device ID "
+				 << cmds[1]
+				 << endl
+				 << endl;
 		}
 	}
 	catch (EthException& e)
 	{
-		cerr
-			<< "Unable to update public key"
-			<< endl
-			<< endl;
+		cerr << "Unable to update public key"
+			 << endl
+			 << endl;
 		return;
 	}
-	cout
-		<< "Successfully updated public key for device ID "
-		<< cmds[1]
-		<< endl
-		<< endl;
+	cout << "Successfully updated public key for device ID "
+		 << cmds[1]
+		 << endl
+		 << endl;
+}
+
+
+
+void
+BlockchainSecConsole::cmd_update_sign_key(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 3)
+	{
+		cout << "Usage: update_sign_key deviceID signKeyHex" << endl
+			 << endl;
+		return;
+	}
+	if (!isInt(cmds[1]))
+	{
+		cerr << "\"" << cmds[1] << "\" is not a valid device ID" << endl
+			 << endl;
+		return;
+	}
+	if (!isHex(cmds[2]))
+	{
+		cerr << "\"" << cmds[2] << "\" is not a valid hexadecimal" << endl
+			 << endl;
+		return;
+	}
+	if (cmds[2].length() != crypto_sign_PUBLICKEYBYTES * 2)
+	{
+		cerr << "Public signature key should be "
+			 << crypto_sign_PUBLICKEYBYTES * 2
+			 << " characters ("
+			 << crypto_sign_PUBLICKEYBYTES
+			 << " bytes)"
+			 << endl
+			 << endl;
+		return;
+	}
+	try
+	{
+		if (!blockchainSec.update_publickey(
+				strtoul(cmds[1].c_str(), nullptr, 10),
+				cmds[2]))
+		{
+			cerr << "Failed to update public signature key for device ID "
+				 << cmds[1]
+				 << endl
+				 << endl;
+		}
+	}
+	catch (EthException& e)
+	{
+		cerr << "Unable to update public signature key"
+			 << endl
+			 << endl;
+		return;
+	}
+	cout << "Successfully updated public signature key for device ID "
+		 << cmds[1]
+		 << endl
+		 << endl;
 }
 
 
@@ -1526,46 +1584,45 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 {
 	(void)cmds;
 	(void)blockchainSec;
-	cout
-		<< "Commands:\n"
-		   "\tis_admin\n"
-		   "\tis_authd\n"
-		   "\tis_device\n"
-		   "\tis_gateway\n"
-		   "\tis_gateway_managed\n"
-		   "\tget_my_device_id\n"
-		   "\tget_data_receiver\n"
-		   "\tget_default_data_receiver\n"
-		   "\tget_key\n"
-		   "\tget_addr_type\n"
-		   "\tget_addr\n"
-		   "\tget_name\n"
-		   "\tget_mac\n"
-		   "\tget_data\n"
-		   "\tget_data_timestamp\n"
-		   "\tget_creation_timestamp\n"
-		   "\tget_num_admin\n"
-		   "\tget_num_devices\n"
-		   "\tget_num_gateways\n"
-		   "\tget_active_admins\n"
-		   "\tget_authorized_devices\n"
-		   "\tget_authorized_gateways\n"
-		   "\tadd_device\n"
-		   "\tadd_gateway\n"
-		   "\tremove_device\n"
-		   "\tremove_gateway\n"
-		   "\tupdate_data_receiver\n"
-		   "\tset_default_data_receiver\n"
-		   "\tupdate_addr\n"
-		   "\tauthorize_admin\n"
-		   "\tdeauthorize_admin\n"
-		   "\tencrypt_and_push_data\n"
-		   "\tget_data_and_decrypt\n"
-		   "\tget_received_devices\n"
-		   "\tupdate_local_keys\n"
-		   "\tupdate_public_key\n"
-		<< endl
-		<< endl;
+	cout << "Commands:\n"
+			"\tis_admin\n"
+			"\tis_authd\n"
+			"\tis_device\n"
+			"\tis_gateway\n"
+			"\tis_gateway_managed\n"
+			"\tget_my_device_id\n"
+			"\tget_data_receiver\n"
+			"\tget_default_data_receiver\n"
+			"\tget_key\n"
+			"\tget_addr_type\n"
+			"\tget_addr\n"
+			"\tget_name\n"
+			"\tget_mac\n"
+			"\tget_data\n"
+			"\tget_data_timestamp\n"
+			"\tget_creation_timestamp\n"
+			"\tget_num_admin\n"
+			"\tget_num_devices\n"
+			"\tget_num_gateways\n"
+			"\tget_active_admins\n"
+			"\tget_authorized_devices\n"
+			"\tget_authorized_gateways\n"
+			"\tadd_device\n"
+			"\tadd_gateway\n"
+			"\tremove_device\n"
+			"\tremove_gateway\n"
+			"\tupdate_data_receiver\n"
+			"\tset_default_data_receiver\n"
+			"\tupdate_addr\n"
+			"\tauthorize_admin\n"
+			"\tdeauthorize_admin\n"
+			"\tencrypt_and_push_data\n"
+			"\tget_data_and_decrypt\n"
+			"\tget_received_devices\n"
+			"\tupdate_local_keys\n"
+			"\tupdate_public_key\n"
+		 << endl
+		 << endl;
 }
 
 
