@@ -48,14 +48,14 @@ EthInterface::initialize(
 {
 	this->ipcPath = boost::trim_copy(ipcPath);
 
-	this->clientAddress = boost::to_upper_copy(boost::trim_copy(clientAddress));
-	if (this->clientAddress.substr(0, 2) == "0X")
+	this->clientAddress = boost::to_lower_copy(boost::trim_copy(clientAddress));
+	if (this->clientAddress.substr(0, 2) == "0x")
 	{
 		this->clientAddress = this->clientAddress.substr(2);
 	}
 
-	this->contractAddress = boost::to_upper_copy(boost::trim_copy(contractAddress));
-	if (this->contractAddress.substr(0, 2) == "0X")
+	this->contractAddress = boost::to_lower_copy(boost::trim_copy(contractAddress));
+	if (this->contractAddress.substr(0, 2) == "0x")
 	{
 		this->contractAddress = this->contractAddress.substr(2);
 	}
@@ -356,8 +356,8 @@ EthInterface::create_contract(void)
 
 	cout << "Contract Address: " << contractAddress << endl;
 
-	this->contractAddress = boost::to_upper_copy(boost::trim_copy(contractAddress));
-	if (this->contractAddress.substr(0, 2) == "0X")
+	this->contractAddress = boost::to_lower_copy(boost::trim_copy(contractAddress));
+	if (this->contractAddress.substr(0, 2) == "0x")
 	{
 		this->contractAddress = this->contractAddress.substr(2);
 	}
@@ -454,14 +454,13 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 
 	while (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) != NULL)
 	{
-
-#ifdef _DEBUG
-		cout << "eth_ipc_request(): Read: ''"
-			 << ipcBuffer.data() << "'" << endl;
-#endif //_DEBUG
-
 		json += ipcBuffer.data();
 	}
+
+#ifdef _DEBUG
+	cout << "eth_ipc_request(): Responce: \""
+			<< json << "\"" << endl;
+#endif //_DEBUG
 
 	if (pclose(ipc) < 0)
 	{
