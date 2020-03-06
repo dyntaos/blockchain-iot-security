@@ -380,7 +380,15 @@ BlockchainSecLib::is_gateway_managed(uint32_t deviceID)
 uint32_t
 BlockchainSecLib::get_my_device_id(void)
 {
-	uint32_t deviceId = getIntFromContract("get_my_device_id");
+	uint32_t deviceId;
+	try
+	{
+		deviceId = getIntFromContract("get_my_device_id");
+	}
+	catch (CallFailedException & e)
+	{
+		deviceId = 0;
+	}
 	if (deviceId == 0)
 	{
 		throw DeviceNotAssignedException(
