@@ -153,50 +153,62 @@ setup(void)
 	}
 
 
-	generateKeys(); // TODO
-	if (!hexToBin(publicKey, PUBLIC_KEY, crypto_sign_PUBLICKEYBYTES * 2))
-	{
-		Serial.println("Error loading existing public key!");
-	}
-	if (!hexToBin(privateKey, PRIVATE_KEY, crypto_sign_SECRETKEYBYTES * 2))
-	{
-		Serial.println("Error loading existing private key!");
-	}
+	//generateKeys(); // TODO
+
 	if (!hexToBin(dataReceiverPublicKey, DATA_RECEIVER_PUBLIC_KEY, crypto_sign_PUBLICKEYBYTES * 2))
 	{
 		Serial.println("Error loading data receiver public key!");
 	}
 
-	Serial.print("Data Receiver Key Str: ");
-	Serial.println(DATA_RECEIVER_PUBLIC_KEY);
+	if (!hexToBin(publicKey, PUBLIC_KEY, crypto_kx_PUBLICKEYBYTES * 2))
+	{
+		Serial.println("Error loading existing public key!");
+	}
+	if (!hexToBin(privateKey, PRIVATE_KEY, crypto_kx_SECRETKEYBYTES * 2))
+	{
+		Serial.println("Error loading existing private key!");
+	}
+
+	if (!hexToBin(signPublicKey, SIGN_PUBLIC_KEY, crypto_sign_PUBLICKEYBYTES * 2))
+	{
+		Serial.println("Error loading existing signing public key!");
+	}
+	if (!hexToBin(signPrivateKey, SIGN_PRIVATE_KEY, crypto_sign_SECRETKEYBYTES * 2))
+	{
+		Serial.println("Error loading existing signing private key!");
+	}
+
+	/*
+	//Serial.print("Data Receiver Key Str: ");
+	//Serial.println(DATA_RECEIVER_PUBLIC_KEY);
 	Serial.print("Data Receiver Key Hex: ");
 	hexPrint(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println();
 
-	Serial.print("Public Key Str: ");
-	Serial.println(PUBLIC_KEY);
+	//Serial.print("Public Key Str: ");
+	//Serial.println(PUBLIC_KEY);
 	Serial.print("Public Key Hex: ");
 	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
 	Serial.println();
 
-	Serial.print("Private Key Str: ");
-	Serial.println(PRIVATE_KEY);
+	//Serial.print("Private Key Str: ");
+	//Serial.println(PRIVATE_KEY);
 	Serial.print("Private Key Hex: ");
 	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
 	Serial.println();
 
-	Serial.print("Signing Public Key Str: ");
-	Serial.println(SIGN_PUBLIC_KEY);
+	//Serial.print("Signing Public Key Str: ");
+	//Serial.println(SIGN_PUBLIC_KEY);
 	Serial.print("Signing Public Key Hex: ");
 	hexPrint(signPublicKey, crypto_sign_PUBLICKEYBYTES);
 	Serial.println();
 
-	Serial.print("Signing Private Key Str: ");
-	Serial.println(SIGN_PRIVATE_KEY);
+	//Serial.print("Signing Private Key Str: ");
+	//Serial.println(SIGN_PRIVATE_KEY);
 	Serial.print("Signing Private Key Hex: ");
 	hexPrint(signPrivateKey, crypto_sign_SECRETKEYBYTES);
 	Serial.println();
-
+	*/
 
 	generateSharedKeys(); // TODO: Check return value
 
