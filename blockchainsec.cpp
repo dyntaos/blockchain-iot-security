@@ -420,7 +420,7 @@ BlockchainSecLib::get_key(uint32_t deviceID)
 
 // Throws ResourceRequestFailedException from ethabi()
 string
-BlockchainSecLib::get_signKey(uint32_t deviceID)
+BlockchainSecLib::get_signkey(uint32_t deviceID)
 {
 	return getStringFromDeviceID("get_signKey", deviceID);
 }

@@ -509,7 +509,7 @@ LoraTrx::verifySignature(struct packet* p)
 
 	try
 	{
-		string hexSignKey = blockchainSec->get_SignKey(p->from);
+		string hexSignKey = blockchainSec->get_signkey(p->from);
 		if (hexSignKey.length() != crypto_sign_PUBLICKEYBYTES * 2)
 		{
 			cerr << "Valid signature public key does not exist on blockchain for device ID "

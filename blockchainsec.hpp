@@ -54,7 +54,7 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	uint32_t get_datareceiver(uint32_t deviceID);
 	uint32_t get_default_datareceiver(void);
 	std::string get_key(uint32_t deviceID);
-	std::string get_signKey(uint32_t deviceID);
+	std::string get_signkey(uint32_t deviceID);
 	AddrType get_addrtype(uint32_t deviceID);
 	std::string get_addr(uint32_t deviceID);
 	std::string get_name(uint32_t deviceID);
