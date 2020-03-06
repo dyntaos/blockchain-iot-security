@@ -31,6 +31,7 @@ class BlockchainSecConsole
 	static void cmd_is_authd(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_is_device(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_is_gateway(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_is_gateway_managed(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_my_device_id(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_data_receiver(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_default_data_receiver(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);

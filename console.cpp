@@ -255,7 +255,7 @@ BlockchainSecConsole::cmd_is_gateway(vector<string>& cmds, BlockchainSecLib& blo
 {
 	if (cmds.size() != 2)
 	{
-		cout << "Usage: is_device deviceID" << endl
+		cout << "Usage: is_gateway deviceID" << endl
 			 << endl;
 		return;
 	}
@@ -284,6 +284,47 @@ BlockchainSecConsole::cmd_is_gateway(vector<string>& cmds, BlockchainSecLib& blo
 	catch (EthException& e)
 	{
 		cerr << "Invalid argument provided" << endl
+			 << endl;
+	}
+}
+
+
+
+void
+BlockchainSecConsole::cmd_is_gateway_managed(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 2)
+	{
+		cout << "Usage: is_gateway_managed deviceID" << endl
+			 << endl;
+		return;
+	}
+	if (!isInt(cmds[1]))
+	{
+		cerr << "\""
+			 << cmds[1]
+			 << "\" is not a valid device ID"
+			 << endl
+			 << endl;
+		return;
+	}
+	try
+	{
+		if (blockchainSec.is_gateway_managed(strtoul(cmds[1].c_str(), nullptr, 10)))
+		{
+			cout << "TRUE" << endl
+				 << endl;
+		}
+		else
+		{
+			cout << "FALSE" << endl
+				 << endl;
+		}
+	}
+	catch (EthException& e)
+	{
+		cerr << "Invalid argument provided"
+			 << endl
 			 << endl;
 	}
 }
@@ -1491,6 +1532,7 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 		   "\tis_authd\n"
 		   "\tis_device\n"
 		   "\tis_gateway\n"
+		   "\tis_gateway_managed\n"
 		   "\tget_my_device_id\n"
 		   "\tget_data_receiver\n"
 		   "\tget_default_data_receiver\n"
