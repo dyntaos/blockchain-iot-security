@@ -508,7 +508,7 @@ EthInterface::eth_sendTransaction(string const& abiData)
 		+ clientAddress + "\","
 						  "\"to\":\"0x"
 		+ contractAddress + "\","
-							"\"gas\":\"0x14F46B\"," //TODO: WHERE THE THE BLOCK GAS LIMIT SET? Choose this value more intentionally
+							"\"gas\":\"" + ETH_DEFAULT_GAS + "\","
 							"\"gasPrice\":\"0x0\","
 							"\"data\":\"0x"
 		+ abiData + "\"}],"
