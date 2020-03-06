@@ -504,7 +504,7 @@ BlockchainSecConsole::cmd_get_sign_key(vector<string>& cmds, BlockchainSecLib& b
 	}
 	try
 	{
-		cout << blockchainSec.get_key(strtoul(cmds[1].c_str(), nullptr, 10))
+		cout << blockchainSec.get_signkey(strtoul(cmds[1].c_str(), nullptr, 10))
 			 << endl
 			 << endl;
 	}
@@ -1598,6 +1598,7 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 			"\tget_data_receiver\n"
 			"\tget_default_data_receiver\n"
 			"\tget_key\n"
+			"\tget_sign_key\n"
 			"\tget_addr_type\n"
 			"\tget_addr\n"
 			"\tget_name\n"
@@ -1624,6 +1625,7 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 			"\tget_received_devices\n"
 			"\tupdate_local_keys\n"
 			"\tupdate_public_key\n"
+			"\tupdate_sign_key\n"
 		 << endl
 		 << endl;
 }

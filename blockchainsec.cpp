@@ -787,7 +787,7 @@ BlockchainSecLib::deauthorize_admin(string const& adminAddress)
 
 
 bool
-BlockchainSecLib::updateLocalKeys(void)
+BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature keys
 {
 	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1], sk[crypto_kx_SECRETKEYBYTES + 1];
 	//unsigned char rx[crypto_kx_SESSIONKEYBYTES + 1], tx[crypto_kx_SESSIONKEYBYTES + 1];
@@ -875,7 +875,8 @@ BlockchainSecLib::encryptAndPushData(string const& data)
 string
 BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 {
-	unsigned char rxKey[crypto_kx_SESSIONKEYBYTES + 1], txKey[crypto_kx_SESSIONKEYBYTES + 1];
+	unsigned char rxKey[crypto_kx_SESSIONKEYBYTES + 1],
+		txKey[crypto_kx_SESSIONKEYBYTES + 1];
 	string nodePublicKeyStr;
 	vector<string> chainData;
 	uint16_t msgLen;
@@ -890,6 +891,7 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 
 	unsigned char nodePublicKey[crypto_kx_PUBLICKEYBYTES + 1];
 	vector<char> byteVector = hexToBytes(nodePublicKeyStr);
+
 	memcpy(nodePublicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
 	nodePublicKey[crypto_kx_PUBLICKEYBYTES] = 0;
 
