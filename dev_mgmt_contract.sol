@@ -74,11 +74,8 @@ contract DeviceMgmt {
 
 	// TODO: Should we index any of these event topics?
 
-	// Keccak256 Signature: 898bb1d05e88e8500531c3c47859e9a57aa56d74962cfad92749b4ef6d21f6ad
-	event Add_Device				(address indexed msgSender, address clientAddr, string name, bool gateway_managed, uint32 device_id);
-
-	// Keccak256 Signature: 28fa548e60f4ba617963a817269ace227732b72ef7e4537675e57d28ed69aa48
-	event Add_Gateway				(address indexed msgSender, address clientAddr, string name, uint32 device_id);
+	// Keccak256 Signature: 9ff928f5be58747f4db3b34d53225d1e1cf1562a3158bd45c2934fca5907f919
+	event Add_Device				(address indexed msgSender, address clientAddr, string name, bool gateway_managed, bool gateway, uint32 device_id);
 
 	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
 	event Remove_Device				(address indexed msgSender, uint32 device_id);
@@ -370,85 +367,48 @@ contract DeviceMgmt {
 	 * @param gateway_managed
 	 * @return
 	 */
-	function add_device(address clientAddr, string calldata name, bool gateway_managed) external _admin returns(uint32) {
+	function add_device(address clientAddr, string calldata name, bool gateway_managed, bool gateway) external _admin returns(uint32) {
 		require(gateway_managed || addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
-		if (free_device_id_stack.length > 0) {
-			device_id = free_device_id_stack[free_device_id_stack.length - 1];
-			free_device_id_stack.pop(); //TODO: What the hell does this return!?
-		} else {
-			device_id = next_device_id++; //TODO: What to do if this overflows.
-		}
 
-		id_to_device[device_id].device_id = device_id;
-		id_to_device[device_id].name = name;
-		id_to_device[device_id].active = true;
-		id_to_device[device_id].is_gateway = false;
-		id_to_device[device_id].addrType = AddrType.UNSET;
-		id_to_device[device_id].addr = "";
-		id_to_device[device_id].data = "";
-		id_to_device[device_id].dataTimestamp = 0;
-		id_to_device[device_id].publicKey = "";
-		id_to_device[device_id].dataReceiverID = defaultDataReceiver;
-		id_to_device[device_id].creationTimestamp = uint32(now);
-		id_to_device[device_id].gateway_managed = gateway_managed;
-
-		authorized_devices.push(device_id);
-		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
-
-		if (gateway_managed) {
-			//id_to_device[device_id].eth_addr = clientAddr;
-			id_to_device[device_id].eth_addr = 0x0000000000000000000000000000000000000000;
-			id_to_device[device_id].has_eth_addr = true;
-		} else {
-			id_to_device[device_id].eth_addr = clientAddr;
-			addr_to_id[clientAddr] = device_id;
-			id_to_device[device_id].has_eth_addr = false;
-		}
-
-		emit Add_Device(msg.sender, clientAddr, name, gateway_managed, device_id);
-		return device_id;
-	}
-
-
-	/*
-	 * @dev
-	 * @param clientAddr
-	 * @param name
-	 * @return
-	 */
-	function add_gateway(address clientAddr, string calldata name) external _admin returns(uint32) {
-		require(addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
-		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
 			device_id = free_device_id_stack[free_device_id_stack.length - 1];
 			free_device_id_stack.pop();
 		} else {
-			device_id = next_device_id++; //TODO: What to do if this overflows.
+			device_id = next_device_id++;
 		}
 
 		id_to_device[device_id].device_id = device_id;
 		id_to_device[device_id].name = name;
 		id_to_device[device_id].active = true;
-		id_to_device[device_id].is_gateway = true;
-		id_to_device[device_id].addrType = AddrType.UNSET;
-		id_to_device[device_id].addr = "";
-		id_to_device[device_id].data = "";
-		id_to_device[device_id].dataTimestamp = 0;
-		id_to_device[device_id].publicKey = "";
+		id_to_device[device_id].is_gateway = gateway && !gateway_managed;
 		id_to_device[device_id].dataReceiverID = defaultDataReceiver;
 		id_to_device[device_id].creationTimestamp = uint32(now);
-		id_to_device[device_id].gateway_managed = false;
-		id_to_device[device_id].eth_addr = clientAddr;
-		id_to_device[device_id].has_eth_addr = true;
+		id_to_device[device_id].gateway_managed = gateway_managed;
 
-		authorized_gateways.push(device_id);
-		id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_gateways.length - 1);
+		if (gateway && !gateway_managed) {
+			// Gateway
+			authorized_gateways.push(device_id);
+			id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_gateways.length - 1);
 
-		gateway_pool[clientAddr] = true;
-		addr_to_id[clientAddr] = device_id;
+			gateway_pool[clientAddr] = true;
+			addr_to_id[clientAddr] = device_id;
 
-		emit Add_Gateway(msg.sender, clientAddr, name, device_id);
+		} else {
+			// Device
+			authorized_devices.push(device_id);
+			id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
+		}
+
+		if (gateway_managed) {
+			id_to_device[device_id].has_eth_addr = false;
+		} else {
+			id_to_device[device_id].eth_addr = clientAddr;
+			addr_to_id[clientAddr] = device_id;
+			id_to_device[device_id].has_eth_addr = true;
+		}
+
+		emit Add_Device(msg.sender, clientAddr, name, gateway_managed, gateway, device_id);
 		return device_id;
 	}
 

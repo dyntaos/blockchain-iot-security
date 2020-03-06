@@ -968,7 +968,7 @@ BlockchainSecConsole::cmd_add_device(vector<string>& cmds, BlockchainSecLib& blo
 	}
 	try
 	{
-		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], gatewayManaged); // TODO: Eliminate all MAC stuff?
+		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], gatewayManaged);
 		cout << "Device ID: " << unsigned(deviceId) << endl
 			 << endl;
 	}
@@ -1001,7 +1001,7 @@ BlockchainSecConsole::cmd_add_gateway(vector<string>& cmds, BlockchainSecLib& bl
 	}
 	try
 	{
-		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2]); // TODO: Eliminate all MAC stuff?
+		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2]);
 		cout << "Device ID: " << unsigned(deviceId) << endl
 			 << endl;
 	}

@@ -149,8 +149,7 @@ vector<pair<string, string>>
 BlockchainSecLib::contractEventSignatures(void)
 {
 	vector<pair<string, string>> vecLogSigs;
-	vecLogSigs.push_back(pair<string, string>("Add_Device", "898bb1d05e88e8500531c3c47859e9a57aa56d74962cfad92749b4ef6d21f6ad"));
-	vecLogSigs.push_back(pair<string, string>("Add_Gateway", "28fa548e60f4ba617963a817269ace227732b72ef7e4537675e57d28ed69aa48"));
+	vecLogSigs.push_back(pair<string, string>("Add_Device", "9ff928f5be58747f4db3b34d53225d1e1cf1562a3158bd45c2934fca5907f919"));
 	vecLogSigs.push_back(pair<string, string>("Remove_Device", "c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363"));
 	vecLogSigs.push_back(pair<string, string>("Remove_Gateway", "0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9"));
 	vecLogSigs.push_back(pair<string, string>("Push_Data", "bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9"));
@@ -577,7 +576,7 @@ BlockchainSecLib::add_device(
 			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + deviceAddress + "' -p '" + escapeSingleQuotes(name) + "'  -p " + (gatewayManaged ? "true" : "false");
+	ethabiEncodeArgs = " -p '" + deviceAddress + "' -p '" + escapeSingleQuotes(name) + "'  -p " + (gatewayManaged ? "true" : "false") + " -p false";
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
@@ -605,9 +604,9 @@ BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name)
 			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + gatewayAddress + "' -p '" + escapeSingleQuotes(name) + "'";
+	ethabiEncodeArgs = " -p '" + gatewayAddress + "' -p '" + escapeSingleQuotes(name) + "'  -p false -p true";
 
-	if (callMutatorContract("add_gateway", ethabiEncodeArgs, eventLog))
+	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
 		return stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
 	}
