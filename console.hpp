@@ -40,7 +40,6 @@ class BlockchainSecConsole
 	static void cmd_get_addr_type(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_addr(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_name(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
-	static void cmd_get_mac(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_data(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_data_timestamp(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_get_creation_timestamp(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);

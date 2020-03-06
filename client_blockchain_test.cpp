@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 	uint32_t dev;
 
 	cout << endl << "Adding device..." << endl;
-	dev = sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", "TEST MAC 1", true);
+	dev = sec->add_device("0000000000000000000000000000000000000000", "TestDevice 1", true);
 	if (dev == 0) {
 		cout << "Failed to add device!" << endl << endl;
 	} else {
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 
 
 	cout << endl << "Adding device..." << endl;
-	dev = sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", "TEST     MAC 2", false);
+	dev = sec->add_device("0000000000000000000000000000000000000001", "Test    Device 2", false);
 	if (dev == 0) {
 		cout << "Failed to add device!" << endl << endl;
 	} else {
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
 
 
 	cout << endl << "Adding this address as a device..." << endl;
-	dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", "LOCAL MAC 1", false);
+	dev = sec->add_device("a4528ce8f47845b3bbf842da92bae9359e23fa3b", "Local Device 1", false);
 	if (dev == 0) {
 		cout << "Failed to add local device!" << endl << endl;
 	} else {

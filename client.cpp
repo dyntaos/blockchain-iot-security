@@ -211,7 +211,7 @@ main(int argc, char* argv[])
 
 			cout << endl
 				 << "Adding this address as a device..." << endl;
-			dev = sec->add_device(sec->getClientAddress(), "Local Device 1", "LOCAL MAC 1", false);
+			dev = sec->add_device(sec->getClientAddress(), "Local Device 1", false);
 			if (dev == 0)
 			{
 				cout << "Failed to add local device!" << endl

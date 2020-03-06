@@ -37,7 +37,6 @@ BlockchainSecConsole::BlockchainSecConsole(void)
 		("get_addr_type", cmd_get_addr_type)
 		("get_addr", cmd_get_addr)
 		("get_name", cmd_get_name)
-		("get_mac", cmd_get_mac)
 		("get_data", cmd_get_data)
 		("get_data_timestamp", cmd_get_data_timestamp)
 		("get_creation_timestamp", cmd_get_creation_timestamp)
@@ -650,39 +649,6 @@ BlockchainSecConsole::cmd_get_name(vector<string>& cmds, BlockchainSecLib& block
 
 
 void
-BlockchainSecConsole::cmd_get_mac(vector<string>& cmds, BlockchainSecLib& blockchainSec)
-{
-	if (cmds.size() != 2)
-	{
-		cout << "Usage: get_mac deviceID" << endl
-			 << endl;
-		return;
-	}
-	if (!isInt(cmds[1]))
-	{
-		cerr << "\"" << cmds[1] << "\" is not a valid device ID" << endl
-			 << endl;
-		return;
-	}
-	try
-	{
-		cout << blockchainSec.get_mac(strtoul(cmds[1].c_str(), nullptr, 10))
-			 << endl
-			 << endl;
-	}
-	catch (EthException& e)
-	{
-		cerr << "Device ID "
-			 << cmds[1]
-			 << " does not exist"
-			 << endl
-			 << endl;
-	}
-}
-
-
-
-void
 BlockchainSecConsole::cmd_get_data(vector<string>& cmds, BlockchainSecLib& blockchainSec)
 {
 	if (cmds.size() != 2)
@@ -1002,7 +968,7 @@ BlockchainSecConsole::cmd_add_device(vector<string>& cmds, BlockchainSecLib& blo
 	}
 	try
 	{
-		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], "", gatewayManaged); // TODO: Eliminate all MAC stuff?
+		auto deviceId = blockchainSec.add_device(cmds[1], cmds[2], gatewayManaged); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl
 			 << endl;
 	}
@@ -1035,7 +1001,7 @@ BlockchainSecConsole::cmd_add_gateway(vector<string>& cmds, BlockchainSecLib& bl
 	}
 	try
 	{
-		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2], ""); // TODO: Eliminate all MAC stuff?
+		auto deviceId = blockchainSec.add_gateway(cmds[1], cmds[2]); // TODO: Eliminate all MAC stuff?
 		cout << "Device ID: " << unsigned(deviceId) << endl
 			 << endl;
 	}
@@ -1635,7 +1601,6 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 			"\tget_addr_type\n"
 			"\tget_addr\n"
 			"\tget_name\n"
-			"\tget_mac\n"
 			"\tget_data\n"
 			"\tget_data_timestamp\n"
 			"\tget_creation_timestamp\n"

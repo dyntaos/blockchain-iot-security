@@ -149,8 +149,8 @@ vector<pair<string, string>>
 BlockchainSecLib::contractEventSignatures(void)
 {
 	vector<pair<string, string>> vecLogSigs;
-	vecLogSigs.push_back(pair<string, string>("Add_Device", "91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01"));
-	vecLogSigs.push_back(pair<string, string>("Add_Gateway", "ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671"));
+	vecLogSigs.push_back(pair<string, string>("Add_Device", "898bb1d05e88e8500531c3c47859e9a57aa56d74962cfad92749b4ef6d21f6ad"));
+	vecLogSigs.push_back(pair<string, string>("Add_Gateway", "28fa548e60f4ba617963a817269ace227732b72ef7e4537675e57d28ed69aa48"));
 	vecLogSigs.push_back(pair<string, string>("Remove_Device", "c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363"));
 	vecLogSigs.push_back(pair<string, string>("Remove_Gateway", "0d014d0489a2ad2061dbf1dffe20d304792998e0635b29eda36a724992b6e5c9"));
 	vecLogSigs.push_back(pair<string, string>("Push_Data", "bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9"));
@@ -463,15 +463,6 @@ BlockchainSecLib::get_name(uint32_t deviceID)
 
 
 // Throws ResourceRequestFailedException from ethabi()
-string
-BlockchainSecLib::get_mac(uint32_t deviceID)
-{
-	return getStringFromDeviceID("get_mac", deviceID);
-}
-
-
-
-// Throws ResourceRequestFailedException from ethabi()
 vector<string>
 BlockchainSecLib::get_data(uint32_t deviceID)
 {
@@ -570,7 +561,6 @@ uint32_t
 BlockchainSecLib::add_device(
 	string const& deviceAddress,
 	string const& name,
-	string const& mac,
 	bool gatewayManaged)
 {
 	string ethabiEncodeArgs;
@@ -587,7 +577,7 @@ BlockchainSecLib::add_device(
 			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + deviceAddress + "' -p '" + escapeSingleQuotes(name) + "' -p '" + escapeSingleQuotes(mac) + "' -p " + (gatewayManaged ? "true" : "false");
+	ethabiEncodeArgs = " -p '" + deviceAddress + "' -p '" + escapeSingleQuotes(name) + "'  -p " + (gatewayManaged ? "true" : "false");
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
@@ -604,7 +594,7 @@ BlockchainSecLib::add_device(
 // Throws ResourceRequestFailedException from ethabi()
 // Throws TransactionFailedException from eth_sendTransaction()
 uint32_t
-BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, string const& mac)
+BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name)
 {
 	string ethabiEncodeArgs;
 	unique_ptr<unordered_map<string, string>> eventLog;
@@ -615,7 +605,7 @@ BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name, 
 			"Device name exceeds maximum length of BLOCKCHAINSEC_MAX_DEV_NAME.");
 	}
 
-	ethabiEncodeArgs = " -p '" + gatewayAddress + "' -p '" + escapeSingleQuotes(name) + "' -p '" + escapeSingleQuotes(mac) + "'";
+	ethabiEncodeArgs = " -p '" + gatewayAddress + "' -p '" + escapeSingleQuotes(name) + "'";
 
 	if (callMutatorContract("add_gateway", ethabiEncodeArgs, eventLog))
 	{

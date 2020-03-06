@@ -38,7 +38,6 @@ contract DeviceMgmt {
 
 		AddrType addrType;                      // How the device connects to the network (IP (ethernet, WiFi, GSM/LTE), LoRa, etc.)
 		string addr;                            // Device is to maintain its current IP (v4/v6) address
-		string mac;                             // MAC address for further identification
 
 		string publicKey;                       // Devices public encryption key
 		string signPublicKey;                   //
@@ -75,11 +74,11 @@ contract DeviceMgmt {
 
 	// TODO: Should we index any of these event topics?
 
-	// Keccak256 Signature: 91f9cfa89e92f74404a9e92923329b12ef1b50b3d6d57acd9167d5b9e5e4fe01
-	event Add_Device				(address indexed msgSender, address clientAddr, string name, string mac, bool gateway_managed, uint32 device_id);
+	// Keccak256 Signature: 898bb1d05e88e8500531c3c47859e9a57aa56d74962cfad92749b4ef6d21f6ad
+	event Add_Device				(address indexed msgSender, address clientAddr, string name, bool gateway_managed, uint32 device_id);
 
-	// Keccak256 Signature: ee7c8e0cb00212a30df0bb395130707e3e320b32bae1c79b3ee3c61cbf3c7671
-	event Add_Gateway				(address indexed msgSender, address clientAddr, string name, string mac, uint32 device_id);
+	// Keccak256 Signature: 28fa548e60f4ba617963a817269ace227732b72ef7e4537675e57d28ed69aa48
+	event Add_Gateway				(address indexed msgSender, address clientAddr, string name, uint32 device_id);
 
 	// Keccak256 Signature: c3d811754f31d6181381ab5fbf732898911891abe7d32e97de73a1ea84c2e363
 	event Remove_Device				(address indexed msgSender, uint32 device_id);
@@ -328,17 +327,6 @@ contract DeviceMgmt {
 	}
 
 
-	/*
-	 * @dev
-	 * @param
-	 * @return
-	 */
-	function get_mac(uint32 device_id) external view _authorized returns(string memory) {
-		require(id_to_device[device_id].active);
-		return id_to_device[device_id].mac;
-	}
-
-
 	// TODO: Modifier should probably be _authorizedDeviceOrGateway
 	/*
 	 * @dev
@@ -378,12 +366,11 @@ contract DeviceMgmt {
 	 * @dev
 	 * @param clientAddr
 	 * @param name
-	 * @param mac
 	 * @param publicKey
 	 * @param gateway_managed
 	 * @return
 	 */
-	function add_device(address clientAddr, string calldata name, string calldata mac, bool gateway_managed) external _admin returns(uint32) {
+	function add_device(address clientAddr, string calldata name, bool gateway_managed) external _admin returns(uint32) {
 		require(gateway_managed || addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
@@ -399,7 +386,6 @@ contract DeviceMgmt {
 		id_to_device[device_id].is_gateway = false;
 		id_to_device[device_id].addrType = AddrType.UNSET;
 		id_to_device[device_id].addr = "";
-		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
 		id_to_device[device_id].dataTimestamp = 0;
 		id_to_device[device_id].publicKey = "";
@@ -420,7 +406,7 @@ contract DeviceMgmt {
 			id_to_device[device_id].has_eth_addr = false;
 		}
 
-		emit Add_Device(msg.sender, clientAddr, name, mac, gateway_managed, device_id);
+		emit Add_Device(msg.sender, clientAddr, name, gateway_managed, device_id);
 		return device_id;
 	}
 
@@ -429,11 +415,9 @@ contract DeviceMgmt {
 	 * @dev
 	 * @param clientAddr
 	 * @param name
-	 * @param mac
-	 * @param publicKey
 	 * @return
 	 */
-	function add_gateway(address clientAddr, string calldata name, string calldata mac) external _admin returns(uint32) {
+	function add_gateway(address clientAddr, string calldata name) external _admin returns(uint32) {
 		require(addr_to_id[clientAddr] == 0 || !id_to_device[addr_to_id[clientAddr]].active);
 		uint32 device_id;
 		if (free_device_id_stack.length > 0) {
@@ -449,7 +433,6 @@ contract DeviceMgmt {
 		id_to_device[device_id].is_gateway = true;
 		id_to_device[device_id].addrType = AddrType.UNSET;
 		id_to_device[device_id].addr = "";
-		id_to_device[device_id].mac = mac;
 		id_to_device[device_id].data = "";
 		id_to_device[device_id].dataTimestamp = 0;
 		id_to_device[device_id].publicKey = "";
@@ -465,7 +448,7 @@ contract DeviceMgmt {
 		gateway_pool[clientAddr] = true;
 		addr_to_id[clientAddr] = device_id;
 
-		emit Add_Gateway(msg.sender, clientAddr, name, mac, device_id);
+		emit Add_Gateway(msg.sender, clientAddr, name, device_id);
 		return device_id;
 	}
 

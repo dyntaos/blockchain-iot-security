@@ -58,7 +58,6 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	AddrType get_addrtype(uint32_t deviceID);
 	std::string get_addr(uint32_t deviceID);
 	std::string get_name(uint32_t deviceID);
-	std::string get_mac(uint32_t deviceID);
 	std::vector<std::string> get_data(uint32_t deviceID);
 	time_t get_dataTimestamp(uint32_t deviceID);
 	time_t get_creationTimestamp(uint32_t deviceID);
@@ -70,8 +69,8 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	std::vector<uint32_t> get_authorized_gateways(void);
 
 	// Blockchain mutator methods
-	uint32_t add_device(std::string const& deviceAddress, std::string const& name, std::string const& mac, bool gatewayManaged);
-	uint32_t add_gateway(std::string const& gatewayAddress, std::string const& name, std::string const& mac);
+	uint32_t add_device(std::string const& deviceAddress, std::string const& name, bool gatewayManaged);
+	uint32_t add_gateway(std::string const& gatewayAddress, std::string const& name);
 	bool remove_device(uint32_t deviceID);
 	bool remove_gateway(uint32_t deviceID);
 	bool update_datareceiver(uint32_t deviceID, uint32_t dataReceiverID);
