@@ -98,8 +98,8 @@ contract DeviceMgmt {
 	// Keccak256 Signature: 9f99e7c31d775c4f75816a8e1a0655e1e5f5bab88311d820d261ebab2ae8d91f
 	event Update_PublicKey			(address indexed msgSender, uint32 device_id, string newPublicKey);
 
-	// Keccak256 Signature: 3b22974627f390f3699ade68dafe43b30b2606f905eafec45482294aabc181e8
-	event Update_SignPublicKey		(address indexed msgSender, uint32 device_id, string newSignPublicKey);
+	// Keccak256 Signature: 7abf29af9412d237982695e733aed1af1c9ba2c4df30a4a18b76f478c7ace921
+	event Update_SignKey			(address indexed msgSender, uint32 device_id, string newSignPublicKey);
 
 	// Keccak256 Signature: 134c4a950d896d7c32faa850baf4e3bccf293ae2538943709726e9596ce9ebaf
 	event Authorize_Admin			(address indexed msgSender, address newAdminAddr);
@@ -523,10 +523,10 @@ contract DeviceMgmt {
 	 * @param newSignPublicKey
 	 * @return
 	 */
-	function update_signpublickey(uint32 device_id, string calldata newSignPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
+	function update_signkey(uint32 device_id, string calldata newSignPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
 		id_to_device[device_id].signPublicKey = newSignPublicKey;
 
-		emit Update_SignPublicKey(msg.sender, device_id, newSignPublicKey);
+		emit Update_SignKey(msg.sender, device_id, newSignPublicKey);
 		return true;
 	}
 

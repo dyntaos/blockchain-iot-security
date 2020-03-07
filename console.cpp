@@ -1558,7 +1558,7 @@ BlockchainSecConsole::cmd_update_sign_key(vector<string>& cmds, BlockchainSecLib
 	}
 	try
 	{
-		if (!blockchainSec.update_publickey(
+		if (!blockchainSec.update_signkey(
 				strtoul(cmds[1].c_str(), nullptr, 10),
 				cmds[2]))
 		{
