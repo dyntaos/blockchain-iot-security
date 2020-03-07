@@ -1013,6 +1013,10 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 		throw CryptographicFailureException("Suspicious cryptographic key");
 	}
 
+	// TODO UGENT TEMP:
+	cout << "rxSharedKey: " << hexStr(rxKey, crypto_kx_SESSIONKEYBYTES) << endl;
+	cout << "txSharedKey: " << hexStr(txKey, crypto_kx_SESSIONKEYBYTES) << endl;
+
 	chainData = get_data(deviceID);
 	msgLen = stoi(chainData[1]);
 
