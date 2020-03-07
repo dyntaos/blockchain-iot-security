@@ -246,7 +246,7 @@ encryptData(struct packet_data* pd, char* data, uint8_t dataLen)
 		(unsigned char*) data,
 		dataLen,
 		pd->crypto_nonce,
-		txSharedKey
+		rxSharedKey
 	);
 }
 
