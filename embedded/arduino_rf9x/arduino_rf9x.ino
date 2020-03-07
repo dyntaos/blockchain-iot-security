@@ -446,6 +446,8 @@ generateSharedKeys(void)
 	}
 	Serial.print("txKey: ");
 	hexPrint(txSharedKey, crypto_kx_SESSIONKEYBYTES);
+	Serial.print("rxKey: ");
+	hexPrint(rxSharedKey, crypto_kx_SESSIONKEYBYTES);
 	return true;
 }
 
