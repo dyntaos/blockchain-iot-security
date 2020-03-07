@@ -240,14 +240,14 @@ encryptData(struct packet_data* pd, char* data, uint8_t dataLen)
 {
 	Serial.println("encryptData()");
 
-	memcpy(pd->data, data, dataLen);
-	// crypto_stream_xchacha20_xor( // TODO: Check return value?
-	// 	pd->data,
-	// 	(unsigned char*) data,
-	// 	dataLen,
-	// 	pd->crypto_nonce,
-	// 	txSharedKey
-	// );
+	//memcpy(pd->data, data, dataLen); // TODO REMOVE
+	crypto_stream_xchacha20_xor( // TODO: Check return value?
+		pd->data,
+		(unsigned char*) data,
+		dataLen,
+		pd->crypto_nonce,
+		txSharedKey
+	);
 }
 
 
@@ -369,7 +369,6 @@ bool
 sendData(char* data, uint8_t dataLen)
 {
 	struct packet p;
-
 
 	//Currently, only a max of 154 bytes can be sent
 	if (dataLen > 154)
