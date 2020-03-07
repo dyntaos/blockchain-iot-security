@@ -181,6 +181,7 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 	{
 		// This client has a device ID -- verify it has proper keys
 		string publicKey;
+		string signPublicKey;
 
 		try
 		{
@@ -189,8 +190,19 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 		catch (...)
 		{ // TODO
 			cerr << "This device does not have a public key on the blockchain..." << endl;
-			return;
+			publicKey = "";
 		}
+
+		try
+		{
+			signPublicKey = boost::trim_copy(get_signkey(localDeviceID)); // TODO: What makes a valid sign public key?
+		}
+		catch (...)
+		{ // TODO
+			cerr << "This device does not have a signature public key on the blockchain..." << endl;
+			signPublicKey = "";
+		}
+
 
 		if (cfgRoot->exists("privateKey") && publicKey == "")
 		{
@@ -198,8 +210,6 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 					"key exists on the blockchain for device ID "
 				 << localDeviceID << endl;
 			// TODO: Throw?
-			// TODO: CLI Flag to force generate new keys?
-			exit(EXIT_FAILURE);
 		}
 
 		if (!cfgRoot->exists("privateKey") && publicKey != "")
@@ -207,40 +217,77 @@ BlockchainSecLib::loadLocalDeviceParameters(void)
 			cerr << "Client has public key on the blockchain, "
 					"but no private key exists locally!"
 				 << endl;
-
 			// TODO: Throw?
-			// TODO: CLI Flag to force generate new keys?
-			exit(EXIT_FAILURE);
 		}
 
-		if (!cfgRoot->exists("privateKey") && publicKey == "")
+
+		if (cfgRoot->exists("signPrivateKey") && signPublicKey == "")
+		{
+			cerr << "Client has signature private key, but no signature "
+					"public key exists on the blockchain for device ID "
+				 << localDeviceID << endl;
+			// TODO: Throw?
+		}
+
+		if (!cfgRoot->exists("signPrivateKey") && signPublicKey != "")
+		{
+			cerr << "Client has signature public key on the blockchain, "
+					"but no signature private key exists locally!"
+				 << endl;
+			// TODO: Throw?
+		}
+
+
+		if (
+			!cfgRoot->exists("privateKey") && publicKey == "" &&
+			!cfgRoot->exists("signPrivateKey") && signPublicKey == "")
 		{
 			if (updateLocalKeys())
 			{
-				cout << "Successfully generated keypair for local client (device ID "
+				cout << "Successfully generated keypairs for local client (device ID "
 					 << localDeviceID << ")..." << endl;
 			}
 			else
 			{
-				cerr << "Failed to create keys for local client (device ID "
+				cerr << "Failed to create keys for local clients (device ID "
 					 << localDeviceID << ")..." << endl;
 			}
 		}
 		else
 		{
-			string hexSk;
-			vector<char> byteVector;
+			if (cfgRoot->exists("privateKey") && publicKey != "")
+			{
+				string hexSk;
+				vector<char> byteVector;
 
-			cfg.lookupValue("privateKey", hexSk); // TODO Check return value
-			byteVector = hexToBytes(hexSk);
-			memcpy(client_sk, byteVector.data(), crypto_kx_SECRETKEYBYTES);
-			client_sk[crypto_kx_SECRETKEYBYTES] = 0;
-			cout << "Loaded private key..." << endl;
+				cfg.lookupValue("privateKey", hexSk); // TODO Check return value
+				byteVector = hexToBytes(hexSk);
+				memcpy(client_sk, byteVector.data(), crypto_kx_SECRETKEYBYTES);
+				client_sk[crypto_kx_SECRETKEYBYTES] = 0;
+				cout << "Loaded private key..." << endl;
 
-			byteVector = hexToBytes(publicKey);
-			memcpy(client_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
-			client_pk[crypto_kx_PUBLICKEYBYTES] = 0;
-			cout << "Loaded public key..." << endl;
+				byteVector = hexToBytes(publicKey);
+				memcpy(client_pk, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+				client_pk[crypto_kx_PUBLICKEYBYTES] = 0;
+				cout << "Loaded public key..." << endl;
+			}
+
+			if (cfgRoot->exists("signPrivateKey") && signPublicKey != "")
+			{
+				string hexSk;
+				vector<char> byteVector;
+
+				cfg.lookupValue("signPrivateKey", hexSk); // TODO Check return value
+				byteVector = hexToBytes(hexSk);
+				memcpy(this->signPrivateKey, byteVector.data(), crypto_sign_SECRETKEYBYTES);
+				signPrivateKey[crypto_sign_SECRETKEYBYTES] = 0;
+				cout << "Loaded signature private key..." << endl;
+
+				byteVector = hexToBytes(signPublicKey);
+				memcpy(this->signPublicKey, byteVector.data(), crypto_sign_PUBLICKEYBYTES);
+				signPublicKey[crypto_sign_PUBLICKEYBYTES] = 0;
+				cout << "Loaded signature public key..." << endl;
+			}
 		}
 	}
 	loadDataReceiverPublicKey(localDeviceID);
@@ -580,7 +627,12 @@ BlockchainSecLib::add_device(
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
-		return stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
+		uint32_t deviceId = stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
+		if (deviceId == get_my_device_id())
+		{
+			loadLocalDeviceParameters();
+		}
+		return deviceId;
 	}
 	else
 	{
@@ -608,7 +660,12 @@ BlockchainSecLib::add_gateway(string const& gatewayAddress, string const& name)
 
 	if (callMutatorContract("add_device", ethabiEncodeArgs, eventLog))
 	{
-		return stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
+		uint32_t deviceId = stoul((*eventLog.get())["device_id"], NULL, 16); // TODO: What id [device_id] doesn't exist? try catch
+		if (deviceId == get_my_device_id())
+		{
+			loadLocalDeviceParameters();
+		}
+		return deviceId;
 	}
 	else
 	{
@@ -789,46 +846,102 @@ BlockchainSecLib::deauthorize_admin(string const& adminAddress)
 bool
 BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature keys
 {
-	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1], sk[crypto_kx_SECRETKEYBYTES + 1];
-	//unsigned char rx[crypto_kx_SESSIONKEYBYTES + 1], tx[crypto_kx_SESSIONKEYBYTES + 1];
+	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1],
+		sk[crypto_kx_SECRETKEYBYTES + 1];
+	unsigned char signPublicKey[crypto_sign_PUBLICKEYBYTES + 1],
+		signPrivateKey[crypto_sign_SECRETKEYBYTES + 1];
+
 	string pkHex, skHex;
+	string signPublicKeyHex, signPrivateKeyHex;
+
+	bool updatePublicResult, updateSignResult;
 
 	derriveSharedSecret = true;
 	crypto_kx_keypair(pk, sk);
+	crypto_sign_keypair(signPublicKey, signPrivateKey);
 
 	pk[crypto_kx_PUBLICKEYBYTES] = sk[crypto_kx_SECRETKEYBYTES] = 0;
-	//	rx[crypto_kx_SESSIONKEYBYTES] =
-	//	tx[crypto_kx_SESSIONKEYBYTES] = 0;
+	signPublicKey[crypto_sign_PUBLICKEYBYTES] = signPrivateKey[crypto_sign_SECRETKEYBYTES] = 0;
 
 	pkHex = hexStr(pk, crypto_kx_PUBLICKEYBYTES);
 	skHex = hexStr(sk, crypto_kx_SECRETKEYBYTES);
+	signPublicKeyHex = hexStr(signPublicKey, crypto_sign_PUBLICKEYBYTES);
+	signPrivateKeyHex = hexStr(signPrivateKey, crypto_sign_SECRETKEYBYTES);
+
 
 #ifdef _DEBUG
 	cout << "updateLocalKeys(): public key = " << pkHex << endl;
 	cout << "updateLocalKeys(): private key = " << skHex << endl;
+	cout << "updateLocalKeys(): signature public key = " << signPublicKeyHex << endl;
+	cout << "updateLocalKeys(): signature private key = " << signPrivateKeyHex << endl;
 #endif //_DEBUG
 
-	if (update_publickey(get_my_device_id(), pkHex))
-	{ // TODO: TRY CATCH!!!!!
+	updatePublicResult = update_publickey(get_my_device_id(), pkHex); // TODO: TRY CATCH!!!!!
+	updateSignResult = update_signkey(get_my_device_id(), signPrivateKeyHex);
+
+	if (updatePublicResult)
+	{
 
 #ifdef _DEBUG
-		cout << "updateLocalKeys(): update_publickey() returned TRUE." << endl;
+		cout << "updateLocalKeys(): update_publickey() returned TRUE" << endl;
 #endif //_DEBUG
 
 		memcpy(client_pk, pk, crypto_kx_PUBLICKEYBYTES + 1);
 		memcpy(client_sk, sk, crypto_kx_SECRETKEYBYTES + 1);
+
+		if (cfgRoot->exists("publicKey"))
+			cfgRoot->remove("publicKey");
+		cfgRoot->add("publicKey", Setting::TypeString) = pkHex;
 
 		if (cfgRoot->exists("privateKey"))
 			cfgRoot->remove("privateKey");
 		cfgRoot->add("privateKey", Setting::TypeString) = skHex;
 
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
-
-		return true;
 	}
 #ifdef _DEBUG
-	cout << "updateLocalKeys(): update_publickey() returned FALSE." << endl;
+	else
+	{
+		cout << "updateLocalKeys(): update_publicslkey() returned FALSE" << endl;
+	}
 #endif //_DEBUG
+
+	if (updateSignResult)
+	{
+
+#ifdef _DEBUG
+		cout << "updateLocalKeys(): update_signkey() returned TRUE" << endl;
+#endif //_DEBUG
+
+		memcpy(this->signPublicKey, signPublicKey, crypto_sign_PUBLICKEYBYTES + 1);
+		memcpy(this->signPrivateKey, signPrivateKey, crypto_sign_SECRETKEYBYTES + 1);
+
+		if (cfgRoot->exists("signPublicKey"))
+			cfgRoot->remove("signPublicKey");
+		cfgRoot->add("signPublicKey", Setting::TypeString) = signPublicKeyHex;
+
+		if (cfgRoot->exists("signPrivateKey"))
+			cfgRoot->remove("signPrivateKey");
+		cfgRoot->add("signPrivateKey", Setting::TypeString) = signPrivateKeyHex;
+
+		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
+	}
+#ifdef _DEBUG
+	else
+	{
+		cout << "updateLocalKeys(): update_signkey() returned FALSE" << endl;
+	}
+#endif //_DEBUG
+
+	if (updatePublicResult && updateSignResult)
+	{
+		return true;
+	}
+
+#ifdef _DEBUG
+	cout << "updateLocalKeys(): update_publickey() returned FALSE" << endl;
+#endif //_DEBUG
+
 	return false;
 }
 

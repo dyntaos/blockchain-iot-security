@@ -99,6 +99,7 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	bool derriveSharedSecret = true; // Only recalculate the shared key if the keys have changed
 	unsigned char dataReceiver_pk[crypto_kx_PUBLICKEYBYTES + 1];
 	unsigned char client_pk[crypto_kx_PUBLICKEYBYTES + 1], client_sk[crypto_kx_SECRETKEYBYTES + 1];
+	unsigned char signPublicKey[crypto_sign_PUBLICKEYBYTES + 1], signPrivateKey[crypto_sign_SECRETKEYBYTES + 1];
 	unsigned char rxSharedKey[crypto_kx_SESSIONKEYBYTES + 1], txSharedKey[crypto_kx_SESSIONKEYBYTES + 1];
 
 	std::vector<std::pair<std::string, std::string>> contractEventSignatures(void);
