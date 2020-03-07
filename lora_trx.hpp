@@ -6,16 +6,16 @@
 #include <mutex>
 #include <queue>
 
-#include <unistd.h>
 #include <bcm2835.h>
+#include <unistd.h>
 
-#include <RH_RF95.h>
+//#include <RH_RF95.h>
+#include <blockchainsec.hpp>
+#include <packet.hpp>
 
 #define BOARD_DRAGINO_PIHAT
 #include <RasPiBoards.h>
 
-#include <blockchainsec.hpp>
-#include <packet.hpp>
 
 
 #define RF_FREQUENCY 915.10 // TODO: Move to config file
