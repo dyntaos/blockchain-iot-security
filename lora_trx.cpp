@@ -2,6 +2,7 @@
 #include <string>
 
 #include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -22,6 +23,14 @@ RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
 {
+	// Check if root
+	if (geteuid() != 0)
+	{
+		cerr << "This must be run as root (sudo) to run in gateway mode!"
+			<< endl;
+		exit(EXIT_FAILURE);
+	}
+
 	if (blockchainSec == NULL)
 	{
 		throw InvalidArgumentException(

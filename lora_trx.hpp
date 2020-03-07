@@ -1,21 +1,21 @@
 #ifndef __LORA_TRX_HPP
 #define __LORA_TRX_HPP
 
-
+#include <thread>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <thread>
 
-#include <bcm2835.h>
 #include <unistd.h>
+#include <bcm2835.h>
 
-#include <blockchainsec.hpp>
-#include <packet.hpp>
+#include <RH_RF95.h>
 
 #define BOARD_DRAGINO_PIHAT
 #include <RasPiBoards.h>
-#include <RH_RF95.h>
+
+#include <blockchainsec.hpp>
+#include <packet.hpp>
 
 
 #define RF_FREQUENCY 915.10 // TODO: Move to config file
