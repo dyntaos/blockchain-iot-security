@@ -476,7 +476,7 @@ BlockchainSecLib::get_key(uint32_t deviceID)
 string
 BlockchainSecLib::get_signkey(uint32_t deviceID)
 {
-	return getStringFromDeviceID("get_signKey", deviceID);
+	return getStringFromDeviceID("get_signkey", deviceID);
 }
 
 
