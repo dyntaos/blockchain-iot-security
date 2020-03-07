@@ -877,7 +877,7 @@ BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature k
 #endif //_DEBUG
 
 	updatePublicResult = update_publickey(get_my_device_id(), pkHex); // TODO: TRY CATCH!!!!!
-	updateSignResult = update_signkey(get_my_device_id(), signPrivateKeyHex);
+	updateSignResult = update_signkey(get_my_device_id(), signPublicKeyHex);
 
 	if (updatePublicResult)
 	{
