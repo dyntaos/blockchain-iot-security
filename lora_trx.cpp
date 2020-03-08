@@ -194,7 +194,7 @@ LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx
 			tx_queue.pop();
 			tx_queue_mutex.unlock();
 
-			myDeviceID = blockchainSec->get_my_device_id();
+			myDeviceID = trx.blockchainSec->get_my_device_id();
 			rf95.setThisAddress(myDeviceID);
 			rf95.setHeaderFrom(myDeviceID);
 
