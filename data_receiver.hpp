@@ -24,6 +24,7 @@ class DataReceiverManager
 
 	DataReceiverManager(BlockchainSecLib *blockchain);
 
+	set<uint32_t> getReceivedChanges(void);
 	void joinThreads(void);
 
 	// Thread main function for the monitor thread

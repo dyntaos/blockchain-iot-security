@@ -138,7 +138,30 @@ main(int argc, char* argv[])
 	if (receiverFlag)
 	{
 		blockchainSec::DataReceiverManager dataRecv(sec);
-		sec->joinThreads();
+
+		for (;;)
+		{
+			set<uint32_t> receivedUpdates = dataRecv.getReceivedChanges();
+
+			if (receivedUpdates.size() == 0)
+			{
+				cerr << "ERROR: Received updates yielded 0 device IDs!" << endl; // TODO: Eliminate this message after testing?
+				continue;
+			}
+
+			for (auto it = receivedUpdates.begin(); it != receivedUpdates.end(); ++it)
+			{
+				cout << "Device ID "
+					 << *it
+					 << " new data:"
+					 << endl
+					 << "\""
+					 << sec->getDataAndDecrypt(*it)
+					 << "\""
+					 << endl << endl;
+			}
+		}
+
 		dataRecv.joinThreads();
 	}
 

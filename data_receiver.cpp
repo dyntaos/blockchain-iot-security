@@ -270,21 +270,39 @@ DataReceiverManager::dataReceiverThread(void)
 												topics,
 												data.substr(2));
 
-		cout << "Got RECEIVED_DATA_UPDATED NOTIFICATION:" << endl;
-
-		for (auto it = event.begin(); it != event.end(); ++it)
-		{
-			cout << "event[\"" << it->first << "\"] = \"" << it->second << "\"" << endl;
-		}
-
 		receivedUpdatesDataMtx.lock();
-		receivedUpdates.insert(strtoul(event["device_id"].c_str(), nullptr, 16));
+		receivedUpdates.insert(strtoul(event["device_id"].c_str(), nullptr, 16)); // TODO: Try/Catch?
 		receivedUpdatesDataMtx.unlock();
 
-		receivedUpdatesCV.notify_all();
+		receivedUpdatesCV.notify_one();
 	}
 	socket.close();
 }
+
+
+
+set<uint32_t>
+DataReceiverManager::getReceivedChanges(void)
+{
+	receivedUpdatesDataMtx.lock();
+
+	if (receivedUpdates.size() == 0)
+	{
+		receivedUpdatesDataMtx.unlock();
+		while (receivedUpdates.size == 0)
+		{
+			receivedUpdatesCV.wait(receivedUpdatesCVLock);
+		}
+		receivedUpdatesDataMtx.lock();
+	}
+	set<uint32_t> result = receivedUpdates;
+	receivedUpdates.clear();
+
+	receivedUpdatesDataMtx.unlock();
+
+	return result;
+}
+
 
 
 } //namespace
