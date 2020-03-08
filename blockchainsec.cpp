@@ -972,7 +972,7 @@ BlockchainSecLib::encryptAndPushData(string const& data)
 		(unsigned char*)data.c_str(),
 		data.length(),
 		nonce,
-		txSharedKey);
+		rxSharedKey);
 
 	cipherStr = string((char*)cipher, cipherLen);
 	nonceStr = string((char*)nonce, crypto_secretbox_NONCEBYTES);
@@ -1013,10 +1013,6 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 		throw CryptographicFailureException("Suspicious cryptographic key");
 	}
 
-	// TODO UGENT TEMP:
-	cout << "rxSharedKey: " << hexStr(rxKey, crypto_kx_SESSIONKEYBYTES) << endl;
-	cout << "txSharedKey: " << hexStr(txKey, crypto_kx_SESSIONKEYBYTES) << endl;
-
 	chainData = get_data(deviceID);
 	msgLen = stoi(chainData[1]);
 
@@ -1041,17 +1037,26 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 
 
 vector<uint32_t>
-BlockchainSecLib::getReceivedDevices(uint32_t deviceID)
+BlockchainSecLib::getReceivedDevices(uint32_t deviceID) // TODO: Devise solution that scales better
 {
 	vector<uint32_t> authorized, result;
 
-	authorized = get_authorized_devices(); // TODO
+	authorized = get_authorized_devices();
 
 	for (vector<uint32_t>::iterator it = authorized.begin(); it != authorized.end(); ++it)
 	{
 		if (get_datareceiver(*it) == deviceID)
 			result.push_back(*it);
 	}
+
+	authorized = get_authorized_gateways();
+
+	for (vector<uint32_t>::iterator it = authorized.begin(); it != authorized.end(); ++it)
+	{
+		if (get_datareceiver(*it) == deviceID)
+			result.push_back(*it);
+	}
+
 	return result;
 }
 

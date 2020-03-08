@@ -21,7 +21,7 @@ RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
 
 
-LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
+LoraTrx::LoraTrx(BlockchainSecLib* blockchainSec)
 {
 	// Check if root
 	if (geteuid() != 0)
@@ -37,7 +37,7 @@ LoraTrx::LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec)
 			"blockchainSec argument to LoraTrx"
 			" constructor is a null pointer");
 	}
-	this->gatewayDeviceId = gatewayDeviceId;
+
 	this->blockchainSec = blockchainSec;
 
 	try
@@ -108,17 +108,11 @@ LoraTrx::setup(void)
 		//rf95.setCADTimeout(10000);
 
 		rf95.setFrequency(RF_FREQUENCY);
-
-		// If we need to send something
-		rf95.setThisAddress(gatewayDeviceId);
-		rf95.setHeaderFrom(gatewayDeviceId);
-
-		// Be sure to grab all node packet
-		// we're sniffing to display, it's a demo
 		rf95.setPromiscuous(true);
-
-		// We're ready to listen for incoming message
 		rf95.setModeRx();
+
+		rf95.setThisAddress(blockchainSec->get_my_device_id());
+		rf95.setHeaderFrom(blockchainSec->get_my_device_id());
 
 		cout << msg << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
 		hardwareInitialized = true;
@@ -172,6 +166,7 @@ void
 LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx_queue, mutex& rx_queue_mutex, mutex& tx_queue_mutex, condition_variable& rx_queue_condvar, bool& halt_server, LoraTrx& trx)
 {
 	string msg;
+	uint32_t myDeviceID;
 	struct packet *msg_buffer = NULL, *tx_buffer = NULL;
 	bool tx_mode = false;
 
@@ -198,6 +193,10 @@ LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx
 			tx_buffer = tx_queue.front();
 			tx_queue.pop();
 			tx_queue_mutex.unlock();
+
+			myDeviceID = blockchainSec->get_my_device_id();
+			rf95.setThisAddress(myDeviceID);
+			rf95.setHeaderFrom(myDeviceID);
 
 			if (!tx_mode)
 			{
@@ -247,7 +246,7 @@ LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx
 
 				memcpy(msg_buffer->payload.bytes, buf, msg_buffer->len);
 
-				//#ifdef _DEBUG
+#ifdef _DEBUG
 				string printbuffer = hexStr(buf, msg_buffer->len);
 				cout << "*Packet* " << endl
 					 << "\tLength: " << unsigned(msg_buffer->len) << endl
@@ -266,7 +265,7 @@ LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx
 					 << "\tGood transmitted packet count: " << unsigned(rf95.txGood())
 					 << endl
 					 << endl;
-				//#endif // _DEBUG
+#endif //_DEBUG
 			}
 			else
 			{
@@ -296,10 +295,10 @@ LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
 {
 	struct packet* p;
 
-	// #ifdef _DEBUG // TODO: Uncomment
+#ifdef _DEBUG
 	cout << "LoRa forwarder thread initialized"
 		 << endl;
-	// #endif // _DEBUG
+#endif //_DEBUG
 
 	while (!halt_server)
 	{
@@ -317,21 +316,24 @@ LoraTrx::readMessage(void)
 	struct packet* msg;
 	unique_lock<mutex> ulock(rx_ulock_mutex);
 
-start:
-	while (rx_queue.empty())
-		rx_queue_condvar.wait(ulock);
-
-	rx_queue_mutex.lock();
-	if (rx_queue.empty())
+	for (;;)
 	{
+		while (rx_queue.empty())
+			rx_queue_condvar.wait(ulock);
+
+		rx_queue_mutex.lock();
+		if (rx_queue.empty())
+		{
+			rx_queue_mutex.unlock();
+			continue;
+		}
+
+		msg = rx_queue.front();
+		rx_queue.pop();
+
 		rx_queue_mutex.unlock();
-		goto start;
+		break;
 	}
-
-	msg = rx_queue.front();
-	rx_queue.pop();
-
-	rx_queue_mutex.unlock();
 
 	return msg;
 }
@@ -411,6 +413,13 @@ LoraTrx::processPacket(struct packet* p)
 					 << endl;
 				return;
 			}
+			else
+			{
+				cout << "Received packet with valid signature from device ID "
+					 << unsigned(p->from)
+					 << endl;
+			}
+
 #ifdef _DEBUG
 			cout << "Received LoRa PACKET_TYPE_DATA_FIRST packet "
 					"with valid signature from device ID "
@@ -567,9 +576,16 @@ LoraTrx::verifySignature(struct packet* p)
 			p->len - 13);
 	}
 
+#ifdef _DEBUG
 	string hexS = hexStr(p->payload.data.signature, crypto_sign_BYTES);
-	cout << "Message Signature: " << hexS << endl
-		 << "Sender PubKey: " << hexStr(senderPubKey, crypto_sign_PUBLICKEYBYTES) << endl;
+	cout << "Message Signature: "
+		 << hexS
+		 << endl
+		 << "Sender PubKey: "
+		 << hexStr(senderPubKey, crypto_sign_PUBLICKEYBYTES)
+		 << endl;
+#endif //_DEBUG
+
 	if (crypto_sign_final_verify(
 			&state,
 			p->payload.data.signature,

@@ -86,6 +86,9 @@ contract DeviceMgmt {
 	// Keccak256 Signature: bba4d289b156cad6df20a164dc91021ab64d1c7d594ddd9128fca71d6366b3c9
 	event Push_Data					(address indexed msgSender, uint32 device_id);
 
+	// Keccak256 Signature: 98e87e8e01e32169ab3efa3535263beca76318be8ede6a321bcbfcbf1e499d26
+	event Device_Data_Updated		(uint32 indexed dataReceiverID, uint32 device_id);
+
 	// Keccak256 Signature: e21f6cd2771fa3b4f5641e2fd1a3d52156a9a8cc10da311d5de41a5755ca6acf
 	event Update_DataReceiver		(address indexed msgSender, uint32 device_id, uint32 dataReceiver);
 
@@ -545,6 +548,7 @@ contract DeviceMgmt {
 
 		//emit Push_Data(msg.sender, device_id, uint32(now), data); //TODO: Data will be stored as a log AND data? Is just a log sufficient?
 		emit Push_Data(msg.sender, device_id);
+		emit Device_Data_Updated(id_to_device[device_id].dataReceiverID, device_id);
 		return true;
 	}
 

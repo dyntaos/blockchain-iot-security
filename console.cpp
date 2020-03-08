@@ -119,6 +119,8 @@ BlockchainSecConsole::console(
 	vector<string> tokens;
 	string input;
 
+	sleep(1); // Wait 1 second before displaying first prompt
+
 	for (; !self.haltThread;)
 	{
 		if (blockchainSec.is_admin(blockchainSec.getClientAddress()))

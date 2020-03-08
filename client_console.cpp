@@ -18,10 +18,11 @@
 using namespace std;
 using namespace blockchainSec;
 
-//TODO: Globals are bad
+
 bool compileFlag = false;
 bool gatewayFlag = false;
 bool consoleFlag = false;
+bool receiverFlag = false;
 
 
 
@@ -38,20 +39,23 @@ parseFlags(int argc, char* argv[])
 
 		options
 			.allow_unrecognised_options()
-			.add_options()(
-				"h,help",
-				"Display help",
-				cxxopts::value<bool>(helpFlag))(
-				"C,compile",
-				"Compile & upload the solidity contract to the blockchain, and save the "
-				"contract address, overwriting the old address in the config file",
-				cxxopts::value<bool>(compileFlag))(
-				"g,gateway",
-				"Start this client in gateway mode. TODO MORE",
-				cxxopts::value<bool>(gatewayFlag))(
-				"c,console",
-				"Start this client in with the console enabled.",
-				cxxopts::value<bool>(consoleFlag));
+			.add_options()
+				("h,help",
+					"Display help",
+					cxxopts::value<bool>(helpFlag))
+				("C,compile",
+					"Compile & upload the solidity contract to the blockchain, and save the "
+					"contract address, overwriting the old address in the config file",
+					cxxopts::value<bool>(compileFlag))
+				("g,gateway",
+					"Start this client in gateway mode. TODO MORE",
+					cxxopts::value<bool>(gatewayFlag))
+				("c,console",
+					"Start this client in with the console enabled.",
+					cxxopts::value<bool>(consoleFlag))
+				("r,receiver",
+					"Start this client as a data receiver.",
+					cxxopts::value<bool>(receiverFlag));
 
 		auto result = options.parse(argc, argv);
 
@@ -114,7 +118,7 @@ main(int argc, char* argv[])
 	{
 #ifdef LORA_GATEWAY
 		cout << "Started in gateway mode..." << endl;
-		trx = new LoraTrx(1, sec); // TODO: Gateway ID
+		trx = new LoraTrx(sec);
 		trx->server_init();
 #else
 		cout << "This architecture does not support running as a LoRa gateway!" << endl;
@@ -130,32 +134,39 @@ main(int argc, char* argv[])
 		blockchainSecConsole->startThread(*sec);
 	}
 
-	/*
-#ifdef LORA_GATEWAY
-	if (gatewayFlag) {
-		struct packet *msg;
-		string msgStr;
+	if (receiverFlag)
+	{
+		/*vector<uint32_t> receivedDevices;
+		uint32_t myDevice;
 
-		for (;;) {
-			msg = trx->readMessage();
-			msgStr = string((char*) msg->payload.bytes, msg->len);
-			cout << "Receive[" << unsigned(msg->len) << "]: " << msg << endl;
-
-			if (trx->sendMessage(boost::to_upper_copy("Hello from the server: " + string((char*) msg->payload.bytes, msg->len)), msg->from)) {
-				cout << "Sent reply to LoRa node" << endl << endl;
-			} else {
-				cout << "Error sending reply to LoRa node..." << endl << endl;
+		for (;;)
+		{
+			try
+			{
+				myDevice = sec->get_my_device_id();
+			}
+			catch(DeviceNotAssignedException& e)
+			{
+				sleep(RECEIVER_NO_DEVICE_ID_RETRY_INTERVAL);
+				continue;
 			}
 
-			delete msg;
-			msg = NULL;
-		}
+			if (myDevice == 0)
+			{
+				sleep(RECEIVER_NO_DEVICE_ID_RETRY_INTERVAL);
+				continue;
+			}
 
-		trx->close_server();
-		exit(EXIT_SUCCESS);
+			receivedDevices = sec->getReceivedDevices(myDevice); // TODO: Try/Catch?
+
+			for (uint8_t i; i < 30; i++)
+			{
+
+			}
+		}*/
+		sec->enable_received_data_notifications();
+
 	}
-#endif //LORA_GATEWAY
-*/
 
 	sec->joinThreads();
 

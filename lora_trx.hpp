@@ -62,7 +62,7 @@ class LoraTrx
 	public:
 	//	RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
-	LoraTrx(uint32_t gatewayDeviceId, BlockchainSecLib* blockchainSec);
+	LoraTrx(BlockchainSecLib* blockchainSec);
 
 	bool sendMessage(std::string msg_str, uint32_t toDeviceId);
 	void server_init(void);
