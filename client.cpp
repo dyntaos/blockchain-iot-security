@@ -1,7 +1,7 @@
-#include <boost/algorithm/string/trim.hpp>
-#include <ctime>
 #include <iostream>
 
+#include <boost/algorithm/string.hpp> // TODO: Temp for boost::to_upper()
+#include <ctime> // TODO: TEMP
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -9,27 +9,27 @@
 
 #include <blockchainsec.hpp>
 #include <client.hpp>
+#include <console.hpp>
+#include <data_receiver.hpp>
 
 #ifdef LORA_GATEWAY
 #include <lora_trx.hpp>
 #endif
 
-
 using namespace std;
-using namespace eth_interface;
 using namespace blockchainSec;
 
 
-//TODO: Globals are bad
 bool compileFlag = false;
 bool gatewayFlag = false;
-
-BlockchainSecLib* sec;
+bool consoleFlag = false;
+bool receiverFlag = false;
+bool sensorFlag = false;
 
 
 
 cxxopts::ParseResult
-parseFlags(int argc, char* argv[])
+parseFlags(int argc, char *argv[])
 {
 	bool helpFlag;
 	try
@@ -37,11 +37,26 @@ parseFlags(int argc, char* argv[])
 		cxxopts::Options options(argv[0], "");
 		options
 			.positional_help("[optional args]")
+			.custom_help("If no flags are provided, data will be read from "
+				"STDIN and pushed to the blockchain before exiting.")
 			.show_positional_help();
 
 		options
 			.allow_unrecognised_options()
-			.add_options()("h,help", "Display help", cxxopts::value<bool>(helpFlag))("c,compile", "Compile & upload the solidity contract to the blockchain, and save the contract address, overwriting the old address in the config file", cxxopts::value<bool>(compileFlag))("g,gateway", "Start this client in gateway mode. TODO MORE", cxxopts::value<bool>(gatewayFlag));
+			.add_options()("h,help",
+				"Display help",
+				cxxopts::value<bool>(helpFlag))("C,compile",
+				"Compile & upload the solidity contract to the blockchain, and save the "
+				"contract address, overwriting the old address in the config file",
+				cxxopts::value<bool>(compileFlag))("g,gateway",
+				"Start this client in gateway mode. TODO MORE",
+				cxxopts::value<bool>(gatewayFlag))("c,console",
+				"Start this client in with the administrator console enabled.",
+				cxxopts::value<bool>(consoleFlag))("r,receiver",
+				"Start this client as a data receiver.",
+				cxxopts::value<bool>(receiverFlag))("s,sensor",
+				"Start this client in sensor mode (collect and push sensor data to the blockchain).",
+				cxxopts::value<bool>(sensorFlag));
 
 		auto result = options.parse(argc, argv);
 
@@ -53,44 +68,10 @@ parseFlags(int argc, char* argv[])
 
 		return result;
 	}
-	catch (const cxxopts::OptionException& e)
+	catch (const cxxopts::OptionException &e)
 	{
 		cout << "Error parsing flags: " << e.what() << endl;
 		exit(EXIT_FAILURE);
-	}
-}
-
-
-
-#ifdef LORA_GATEWAY
-
-void
-senderThread(LoraTrx& trx)
-{
-	int r;
-	char output[256];
-	char d[] = "recruitrecruiterrefereerehaverelativereporterrepresentativerestaurantreverendrguniotrichriderritzyroarsfulipwparkrrollerroofroomroommaterosessagesailorsalesmansaloonsargeantsarkscaffoldsceneschoolseargeantsecondsecretarysellerseniorsequencesergeantservantserverservingsevenseventeenseveralsexualitysheik/villainshepherdsheriffshipshopshowsidekicksingersingingsirensistersixsixteenskatesslaveslickersmallsmugglersosocialsoldiersolidersonsongsongstresssossoyspeakerspokenspysquawsquirestaffstagestallstationstatuesteedstepfatherstepmotherstewardessstorestorekeeperstorystorytellerstrangerstreetstripperstudentstudiostutterersuitsuitorssuperintendentsupermarketsupervisorsurgeonsweethearttailortakertastertaverntaxiteachertechnicianteentelegramtellertenthalthothetheatretheirtherthiefthirty-fivethisthreethroughthrowertickettimetknittotossedtouchtouristtouriststowntownsmantradetradertraintrainertravelertribetriptroopertroubledtrucktrusteetrustytubtwelvetwenty-fivetwintyuncleupstairsurchinsv.vaETERevaletvampirevanvendorvicarviceroyvictimvillagevisitorvocalsvonwaitingwaitresswalkerwarwardenwaswasherwomanwatchingwatchmanweaverwelwerewesswherewhichwhitewhowhosewifewinnerwithwittiestwomanworkerwriterxxxyyellowyoungyoungeryoungestyouthyszealot";
-
-	for (;;)
-	{
-		sleep((rand() % 9) + 1);
-		r = rand() % 255;
-		strncpy(output, d, r);
-		cout << "Send[" << r << "]: " << output << endl;
-		trx.sendMessage(output, 5);
-	}
-}
-
-#endif //LORA_GATEWAY
-
-
-
-void
-printStrVector(vector<string> v)
-{
-	for (vector<string>::iterator it = v.begin(); it != v.end(); ++it)
-	{
-		cout << "\t" << *it << endl;
 	}
 }
 
@@ -100,7 +81,7 @@ string
 runBinary(string cmd)
 {
 	string result;
-	FILE* inFd;
+	FILE *inFd;
 	array<char, SENSOR_PIPE_BUFFER_LEN> pipeBuffer;
 
 	inFd = popen(cmd.c_str(), "r");
@@ -125,6 +106,7 @@ runBinary(string cmd)
 }
 
 
+
 string
 querySensor(void)
 {
@@ -136,7 +118,7 @@ querySensor(void)
 	{
 		data += runBinary("uname -a");
 	}
-	catch (ResourceRequestFailedException& e)
+	catch (ResourceRequestFailedException &e)
 	{
 		data += e.what();
 	}
@@ -147,7 +129,7 @@ querySensor(void)
 	{
 		data += runBinary("nproc");
 	}
-	catch (ResourceRequestFailedException& e)
+	catch (ResourceRequestFailedException &e)
 	{
 		data += e.what();
 	}
@@ -158,7 +140,7 @@ querySensor(void)
 	{
 		data += runBinary("uptime");
 	}
-	catch (ResourceRequestFailedException& e)
+	catch (ResourceRequestFailedException &e)
 	{
 		data += e.what();
 	}
@@ -169,7 +151,7 @@ querySensor(void)
 	{
 		data += runBinary("free -h");
 	}
-	catch (ResourceRequestFailedException& e)
+	catch (ResourceRequestFailedException &e)
 	{
 		data += e.what();
 	}
@@ -177,117 +159,186 @@ querySensor(void)
 }
 
 
-int
-main(int argc, char* argv[])
+
+void
+dataReceiver(BlockchainSecLib& blockchain)
 {
+	DataReceiverManager dataRecv(&blockchain);
+
+	for (;;)
+	{
+		set<uint32_t> receivedUpdates = dataRecv.getReceivedChanges();
+
+		if (receivedUpdates.size() == 0)
+		{
+			cerr << "ERROR: Received updates yielded 0 device IDs!" << endl; // TODO: Eliminate this message after testing?
+			continue;
+		}
+
+		for (auto it = receivedUpdates.begin(); it != receivedUpdates.end(); ++it)
+		{
+			// TODO: Make into a single string then cout
+			cout << "Device ID "
+				 << *it
+				 << " new data:"
+				 << endl
+				 << "\""
+				 << blockchain.getDataAndDecrypt(*it)
+				 << "\""
+				 << endl
+				 << endl;
+		}
+	}
+	dataRecv.joinThreads();
+}
+
+
+
+void
+sensor(BlockchainSecLib& blockchain)
+{
+	string data;
+	uint32_t myDeviceID;
+
+	for (;;)
+	{
+		data = querySensor();
+
+		try
+		{
+			myDeviceID = blockchain.get_my_device_id();
+		}
+		catch (...)
+		{
+			myDeviceID = 0;
+		}
+
+		if (myDeviceID == 0)
+		{
+			cerr << "This device does not have a registered device ID! Retrying in "
+				 << INVALID_DEVICE_TRY_INTERVAL
+				 << " seconds..."
+				 << endl;
+			sleep(INVALID_DEVICE_TRY_INTERVAL);
+			break;
+		}
+
+		cout << "Attempting to push data to the blockchain..." << endl;
+
+		if (!blockchain.encryptAndPushData(data))
+		{
+			cerr << "Failed to push data to the blockchain! Retrying in "
+				 << INVALID_DEVICE_TRY_INTERVAL
+				 << " seconds..."
+				 << endl;
+			sleep(INVALID_DEVICE_TRY_INTERVAL);
+			break;
+		}
+
+		cout << "Successfully pushed data to the blockchain..."
+			 << endl;
+
+		sleep(DATA_PUSH_INTERVAL);
+	}
+}
+
+
+
+int
+main(int argc, char *argv[])
+{
+	BlockchainSecLib *sec;
+	BlockchainSecConsole *blockchainSecConsole;
+	thread *dataReceiverThread;
+
+#ifdef LORA_GATEWAY
+	LoraTrx *trx;
+#endif //LORA_GATEWAY
+
+	cout << ".:Blockchain Security Framework Client:." << endl;
 
 	auto flags = parseFlags(argc, argv);
+	(void)argc;
+	(void)argv;
 
-	cout << endl
-		 << "\t.:Blockchain Security Framework Client:." << endl
-		 << endl;
 
 	if (compileFlag)
 	{
 		cout << "Compiling smart contract..." << endl;
 	}
+
+
+	// #ifndef LORA_GATEWAY
 	sec = new BlockchainSecLib(compileFlag);
+	// #endif
 
 	if (gatewayFlag)
 	{
-		cout << "This binary does not support running as a LoRa gateway!" << endl;
+#ifdef LORA_GATEWAY
+		cout << "Started in gateway mode..." << endl;
+		trx = new LoraTrx(sec);
+		trx->server_init();
+#else
+		cout << "This architecture does not support running as a LoRa gateway!" << endl;
 		exit(EXIT_FAILURE);
+#endif //LORA_GATEWAY
 	}
 
-	for (;;)
+
+	if (consoleFlag)
 	{
-
-		while (sec->get_my_device_id() == 0)
-		{
-			uint32_t dev;
-
-			cerr << "This device does not have an associated device ID..." << endl
-				 << "Creating device..." << endl;
-
-			cout << endl
-				 << "Adding this address as a device..." << endl;
-			dev = sec->add_device(sec->getClientAddress(), "Local Device 1", false);
-			if (dev == 0)
-			{
-				cout << "Failed to add local device!" << endl
-					 << endl;
-			}
-			else
-			{
-				cout << "Successfully added local device as deviceID " << dev << "!" << endl
-					 << endl;
-			}
-
-			sec->update_datareceiver(dev, dev);
-
-			sec->updateLocalKeys();
-
-			//cerr << "This device does not have an associated device ID... Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds..." << endl;
-			//sleep(INVALID_DEVICE_TRY_INTERVAL);
-		}
-		sec->loadLocalDeviceParameters();
-
-		cout << "Found device ID #" << sec->get_my_device_id() << endl
-			 << endl;
-
-
-		for (;;)
-		{
-			string data = querySensor();
-			uint32_t myDeviceID = sec->get_my_device_id();
-
-			if (myDeviceID == 0)
-			{
-				cerr << "This device does not have a registered device ID! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
-				sleep(INVALID_DEVICE_TRY_INTERVAL);
-				break;
-			}
-
-			cout << "Attempting to push data to the blockchain..." << endl;
-
-			if (!sec->encryptAndPushData(data))
-			{
-				cerr << "Failed to push data to the blockchain! Retrying in " << INVALID_DEVICE_TRY_INTERVAL << " seconds...\n";
-				sleep(INVALID_DEVICE_TRY_INTERVAL);
-				break;
-			}
-
-			cout << "Successfully pushed data to the blockchain..." << endl
-				 << endl;
-
-			string chainData;
-			time_t dataTimestamp;
-
-			try
-			{
-				chainData = sec->getDataAndDecrypt(myDeviceID);
-				dataTimestamp = sec->get_dataTimestamp(myDeviceID);
-			}
-			catch (EthException& e)
-			{
-				cerr << "Error while retrieving data from the blockchain!" << endl
-					 << e.what() << endl;
-				sleep(INVALID_DEVICE_TRY_INTERVAL);
-				break;
-			}
-
-			string timestamp = asctime(localtime(&dataTimestamp));
-			boost::trim(timestamp);
-
-			cout << "Got data timestamped as " << timestamp << ":" << endl
-				 << endl
-				 << chainData << endl;
-
-			sleep(DATA_PUSH_INTERVAL);
-		}
+		cout << "Console enabled..." << endl;
+		blockchainSecConsole = new BlockchainSecConsole();
+		blockchainSecConsole->startThread(*sec);
 	}
 
+	if (receiverFlag)
+	{
+		dataReceiverThread = new thread(
+			dataReceiver,
+			std::ref(*sec));
+	}
 
-	sec->joinThreads();
+	if (sensorFlag)
+	{
+		sensor(*sec); // Does not return
+	}
+
+	if (!(compileFlag || gatewayFlag || consoleFlag || receiverFlag || sensorFlag))
+	{
+		// If no flags are provided, read data from stdin and push to blockchain and exit
+		char inBuffer[IPC_BUFFER_LENGTH];
+		string data;
+		uint32_t myDevice;
+
+		try
+		{
+			myDevice = sec->get_my_device_id();
+		}
+		catch (...)
+		{
+			myDevice = 0;
+		}
+
+		if (myDevice == 0)
+		{
+			cerr << "No device ID is assigned to address "
+				<< sec->getClientAddress()
+				<< endl;
+			exit(EXIT_FAILURE);
+		}
+
+		while (cin.read(inBuffer, sizeof(inBuffer)))
+		{
+			data.append(inBuffer, cin.gcount());
+		}
+		sec->encryptAndPushData(data);
+	}
+	else
+	{
+		if (receiverFlag) dataReceiverThread->join();
+		sec->joinThreads();
+	}
+
 	return EXIT_SUCCESS;
 }
