@@ -39,7 +39,8 @@ DEBUG =
 
 .PHONY: all mkdirs debug clean lora _lora
 
-all: mkdirs $(BIN)/client $(BIN)/client_blockchain_test $(BIN)/client_data_receiver $(BIN)/client_console
+#all: mkdirs $(BIN)/client $(BIN)/client_blockchain_test $(BIN)/client_data_receiver $(BIN)/client_console
+all: mkdirs $(BIN)/client_console
 
 mkdirs:
 	mkdir -p $(BIN) $(OBJ) $(LIB)
@@ -95,10 +96,10 @@ $(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
 ### Static Library ###   #TODO: Can I remove -fPIC?
 
 $(OBJ)/eth_interface.o: eth_interface.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/data_receiver.o: data_receiver.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
@@ -146,40 +147,40 @@ $(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
 
 ### Client Binary ###
 
-$(OBJ)/client.o: client.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
+#$(OBJ)/client.o: client.cpp
+#	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
 
-$(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client.o \
-		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
-	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client
-
-
-$(OBJ)/client_data_receiver.o: client_data_receiver.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
-
-$(BIN)/client_data_receiver: $(OBJ)/client_data_receiver.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client_data_receiver.o \
-		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
-	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client_data_receiver
+#$(BIN)/client: $(OBJ)/client.o $(LIB)/libblockchainsec.a
+#	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+#		$(OBJ)/client.o \
+#		-L $(LIB) \
+#		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+#	cp ./*.sol ./*.conf $(BIN)/
+#	ln -fs $@ ./client
 
 
-$(OBJ)/client_blockchain_test.o: client_blockchain_test.cpp
-	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
+#$(OBJ)/client_data_receiver.o: client_data_receiver.cpp
+#	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
 
-$(BIN)/client_blockchain_test: $(OBJ)/client_blockchain_test.o $(LIB)/libblockchainsec.a
-	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client_blockchain_test.o \
-		-L $(LIB) \
-		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
-	cp ./*.sol ./*.conf $(BIN)/
-	ln -fs $@ ./client_blockchain_test
+#$(BIN)/client_data_receiver: $(OBJ)/client_data_receiver.o $(LIB)/libblockchainsec.a
+#	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+#		$(OBJ)/client_data_receiver.o \
+#		-L $(LIB) \
+#		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+#	cp ./*.sol ./*.conf $(BIN)/
+#	ln -fs $@ ./client_data_receiver
+
+
+#$(OBJ)/client_blockchain_test.o: client_blockchain_test.cpp
+#	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(LORA_GATEWAY) $(DEBUG) -o $@ $(INCLUDE) $(RADIOHEADINC) $<
+
+#$(BIN)/client_blockchain_test: $(OBJ)/client_blockchain_test.o $(LIB)/libblockchainsec.a
+#	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+#		$(OBJ)/client_blockchain_test.o \
+#		-L $(LIB) \
+#		-lblockchainsec -lconfig++ -lpthread -lboost_system -lsodium $(LINK_LORA)
+#	cp ./*.sol ./*.conf $(BIN)/
+#	ln -fs $@ ./client_blockchain_test
 
 
 $(OBJ)/client_console.o: client_console.cpp

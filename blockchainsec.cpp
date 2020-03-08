@@ -1026,7 +1026,7 @@ BlockchainSecLib::getDataAndDecrypt(uint32_t const deviceID)
 		(unsigned char*)cipherStr.c_str(),
 		msgLen,
 		(unsigned char*)nonceStr.c_str(),
-		rxKey);
+		txKey);
 
 	string result = string((char*)message, msgLen);
 	delete[] message;
