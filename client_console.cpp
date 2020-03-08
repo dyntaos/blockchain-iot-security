@@ -8,6 +8,7 @@
 #include <cxxopts.hpp>
 
 #include <blockchainsec.hpp>
+#include <data_receiver.hpp>
 #include <client.hpp>
 #include <console.hpp>
 
@@ -136,36 +137,9 @@ main(int argc, char* argv[])
 
 	if (receiverFlag)
 	{
-		/*vector<uint32_t> receivedDevices;
-		uint32_t myDevice;
-
-		for (;;)
-		{
-			try
-			{
-				myDevice = sec->get_my_device_id();
-			}
-			catch(DeviceNotAssignedException& e)
-			{
-				sleep(RECEIVER_NO_DEVICE_ID_RETRY_INTERVAL);
-				continue;
-			}
-
-			if (myDevice == 0)
-			{
-				sleep(RECEIVER_NO_DEVICE_ID_RETRY_INTERVAL);
-				continue;
-			}
-
-			receivedDevices = sec->getReceivedDevices(myDevice); // TODO: Try/Catch?
-
-			for (uint8_t i; i < 30; i++)
-			{
-
-			}
-		}*/
-		sec->enable_received_data_notifications();
-
+		blockchainSec::DataReceiverManager dataRecv(sec);
+		sec->joinThreads();
+		dataRecv.joinThreads();
 	}
 
 	sec->joinThreads();

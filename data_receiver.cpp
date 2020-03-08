@@ -1,6 +1,5 @@
-//#include <boost/algorithm/string/trim.hpp>
 #include <iostream>
-//#include <ethabi.hpp>
+#include <ethabi.hpp>
 #include <data_receiver.hpp>
 
 
@@ -11,16 +10,9 @@ namespace blockchainSec
 
 
 
-DataReceiverManager::DataReceiverManager(
-	BlockchainSecLib *blockchain,
-	string const& clientAddress,
-	string const& contractAddress,
-	string const& ipcPath)
+DataReceiverManager::DataReceiverManager(BlockchainSecLib *blockchain)
 {
 	this->blockchain = blockchain;
-	this->clientAddress = clientAddress;
-	this->contractAddress = contractAddress;
-	this->ipcPath = ipcPath;
 
 	receivedUpdatesCVLock = std::unique_lock<std::mutex>(receivedUpdatesLockMtx);
 
@@ -30,7 +22,7 @@ DataReceiverManager::DataReceiverManager(
 
 
 void
-DataReceiverManager::joinThread(void)
+DataReceiverManager::joinThreads(void)
 {
 	if (receiverThread != NULL)
 	{
@@ -78,7 +70,7 @@ restart: // TODO: Get rid of this
 				"\"method\":\"eth_subscribe\","
 				"\"params\":["
 					"\"logs\",{"
-						"\"address\":\"0x" + contractAddress + "\","
+						"\"address\":\"0x" + blockchain->getContractAddress() + "\","
 						"\"topics\":[\"" + "0x" SIGNATURE_DEVICE_DATA_UPDATED "\","
 									"\"0x00000000000000000000000000000000000000000000000000000000" + deviceIdHex + "\""
 						"]"
@@ -94,7 +86,7 @@ restart: // TODO: Get rid of this
 	{
 		throw ResourceRequestFailedException(
 			"Failed to open Unix Domain Socket with Geth Ethereum client via \""
-			+ ipcPath + "\"");
+			+ blockchain->getIPCPath() + "\"");
 	}
 	socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
@@ -114,8 +106,6 @@ subscribeReceive: // TODO: Get rid of this
 		subscribeParse += receiveBuffer;
 	}
 
-
-subParse: // TODO: Get rid of this
 
 	message = subscribeParse.substr(0, subscribeParse.find_first_of('\n', 0));
 	subscribeParse = subscribeParse.substr(subscribeParse.find_first_of('\n', 0) + 1);
@@ -169,12 +159,12 @@ void
 DataReceiverManager::dataReceiverThread(void)
 {
 	boost::asio::io_service io_service;
-	boost::asio::local::stream_protocol::endpoint ep(ipcPath);
+	boost::asio::local::stream_protocol::endpoint ep(blockchain->getIPCPath().c_str());
 	boost::asio::local::stream_protocol::socket socket(io_service);
 	char receiveBuffer[IPC_BUFFER_LENGTH];
 	int receiveLength;
 	Json jsonData, resultJsonObject;
-	string data, message, method, subscription, receiveParse;
+	string data, message, method, subscription;
 	vector<string> topics;
 
 	dataReceiverThreadSetup(socket, ep);
@@ -266,7 +256,7 @@ DataReceiverManager::dataReceiverThread(void)
 		}
 
 		receivedUpdatesDataMtx.lock();
-		receivedUpdates.insert(strtoul(event["device_id"], nullptr, 16));
+		receivedUpdates.insert(strtoul(event["device_id"].c_str(), nullptr, 16));
 		receivedUpdatesDataMtx.unlock();
 
 		receivedUpdatesCV.notify_all();

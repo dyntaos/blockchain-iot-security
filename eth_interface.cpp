@@ -70,6 +70,14 @@ EthInterface::initialize(
 
 
 string
+EthInterface::getIPCPath(void)
+{
+	return ipcPath;
+}
+
+
+
+string
 EthInterface::getClientAddress(void)
 {
 	return clientAddress;
@@ -568,7 +576,7 @@ EthInterface::eth_getTransactionReceipt(string const& transactionHash)
 void
 EthInterface::joinThreads(void)
 {
-	eventLogWaitManager->joinThread();
+	eventLogWaitManager->joinThreads();
 }
 
 

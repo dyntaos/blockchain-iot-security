@@ -39,6 +39,8 @@ class EthInterface
 		std::string contractAddress,
 		std::vector<std::pair<std::string, std::string>> contractEventSignatures);
 
+
+	std::string getIPCPath(void);
 	std::string getClientAddress(void);
 	std::string getContractAddress(void);
 	std::string getEthContractSOL(void);

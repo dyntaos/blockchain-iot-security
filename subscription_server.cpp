@@ -35,7 +35,7 @@ EventLogWaitManager::EventLogWaitManager(
 
 
 void
-EventLogWaitManager::joinThread(void)
+EventLogWaitManager::joinThreads(void)
 {
 	if (subscriptionListener != NULL)
 	{

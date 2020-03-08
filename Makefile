@@ -92,13 +92,16 @@ $(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
 
 
 
-### Static Library ###
+### Static Library ###   #TODO: Can I remove -fPIC?
 
 $(OBJ)/eth_interface.o: eth_interface.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/blockchainsec.o: blockchainsec.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -fPIC $(DEBUG) -o $@ $(INCLUDE) $<
+
+$(OBJ)/data_receiver.o: data_receiver.cpp
+	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
 
 $(OBJ)/subscription_server.o: subscription_server.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
@@ -130,13 +133,13 @@ $(OBJ)/base64.o: cpp-base64/base64.cpp
 $(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
 							$(OBJ)/eth_interface.o \
 							$(OBJ)/blockchainsec.o \
+							$(OBJ)/data_receiver.o \
 							$(OBJ)/subscription_server.o \
 							$(OBJ)/console.o \
 							$(OBJ)/ethabi.o \
 							$(OBJ)/misc.o \
 							$(OBJ)/base64.o
 	ar rcs $@ $(LORA_OBJ) $^
-
 
 
 
