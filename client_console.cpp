@@ -194,6 +194,56 @@ dataReceiver(BlockchainSecLib& blockchain)
 
 
 
+void
+sensor(BlockchainSecLib& blockchain)
+{
+	string data;
+	uint32_t myDeviceID;
+
+	for (;;)
+	{
+		data = querySensor();
+
+		try
+		{
+			myDeviceID = blockchain.get_my_device_id();
+		}
+		catch (...)
+		{
+			myDeviceID = 0;
+		}
+
+		if (myDeviceID == 0)
+		{
+			cerr << "This device does not have a registered device ID! Retrying in "
+				 << INVALID_DEVICE_TRY_INTERVAL
+				 << " seconds..."
+				 << endl;
+			sleep(INVALID_DEVICE_TRY_INTERVAL);
+			break;
+		}
+
+		cout << "Attempting to push data to the blockchain..." << endl;
+
+		if (!blockchain.encryptAndPushData(data))
+		{
+			cerr << "Failed to push data to the blockchain! Retrying in "
+				 << INVALID_DEVICE_TRY_INTERVAL
+				 << " seconds..."
+				 << endl;
+			sleep(INVALID_DEVICE_TRY_INTERVAL);
+			break;
+		}
+
+		cout << "Successfully pushed data to the blockchain..."
+			 << endl;
+
+		sleep(DATA_PUSH_INTERVAL);
+	}
+}
+
+
+
 int
 main(int argc, char *argv[])
 {
@@ -249,10 +299,14 @@ main(int argc, char *argv[])
 			std::ref(*sec));
 	}
 
+	if (sensorFlag)
+	{
+		sensor(*sec); // Does not return
+	}
+
 	if (!(compileFlag || gatewayFlag || consoleFlag || receiverFlag || sensorFlag))
 	{
 		// If no flags are provided, read data from stdin and push to blockchain and exit
-		// TODO
 		char inBuffer[IPC_BUFFER_LENGTH];
 		string data;
 		uint32_t myDevice;
