@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 	if (gatewayFlag) {
 #ifdef LORA_GATEWAY
 		cout << "Started in gateway mode..." << endl;
-		trx = new LoraTrx(1, sec); // TODO: Gateway ID
+		trx = new LoraTrx(sec); // TODO: Gateway ID
 		trx->server_init();
 #else
 		cout << "This architecture does not support running as a LoRa gateway!" << endl;
