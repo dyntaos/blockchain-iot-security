@@ -289,7 +289,7 @@ DataReceiverManager::getReceivedChanges(void)
 	if (receivedUpdates.size() == 0)
 	{
 		receivedUpdatesDataMtx.unlock();
-		while (receivedUpdates.size == 0)
+		while (receivedUpdates.size() == 0)
 		{
 			receivedUpdatesCV.wait(receivedUpdatesCVLock);
 		}
