@@ -12,7 +12,7 @@
 
 #define EVENT_LOG_NAME                "Device_Data_Updated"
 #define SIGNATURE_DEVICE_DATA_UPDATED "98e87e8e01e32169ab3efa3535263beca76318be8ede6a321bcbfcbf1e499d26"
-
+#define NO_DEVICE_RETRY_INTERVAL      30
 
 namespace blockchainSec
 {
@@ -41,7 +41,7 @@ class DataReceiverManager
 	std::string clientAddress;
 	std::string ipcPath;
 
-	std::string receiveParse;
+	std::string subscriptionHash;
 
 	bool subscribedReceiverUpdates = false;
 	bool wantSubscribedReceiverUpdates = false;

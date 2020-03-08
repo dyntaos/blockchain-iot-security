@@ -49,10 +49,42 @@ DataReceiverManager::dataReceiverThreadSetup(
 	string subscribeParse, data, message;
 	Json jsonResponce;
 	int receiveLength;
-	uint16_t i;
 
 
 restart: // TODO: Get rid of this
+
+	try
+	{
+		subscribedReceiverDeviceID = blockchain->get_my_device_id();
+	}
+	catch (DeviceNotAssignedException& e)
+	{
+		subscribedReceiverDeviceID = 0;
+	}
+
+	if (subscribedReceiverDeviceID == 0)
+	{
+		sleep(NO_DEVICE_RETRY_INTERVAL);
+		goto restart;
+	}
+
+	stringstream deviceIdSS;
+	deviceIdSS << std::hex << subscribedReceiverDeviceID;
+	string deviceIdHex = "00000000" + deviceIdSS.str();
+	deviceIdHex = deviceIdHex.substr(deviceIdHex.length() - 8);
+
+	data = "{"
+				"\"id\":1,"
+				"\"method\":\"eth_subscribe\","
+				"\"params\":["
+					"\"logs\",{"
+						"\"address\":\"0x" + contractAddress + "\","
+						"\"topics\":[\"" + "0x" SIGNATURE_DEVICE_DATA_UPDATED "\","
+									"\"0x00000000000000000000000000000000000000000000000000000000" + deviceIdHex + "\""
+						"]"
+					"}"
+				"]"
+			"}";
 
 	try
 	{
@@ -64,22 +96,6 @@ restart: // TODO: Get rid of this
 			"Failed to open Unix Domain Socket with Geth Ethereum client via \""
 			+ ipcPath + "\"");
 	}
-
-
-	data = "{"
-				"\"id\":1,"
-				"\"method\":\"eth_subscribe\","
-				"\"params\":["
-					"\"logs\",{"
-						"\"address\":\"0x" + contractAddress + "\","
-						"\"topics\":[\"" + "0x" + contractLogSignatures[i].second + "\","
-									"\"0x000000000000000000000000" + clientAddress + "\""
-						"]"
-					"}"
-				"]"
-			"}";
-
-
 	socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
 
@@ -125,12 +141,8 @@ subParse: // TODO: Get rid of this
 	{
 		throw ResourceRequestFailedException(
 			"dataReceiverThread(): Got an error responce to eth_subscribe!\n"
-			"Signature: "
-			+ contractLogSignatures[i].second + "\n"
-												"Request: "
-			+ data + "\n"
-						"Responce: "
-			+ message + "\n");
+			"Request: " + data +
+			"\nResponce: " + message + "\n");
 	}
 
 	if (jsonResponce.contains("method") > 0)
@@ -144,28 +156,11 @@ subParse: // TODO: Get rid of this
 		throw ResourceRequestFailedException(
 			"dataReceiverThread(): Unexpected responce to eth_subscribe received!");
 	}
-	string result = jsonResponce["result"];
-
-	subscriptionToEventName[result] = contractLogSignatures[i].first;
-
-
-	boost::trim(subscribeParse);
-	if (subscribeParse.length() > 0)
-		goto subParse;
-
+	subscriptionHash = jsonResponce["result"];
 
 	receivedUpdatesDataMtx.lock();
 	receivedUpdates.clear();
 	receivedUpdatesDataMtx.unlock();
-
-	try
-	{
-		subscribedReceiverDeviceID = blockchain->get_my_device_id();
-	}
-	catch (DeviceNotAssignedException& e)
-	{
-		subscribedReceiverDeviceID = 0;
-	}
 }
 
 
@@ -179,7 +174,7 @@ DataReceiverManager::dataReceiverThread(void)
 	char receiveBuffer[IPC_BUFFER_LENGTH];
 	int receiveLength;
 	Json jsonData, resultJsonObject;
-	string data, message, method, subscription;
+	string data, message, method, subscription, receiveParse;
 	vector<string> topics;
 
 	dataReceiverThreadSetup(socket, ep);
@@ -187,63 +182,13 @@ DataReceiverManager::dataReceiverThread(void)
 
 	for (;;)
 	{
-		//receivedUpdatesDataMtx.lock();
 		if (subscribedReceiverDeviceID != blockchain->get_my_device_id())
 		{
-			// Cancel existing subscription and recreate with new device ID
-			// TODO
+			// Cancel existing subscription and recreate with the new device ID
 			socket.close();
+			receiveParse = "";
 			dataReceiverThreadSetup(socket, ep);
-			// TODO: Clear JSON String buffers
 		}
-
-		if (wantSubscribedReceiverUpdates && !subscribedReceiverUpdates)
-		{
-			// Subscribe to Device_Data_Updated events
-
-			try
-			{
-				subscribedReceiverDeviceID = blockchain->get_my_device_id();
-			}
-			catch (DeviceNotAssignedException& e)
-			{
-				subscribedReceiverDeviceID = 0;
-			}
-
-			if (subscribedReceiverDeviceID != 0)
-			{
-				receivedUpdates.clear();
-
-				stringstream deviceIdSS;
-				deviceIdSS << std::hex << subscribedReceiverDeviceID;
-				string deviceIdHex = "00000000" + deviceIdSS.str();
-				deviceIdHex = deviceIdHex.substr(deviceIdHex.length() - 8);
-
-				data = "{"
-						"\"id\":2,"
-						"\"method\":\"eth_subscribe\","
-						"\"params\":["
-							"\"logs\",{"
-								"\"address\":\"0x" + contractAddress + "\","
-								"\"topics\":[\"" + "0x" SIGNATURE_DEVICE_DATA_UPDATED "\","
-											"\"0x00000000000000000000000000000000000000000000000000000000" + deviceIdHex + "\""
-								"]"
-							"}"
-						"]"
-					"}";
-
-				socket.send(boost::asio::buffer(data.c_str(), data.length()));
-				subscribedReceiverUpdates = true;
-			}
-			else
-			{
-				wantSubscribedReceiverUpdates = false; // Don't spam GETH with requests and abort
-				receivedUpdatesCV.notify_all();
-			}
-		}
-		receivedUpdatesDataMtx.unlock();
-
-
 
 		while (receiveParse.find_first_of('\n', 0) == string::npos)
 		{
@@ -252,18 +197,17 @@ DataReceiverManager::dataReceiverThread(void)
 			if (receiveLength == 0)
 			{
 				// Socket was closed by other end
-				socket.close(); // TODO: What happens if this socket is already closed?
+				socket.close();
+				receiveParse = "";
 				dataReceiverThreadSetup(socket, ep);
+				continue;
 			}
 			receiveBuffer[receiveLength] = 0;
 			receiveParse += receiveBuffer;
 		}
 
-
 		message = receiveParse.substr(0, receiveParse.find_first_of('\n', 0));
 		receiveParse = receiveParse.substr(receiveParse.find_first_of('\n', 0) + 1);
-
-
 
 		try
 		{
@@ -296,7 +240,6 @@ DataReceiverManager::dataReceiverThread(void)
 			continue;
 		}
 
-
 		if (method.compare("eth_subscription") != 0)
 		{
 			// "method" field of the JSON data is not "eth_subscription"
@@ -326,6 +269,7 @@ DataReceiverManager::dataReceiverThread(void)
 		receivedUpdates.insert(strtoul(event["device_id"], nullptr, 16));
 		receivedUpdatesDataMtx.unlock();
 
+		receivedUpdatesCV.notify_all();
 	}
 	socket.close();
 }
