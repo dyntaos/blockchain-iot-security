@@ -390,10 +390,12 @@ LoraTrx::processPacket(struct packet* p)
 		return;
 	}
 
+#ifdef _DEBUG
 	cout << "Data: " << dataStr << endl
 		 << "Data Hex: " << dataHexStr << endl
 		 << "Signature Hex: " << sigHexStr << endl
 		 << "Nonce Hex: " << nonceHexStr << endl;
+#endif //_DEBUG
 
 	maskedFlags = p->flags & 0xF;
 	switch (maskedFlags)

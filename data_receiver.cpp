@@ -88,6 +88,14 @@ restart: // TODO: Get rid of this
 			"Failed to open Unix Domain Socket with Geth Ethereum client via \""
 			+ blockchain->getIPCPath() + "\"");
 	}
+
+#ifdef _DEBUG
+	cout << "dataReceiverThreadSetup(): Sending subscription request: "
+		<< endl
+		<< data
+		<< endl;
+#endif //_DEBUG
+
 	socket.send(boost::asio::buffer(data.c_str(), data.length()));
 
 
@@ -109,6 +117,13 @@ subscribeReceive: // TODO: Get rid of this
 
 	message = subscribeParse.substr(0, subscribeParse.find_first_of('\n', 0));
 	subscribeParse = subscribeParse.substr(subscribeParse.find_first_of('\n', 0) + 1);
+
+#ifdef _DEBUG
+	cout << "dataReceiverThreadSetup(): Got reply:"
+		<< endl
+		<< message
+		<< endl;
+#endif //_DEBUG
 
 	// TODO: Should this be in a try catch? What to do if fails?
 	try
@@ -168,7 +183,7 @@ DataReceiverManager::dataReceiverThread(void)
 	vector<string> topics;
 
 	dataReceiverThreadSetup(socket, ep);
-
+	cout << "Done dataReceiverThreadSetup()" << endl;
 
 	for (;;)
 	{
@@ -198,6 +213,13 @@ DataReceiverManager::dataReceiverThread(void)
 
 		message = receiveParse.substr(0, receiveParse.find_first_of('\n', 0));
 		receiveParse = receiveParse.substr(receiveParse.find_first_of('\n', 0) + 1);
+
+#ifdef _DEBUG
+		cout << "dataReceiverThread(): Got reply:"
+		<< endl
+		<< message
+		<< endl;
+#endif //_DEBUG
 
 		try
 		{
