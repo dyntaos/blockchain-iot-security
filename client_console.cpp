@@ -253,7 +253,32 @@ main(int argc, char *argv[])
 	{
 		// If no flags are provided, read data from stdin and push to blockchain and exit
 		// TODO
+		char inBuffer[IPC_BUFFER_LENGTH];
+		string data;
+		uint32_t myDevice;
 
+		try
+		{
+			myDevice = sec->get_my_device_id();
+		}
+		catch (...)
+		{
+			myDevice = 0;
+		}
+
+		if (myDevice == 0)
+		{
+			cerr << "No device ID is assigned to address "
+				<< sec->getClientAddress()
+				<< endl;
+			exit(EXIT_FAILURE);
+		}
+
+		while (cin.read(inBuffer, sizeof(inBuffer)))
+		{
+			data.append(inBuffer, cin.gcount());
+		}
+		sec->encryptAndPushData(data);
 	}
 	else
 	{
