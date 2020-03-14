@@ -64,6 +64,10 @@ class BlockchainSecConsole
 	static void cmd_update_local_keys(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_update_public_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_update_sign_key(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_get_client_address(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_get_contract_address(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_gen_enc_keys(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
+	static void cmd_gen_sign_keys(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 	static void cmd_help(std::vector<std::string>& cmds, BlockchainSecLib& blockchainSec);
 
 

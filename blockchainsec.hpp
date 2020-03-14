@@ -90,6 +90,9 @@ class BlockchainSecLib : public eth_interface::EthInterface
 	std::string getDataAndDecrypt(uint32_t const deviceID);
 	std::vector<uint32_t> getReceivedDevices(uint32_t deviceID);
 
+	std::pair<std::string, std::string> generateEncryptionKeys(void);
+	std::pair<std::string, std::string> generateSignatureKeys(void);
+
 	private:
 	uint32_t localDeviceID;
 

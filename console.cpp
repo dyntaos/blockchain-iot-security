@@ -62,6 +62,10 @@ BlockchainSecConsole::BlockchainSecConsole(void)
 		("update_local_keys", cmd_update_local_keys)
 		("update_public_key", cmd_update_public_key)
 		("update_sign_key", cmd_update_sign_key)
+		("get_client_address", cmd_get_client_address)
+		("get_contract_address", cmd_get_contract_address)
+		("gen_enc_keys", cmd_gen_enc_keys)
+		("gen_sign_keys", cmd_gen_sign_keys)
 		("help", cmd_help);
 }
 
@@ -1586,6 +1590,74 @@ BlockchainSecConsole::cmd_update_sign_key(vector<string>& cmds, BlockchainSecLib
 
 
 void
+BlockchainSecConsole::cmd_get_contract_address(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 1)
+	{
+		cout << "Usage: get_contract_address" << endl
+			 << endl;
+		return;
+	}
+
+	cout << blockchainSec.getContractAddress() << endl;
+}
+
+
+
+void
+BlockchainSecConsole::cmd_get_client_address(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 1)
+	{
+		cout << "Usage: get_client_address" << endl
+			 << endl;
+		return;
+	}
+
+	cout << blockchainSec.getClientAddress() << endl;
+}
+
+
+
+void
+BlockchainSecConsole::cmd_gen_enc_keys(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 1)
+	{
+		cout << "Usage: gen_enc_keys" << endl
+			 << endl;
+		return;
+	}
+
+	auto keys = blockchainSec.generateEncryptionKeys();
+
+	cout << " Public Encryption Key: " << keys.first << endl
+		 << "Private Encryption Key: " << keys.second << endl
+		 << endl;
+}
+
+
+
+void
+BlockchainSecConsole::cmd_gen_sign_keys(vector<string>& cmds, BlockchainSecLib& blockchainSec)
+{
+	if (cmds.size() != 1)
+	{
+		cout << "Usage: gen_sign_keys" << endl
+			 << endl;
+		return;
+	}
+
+	auto keys = blockchainSec.generateSignatureKeys();
+
+	cout << " Public Signature Key: " << keys.first << endl
+		 << "Private Signature Key: " << keys.second << endl
+		 << endl;
+}
+
+
+
+void
 BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchainSec)
 {
 	(void)cmds;
@@ -1628,6 +1700,10 @@ BlockchainSecConsole::cmd_help(vector<string>& cmds, BlockchainSecLib& blockchai
 			"\tupdate_local_keys\n"
 			"\tupdate_public_key\n"
 			"\tupdate_sign_key\n"
+			"\tget_client_address\n"
+			"\tget_contract_address\n"
+			"\tgen_enc_keys\n"
+			"\tgen_sign_keys\n"
 		 << endl
 		 << endl;
 }

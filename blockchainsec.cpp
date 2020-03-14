@@ -844,7 +844,7 @@ BlockchainSecLib::deauthorize_admin(string const& adminAddress)
 
 
 bool
-BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature keys
+BlockchainSecLib::updateLocalKeys(void)
 {
 	unsigned char pk[crypto_kx_PUBLICKEYBYTES + 1],
 		sk[crypto_kx_SECRETKEYBYTES + 1];
@@ -867,7 +867,6 @@ BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature k
 	skHex = hexStr(sk, crypto_kx_SECRETKEYBYTES);
 	signPublicKeyHex = hexStr(signPublicKey, crypto_sign_PUBLICKEYBYTES);
 	signPrivateKeyHex = hexStr(signPrivateKey, crypto_sign_SECRETKEYBYTES);
-
 
 #ifdef _DEBUG
 	cout << "updateLocalKeys(): public key = " << pkHex << endl;
@@ -899,6 +898,7 @@ BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature k
 
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 	}
+
 #ifdef _DEBUG
 	else
 	{
@@ -926,6 +926,7 @@ BlockchainSecLib::updateLocalKeys(void) // TODO: Generate and update signature k
 
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 	}
+
 #ifdef _DEBUG
 	else
 	{
@@ -1058,6 +1059,38 @@ BlockchainSecLib::getReceivedDevices(uint32_t deviceID) // TODO: Devise solution
 	}
 
 	return result;
+}
+
+
+
+pair<string, string>
+BlockchainSecLib::generateEncryptionKeys(void)
+{
+	unsigned char publicKey[crypto_kx_PUBLICKEYBYTES + 1];
+	unsigned char privateKey[crypto_kx_SECRETKEYBYTES + 1];
+
+	crypto_kx_keypair(publicKey, privateKey);
+
+	return pair<string, string>(
+			hexStr(publicKey, crypto_kx_PUBLICKEYBYTES),
+			hexStr(privateKey, crypto_kx_SECRETKEYBYTES)
+	);
+}
+
+
+
+pair<string, string>
+BlockchainSecLib::generateSignatureKeys(void)
+{
+	unsigned char signPublicKey[crypto_sign_PUBLICKEYBYTES + 1];
+	unsigned char signPrivateKey[crypto_sign_SECRETKEYBYTES + 1];
+
+	crypto_sign_keypair(signPublicKey, signPrivateKey);
+
+	return pair<string, string>(
+			hexStr(signPublicKey, crypto_sign_PUBLICKEYBYTES),
+			hexStr(signPrivateKey, crypto_sign_SECRETKEYBYTES)
+	);
 }
 
 
