@@ -13,6 +13,13 @@ ARDUINO_LIBS  = SPI Adafruit_ZeroDMA BlockchainSecRadioHead
 AVRDUDE      = /usr/bin/avrdude
 AVRDUDE_CONF = /etc/avrdude.conf
 CPPFLAGS += -fno-fat-lto-objects
+
+CFLAGS = -Os
+
+#-Wl,-s
+LDFLAGS=-Wl,--gc-sections -Wl,--print-gc-sections
+
+#LDFLAGS = --gc-sections --print-gc-sections
 #CPPFLAGS += -ffat-lto-objects -fuse-linker-plugin
 #CORE_OBJS += --use-linker-plugin --plugin /home/kale/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/liblto_plugin.so
 CPPFLAGS += -I ../../RadioHead \
