@@ -116,10 +116,11 @@ loadConfig(void)
 	vector<char> byteVector;
 	string temp;
 
-	cfg.setOptions(Config::OptionFsync
-		| Config::OptionSemicolonSeparators
-		| Config::OptionColonAssignmentForGroups
-		| Config::OptionOpenBraceOnSeparateLine);
+	cfg.setOptions(
+		  libconfig::Config::OptionFsync
+		| libconfig::Config::OptionSemicolonSeparators
+		| libconfig::Config::OptionColonAssignmentForGroups
+		| libconfig::Config::OptionOpenBraceOnSeparateLine);
 
 	cout << "Reading config file..." << endl;
 
