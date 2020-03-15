@@ -136,7 +136,7 @@ setup(void)
 #ifdef SERIAL_ON
 	Serial.begin(115200);
 	while (!Serial)
-	{ // TODO: Change to boot without Serial
+	{
 		delay(50);
 	}
 #endif
@@ -429,8 +429,8 @@ sendData(char* data, uint8_t dataLen)
 {
 	struct packet p;
 
-	//Currently, only a max of 154 bytes can be sent
-	if (dataLen > 154)
+	//Currently, only a max of 156 bytes can be sent
+	if (dataLen > 156)
 		return false;
 
 

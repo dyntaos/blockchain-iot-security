@@ -56,9 +56,20 @@ debug_flag:
 	$(eval DEBUG = -D_DEBUG)
 
 clean:
-	rm -rf ./build ./client
+	rm -rf ./build ./client ./lora_client
 
-lora: _lora mkdirs $(OBJ)/lora_trx.o $(OBJ)/RasPi.o $(OBJ)/RH_RF95.o $(OBJ)/RHDatagram.o $(OBJ)/RHHardwareSPI.o $(OBJ)/RHSPIDriver.o $(OBJ)/RHGenericDriver.o $(OBJ)/RHGenericSPI.o all
+lora: _lora \
+		mkdirs \
+		$(OBJ)/lora_trx.o \
+		$(OBJ)/RasPi.o \
+		$(OBJ)/RH_RF95.o \
+		$(OBJ)/RHDatagram.o \
+		$(OBJ)/RHHardwareSPI.o \
+		$(OBJ)/RHSPIDriver.o \
+		$(OBJ)/RHGenericDriver.o \
+		$(OBJ)/RHGenericSPI.o \
+		$(OBJ)/lora_client \
+		all
 
 _lora:
 	$(eval LINK_LORA=-lbcm2835 -lwiringPi )
@@ -71,6 +82,7 @@ _lora:
 					$(OBJ)/RHGenericDriver.o \
 					$(OBJ)/RHGenericSPI.o )
 	$(eval LORA_GATEWAY=-DLORA_GATEWAY )
+
 
 
 ### RadioHead Library ###
@@ -98,7 +110,7 @@ $(OBJ)/RHGenericSPI.o: $(RADIOHEADBASE)/RHGenericSPI.cpp
 
 
 
-### Static Library ###   #TODO: Can I remove -fPIC?
+### Static Library ###
 
 $(OBJ)/eth_interface.o: eth_interface.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c $(DEBUG) -o $@ $(INCLUDE) $<
@@ -147,6 +159,27 @@ $(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
 							$(OBJ)/base64.o
 	ar rcs $@ $(LORA_OBJ) $^
 
+
+
+### LoRa Client Binary ###
+
+$(OBJ)/lora_client.o: lora_client.cpp
+	$(CROSSCOMPILE)$(CC) \
+		$(CFLAGS) \
+		$(RADIOHEADCFLAGS) \
+		-Wall -Wextra --pedantic -g -c \
+		-o $@ \
+		$(INCLUDE) \
+		$(RADIOHEADINC) \
+		$<
+
+$(BIN)/lora_client: $(OBJ)/lora_client.o
+	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
+		$(OBJ)/client.o \
+		-L $(LIB) \
+		-lconfig++ -lsodium $(LINK_LORA)
+	cp ./*.conf $(BIN)/
+	ln -fs $@ ./lora_client
 
 
 
