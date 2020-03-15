@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <array>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -9,6 +10,8 @@
 #include <libconfig.h++>
 #include <cpp-base64/base64.h>
 #include <misc.hpp>
+#include <sodium.h>
+#include <lora_client.hpp>
 
 
 using namespace std;
@@ -17,9 +20,9 @@ using namespace std;
 
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
-int16_t packetnum = 0; // packet counter, we increment per transmission
-int8_t flags = 255;
-uint8_t fragment = 0;
+int16_t packetnum = 0U;
+int8_t flags = 255U;
+uint8_t fragment = 0U;
 unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len;
@@ -88,11 +91,11 @@ setup(void)
 		rf95.setPromiscuous(true);
 		rf95.setModeRx();
 
-		rf95.setThisAddress(blockchainSec->get_my_device_id());
-		rf95.setHeaderFrom(blockchainSec->get_my_device_id());
+		// TODO URGENT
+		//rf95.setThisAddress(blockchainSec->get_my_device_id());
+		//rf95.setHeaderFrom(blockchainSec->get_my_device_id());
 
 		cout << msg << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
-		hardwareInitialized = true;
 		return true;
 	}
 
