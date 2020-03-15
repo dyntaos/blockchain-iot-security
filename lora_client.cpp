@@ -99,7 +99,7 @@ setup(void)
 		rf95.setModeRx();
 
 		rf95.setThisAddress(loraDeviceId);
-		rf95.setHeaderFrom(
+		rf95.setHeaderFrom(loraDeviceId);
 
 		cout << msg << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
 		return true;
@@ -178,7 +178,7 @@ loadConfig(void)
 			<< " characters and not include \"0x\" as a prefix!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	byteVector = hexToBytes(temp)
+	byteVector = hexToBytes(temp);
 	memcpy(publicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
 
 
@@ -200,7 +200,7 @@ loadConfig(void)
 			<< " characters and not include \"0x\" as a prefix!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	byteVector = hexToBytes(temp)
+	byteVector = hexToBytes(temp);
 	memcpy(privateKey, byteVector.data(), crypto_kx_SECRETKEYBYTES);
 
 
@@ -222,7 +222,7 @@ loadConfig(void)
 			<< " characters and not include \"0x\" as a prefix!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	byteVector = hexToBytes(temp)
+	byteVector = hexToBytes(temp);
 	memcpy(signPublicKey, byteVector.data(), crypto_sign_PUBLICKEYBYTES);
 
 
@@ -244,7 +244,7 @@ loadConfig(void)
 			<< " characters and not include \"0x\" as a prefix!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	byteVector = hexToBytes(temp)
+	byteVector = hexToBytes(temp);
 	memcpy(signPrivateKey, byteVector.data(), crypto_sign_SECRETKEYBYTES);
 
 
@@ -266,7 +266,7 @@ loadConfig(void)
 			<< " characters and not include \"0x\" as a prefix!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	byteVector = hexToBytes(temp)
+	byteVector = hexToBytes(temp);
 	memcpy(dataReceiverPublicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
 
 	cout << "Configuration file successfully loaded" << endl;
@@ -559,8 +559,6 @@ generateSharedKeys(void)
 #endif
 	return true;
 }
-
-
 
 
 
