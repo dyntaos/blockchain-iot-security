@@ -128,12 +128,12 @@ loadConfig(void)
 	{
 		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
 	}
-	catch (const FileIOException& e)
+	catch (const libconfig::FileIOException& e)
 	{
 		cerr << "IO error reading config file!" << endl;
 		exit(EXIT_FAILURE);
 	}
-	catch (const ParseException& e)
+	catch (const libconfig::ParseException& e)
 	{
 		cerr << "Config file error "
 			 << e.getFile()
