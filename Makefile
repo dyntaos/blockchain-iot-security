@@ -174,9 +174,10 @@ $(OBJ)/lora_client.o: lora_client.cpp
 		$(RADIOHEADINC) \
 		$<
 
-$(BIN)/lora_client: $(OBJ)/lora_client.o
+$(BIN)/lora_client: $(OBJ)/lora_client.o $(OBJ)/misc.o
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
 		$(OBJ)/lora_client.o \
+		$(OBJ)/misc.o \
 		$(RH_OBJ) \
 		-L $(LIB) \
 		-lconfig++ -lsodium $(LINK_LORA)
