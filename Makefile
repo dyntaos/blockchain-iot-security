@@ -68,13 +68,13 @@ lora: _lora \
 		$(OBJ)/RHSPIDriver.o \
 		$(OBJ)/RHGenericDriver.o \
 		$(OBJ)/RHGenericSPI.o \
-		$(OBJ)/lora_client \
+		$(BIN)/lora_client \
 		all
 
 _lora:
 	$(eval LINK_LORA=-lbcm2835 -lwiringPi )
-	$(eval LORA_OBJ=$(OBJ)/lora_trx.o \
-					$(OBJ)/RasPi.o \
+	$(eval LORA_TRX_OBJ=$(OBJ)/lora_trx.o )
+	$(eval RH_OBJ=$(OBJ)/RasPi.o \
 					$(OBJ)/RH_RF95.o \
 					$(OBJ)/RHDatagram.o \
 					$(OBJ)/RHHardwareSPI.o \
@@ -148,7 +148,8 @@ $(OBJ)/misc.o: misc.cpp
 $(OBJ)/base64.o: cpp-base64/base64.cpp
 	$(CROSSCOMPILE)$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $(INCLUDE) $<
 
-$(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
+$(LIB)/libblockchainsec.a:	$(LORA_TRX_OBJ) \
+							$(RH_OBJ) \
 							$(OBJ)/eth_interface.o \
 							$(OBJ)/blockchainsec.o \
 							$(OBJ)/data_receiver.o \
@@ -157,7 +158,7 @@ $(LIB)/libblockchainsec.a:	$(LORA_OBJ) \
 							$(OBJ)/ethabi.o \
 							$(OBJ)/misc.o \
 							$(OBJ)/base64.o
-	ar rcs $@ $(LORA_OBJ) $^
+	ar rcs $@ $(LORA_TRX_OBJ) $(RH_OBJ) $^
 
 
 
@@ -175,7 +176,8 @@ $(OBJ)/lora_client.o: lora_client.cpp
 
 $(BIN)/lora_client: $(OBJ)/lora_client.o
 	$(CROSSCOMPILE)$(CC) $(CPPFLAGS) -o $@ \
-		$(OBJ)/client.o \
+		$(OBJ)/lora_client.o \
+		$(RH_OBJ) \
 		-L $(LIB) \
 		-lconfig++ -lsodium $(LINK_LORA)
 	cp ./*.conf $(BIN)/

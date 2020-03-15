@@ -6,6 +6,7 @@ client
 client_data_receiver
 client_blockchain_test
 client_console
+lora_client
 embedded/feather-m0_rf9x/libsodium_include
 embedded/feather-m0_rf9x/build-adafruit_feather_m0
 embedded/feather-m0_rf9x/screenlog.txt
