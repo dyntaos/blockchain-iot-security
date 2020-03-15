@@ -33,4 +33,14 @@
 
 //#define VERBOSE
 
+
+void encryptData(struct packet_data *pd, const char* data, uint8_t dataLen);
+void signPacket(struct packet *p);
+void transmitData(struct packet *p);
+void processReply(struct packet *p);
+bool sendData(const char *data, uint8_t dataLen);
+void generateKeys(void);
+bool generateSharedKeys(void);
+
+
 #endif //__LORA_CLIENT_HPP

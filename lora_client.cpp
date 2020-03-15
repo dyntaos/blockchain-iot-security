@@ -11,17 +11,19 @@
 #include <cpp-base64/base64.h>
 #include <misc.hpp>
 #include <sodium.h>
+#include <eth_interface_except.hpp>
 #include <lora_client.hpp>
 
 
 using namespace std;
+using namespace eth_interface;
 
 
 
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
-int16_t packetnum = 0U;
-int8_t flags = 255U;
+uint16_t packetnum = 0U;
+uint8_t flags = 255U;
 uint8_t fragment = 0U;
 unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -170,7 +172,7 @@ sendSensorData(void)
 
 
 void
-encryptData(struct packet_data* pd, char* data, uint8_t dataLen)
+encryptData(struct packet_data* pd, const char* data, uint8_t dataLen)
 {
 	crypto_stream_xchacha20_xor( // TODO: Check return value?
 		pd->data,
@@ -290,6 +292,7 @@ transmitData(struct packet* p)
 void
 processReply(struct packet* p)
 {
+	(void) p;
 #ifdef VERBOSE
 	Serial.println("processReply()");
 #endif
@@ -299,7 +302,7 @@ processReply(struct packet* p)
 
 
 bool
-sendData(char* data, uint8_t dataLen)
+sendData(const char* data, uint8_t dataLen)
 {
 	struct packet p;
 
@@ -316,7 +319,7 @@ sendData(char* data, uint8_t dataLen)
 	// TODO: Magic number
 	p.len = 13 + dataLen + sizeof(p.payload.data.crypto_nonce) + sizeof(p.payload.data.signature); // TODO: This is only valid for PACKET_TYPE_DATA_FIRST
 
-	customRandBytes(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
+	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 	encryptData(&p.payload.data, data, dataLen);
 	signPacket(&p);
 	transmitData(&p);
@@ -343,7 +346,7 @@ generateKeys(void)
 #endif
 	}
 
-	customRandBytes(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
+	randombytes_buf(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
 
 #ifdef VERBOSE
 	Serial.print("dataReceiver Key: ");
@@ -404,7 +407,7 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (argc == 2 &* strcmp("-s", argv[1]) != 0)
+	if (argc == 2 && strcmp("-s", argv[1]) != 0)
 	{
 		cerr << "Unknown flag: " << argv[1]
 			 << endl;
@@ -415,7 +418,7 @@ main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (argc == 2 &* strcmp("-s", argv[1]) != 0)
+	if (argc == 2 && strcmp("-s", argv[1]) != 0)
 	{
 		for (;;)
 		{

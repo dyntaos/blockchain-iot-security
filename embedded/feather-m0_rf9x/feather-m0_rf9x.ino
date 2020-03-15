@@ -16,8 +16,8 @@
 
 
 
-int16_t packetnum = 0; // packet counter, we increment per transmission
-int8_t flags = 255;
+uint16_t packetnum = 0; // packet counter, we increment per transmission
+uint8_t flags = 255;
 uint8_t fragment = 0;
 unsigned long sendtime, delta;
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
