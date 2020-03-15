@@ -4,7 +4,7 @@
 #include <thread>
 #include <mutex>
 
-#include "json/include/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include <sodium.h>
 
 #include <eth_interface_except.hpp>

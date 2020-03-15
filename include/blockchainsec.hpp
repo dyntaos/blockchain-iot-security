@@ -1,7 +1,6 @@
 #ifndef __BLOCKCHAINSEC_HPP
 #define __BLOCKCHAINSEC_HPP
 
-#include "json/include/nlohmann/json.hpp"
 #include <libconfig.h++>
 #include <mutex>
 #include <sodium.h>

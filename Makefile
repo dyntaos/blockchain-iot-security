@@ -22,7 +22,13 @@ WIRINGPIINC = ./WiringPi/wiringPi
 LIBCONFIGINC = ./libconfig/lib
 SODIUMINC = ./libsodium/src/libsodium/include
 
-INCLUDE = -I . -I $(CXXOPTSINC) -I $(JSONINC) -I $(WIRINGPIINC) -I $(LIBCONFIGINC) -I $(SODIUMINC)
+INCLUDE = -I . \
+			-I ./include \
+			-I $(CXXOPTSINC) \
+			-I $(JSONINC) \
+			-I $(WIRINGPIINC) \
+			-I $(LIBCONFIGINC) \
+			-I $(SODIUMINC)
 ARCH = $(shell uname -s)$(shell uname -m)
 
 BUILD = ./build
