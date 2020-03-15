@@ -6,10 +6,6 @@ client
 client_data_receiver
 client_blockchain_test
 client_console
-embedded/arduino_rf9x/build-adafruit_feather_m0
-embedded/arduino_rf9x/screenlog.txt
 embedded/feather-m0_rf9x/libsodium_include
-embedded/avr-2560_rf9x/libsodium_include
-scripts/Arduino-Plus-master
-scripts/avr-2560
-scripts/avr2560.a
+embedded/feather-m0_rf9x/build-adafruit_feather_m0
+embedded/feather-m0_rf9x/screenlog.txt

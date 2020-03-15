@@ -4,7 +4,8 @@
 #include <SPI.h>
 #include <RH_RF95.h>
 
-#define RFM95_CS 8
+#define BATT_VOLTAGE_PIN A7
+#define RFM95_CS  8
 #define RFM95_RST 4
 #define RFM95_INT 3
 
