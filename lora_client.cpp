@@ -22,6 +22,11 @@ using namespace eth_interface;
 
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
 
+libconfig::Config cfg;
+libconfig::Setting* cfgRoot;
+
+uint32_t loraDeviceId;
+
 uint16_t packetnum = 0U;
 uint8_t flags = 255U;
 uint8_t fragment = 0U;
@@ -93,15 +98,178 @@ setup(void)
 		rf95.setPromiscuous(true);
 		rf95.setModeRx();
 
-		// TODO URGENT
-		//rf95.setThisAddress(blockchainSec->get_my_device_id());
-		//rf95.setHeaderFrom(blockchainSec->get_my_device_id());
+		rf95.setThisAddress(loraDeviceId);
+		rf95.setHeaderFrom(
 
 		cout << msg << " Radio Initialized @ " << RF_FREQUENCY << "MHz" << endl;
 		return true;
 	}
 
 	return false;
+}
+
+
+
+void
+loadConfig(void)
+{
+	vector<char> byteVector;
+	string temp;
+
+	cfg.setOptions(Config::OptionFsync
+		| Config::OptionSemicolonSeparators
+		| Config::OptionColonAssignmentForGroups
+		| Config::OptionOpenBraceOnSeparateLine);
+
+	cout << "Reading config file..." << endl;
+
+	try
+	{
+		cfg.readFile(BLOCKCHAINSEC_CONFIG_F);
+	}
+	catch (const FileIOException& e)
+	{
+		cerr << "IO error reading config file!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	catch (const ParseException& e)
+	{
+		cerr << "Config file error "
+			 << e.getFile()
+			 << ":"
+			 << e.getLine()
+			 << " - "
+			 << e.getError()
+			 << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	cfgRoot = &cfg.getRoot();
+
+	if (!cfg.exists("loraDeviceId"))
+	{
+		cerr << "Configuration file does not contain 'loraDeviceId'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("loraDeviceId", temp);
+	if (!isInt(temp))
+	{
+		cerr << "Configuration file contains an error for 'loraDeviceId': Must be an unsigned integer!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	loraDeviceId = strtoul(temp.c_str(), nullptr, 10);
+
+
+	if (!cfg.exists("publicKey"))
+	{
+		cerr << "Configuration file does not contain 'publicKey'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("publicKey", temp);
+	if (!isHex(temp))
+	{
+		cerr << "Configuration file contains an error for 'publicKey': Value is not valid hexidecimal!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
+	{
+		cerr << "Configuration file contains an error for 'publicKey': Length must be "
+			<< crypto_kx_PUBLICKEYBYTES * 2
+			<< " characters and not include \"0x\" as a prefix!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	byteVector = hexToBytes(temp)
+	memcpy(publicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+
+
+	if (!cfg.exists("privateKey"))
+	{
+		cerr << "Configuration file does not contain 'privateKey'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("privateKey", temp);
+	if (!isHex(temp))
+	{
+		cerr << "Configuration file contains an error for 'privateKey': Value is not valid hexidecimal!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (temp.length() != crypto_kx_SECRETKEYBYTES * 2)
+	{
+		cerr << "Configuration file contains an error for 'privateKey': Length must be "
+			<< crypto_kx_SECRETKEYBYTES * 2
+			<< " characters and not include \"0x\" as a prefix!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	byteVector = hexToBytes(temp)
+	memcpy(privateKey, byteVector.data(), crypto_kx_SECRETKEYBYTES);
+
+
+	if (!cfg.exists("signPublicKey"))
+	{
+		cerr << "Configuration file does not contain 'signPublicKey'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("signPublicKey", temp);
+	if (!isHex(temp))
+	{
+		cerr << "Configuration file contains an error for 'signPublicKey': Value is not valid hexidecimal!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (temp.length() != crypto_sign_PUBLICKEYBYTES * 2)
+	{
+		cerr << "Configuration file contains an error for 'signPublicKey': Length must be "
+			<< crypto_sign_PUBLICKEYBYTES * 2
+			<< " characters and not include \"0x\" as a prefix!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	byteVector = hexToBytes(temp)
+	memcpy(signPublicKey, byteVector.data(), crypto_sign_PUBLICKEYBYTES);
+
+
+	if (!cfg.exists("signPrivateKey"))
+	{
+		cerr << "Configuration file does not contain 'signPrivateKey'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("signPrivateKey", temp);
+	if (!isHex(temp))
+	{
+		cerr << "Configuration file contains an error for 'signPrivateKey': Value is not valid hexidecimal!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (temp.length() != crypto_sign_SECRETKEYBYTES * 2)
+	{
+		cerr << "Configuration file contains an error for 'signPrivateKey': Length must be "
+			<< crypto_sign_SECRETKEYBYTES * 2
+			<< " characters and not include \"0x\" as a prefix!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	byteVector = hexToBytes(temp)
+	memcpy(signPrivateKey, byteVector.data(), crypto_sign_SECRETKEYBYTES);
+
+
+	if (!cfg.exists("dataReceiverPublicKey"))
+	{
+		cerr << "Configuration file does not contain 'dataReceiverPublicKey'!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	cfg.lookupValue("dataReceiverPublicKey", temp);
+	if (!isHex(temp))
+	{
+		cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Value is not valid hexidecimal!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
+	{
+		cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Length must be "
+			<< crypto_kx_PUBLICKEYBYTES * 2
+			<< " characters and not include \"0x\" as a prefix!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	byteVector = hexToBytes(temp)
+	memcpy(dataReceiverPublicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
+
+	cout << "Configuration file successfully loaded" << endl;
 }
 
 
@@ -412,6 +580,8 @@ main(int argc, char *argv[])
 		cerr << "Unknown flag: " << argv[1]
 			 << endl;
 	}
+
+	loadConfig();
 
 	if (!setup())
 	{
