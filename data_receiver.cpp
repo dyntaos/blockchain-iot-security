@@ -183,7 +183,6 @@ DataReceiverManager::dataReceiverThread(void)
 	vector<string> topics;
 
 	dataReceiverThreadSetup(socket, ep);
-	cout << "Done dataReceiverThreadSetup()" << endl;
 
 	for (;;)
 	{

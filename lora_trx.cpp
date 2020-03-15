@@ -370,13 +370,21 @@ void
 LoraTrx::processPacket(struct packet* p)
 {
 	uint8_t maskedFlags;
+	int dataLen;
 
 	if (p == NULL)
 	{
 		throw InvalidArgumentException("Packet struct is a null pointer");
 	}
 
-	string dataStr = string((char*)p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); // TODO: Magic number
+	dataLen = p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature);
+	if (dataLen < 0)
+	{
+		cerr << "Invalid packet size - Discarding packet..."
+			<< endl;
+		return;
+	}
+	string dataStr = string((char*)p->payload.data.data, dataLen); // TODO: Magic number
 	string dataHexStr = hexStr((unsigned char*)p->payload.data.data, p->len - 13 - sizeof(p->payload.data.crypto_nonce) - sizeof(p->payload.data.signature)); //TODO: Magic num
 	string sigHexStr = hexStr((unsigned char*)p->payload.data.signature, crypto_sign_BYTES);
 	string nonceHexStr = hexStr((unsigned char*)p->payload.data.crypto_nonce, crypto_stream_xchacha20_NONCEBYTES);
