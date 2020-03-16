@@ -211,6 +211,7 @@ BlockchainSecConsole::cmd_is_admin(vector<string>& cmds, BlockchainSecLib& block
 	{
 		cerr << "Invalid argument provided" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -248,6 +249,7 @@ BlockchainSecConsole::cmd_is_authd(vector<string>& cmds, BlockchainSecLib& block
 	{
 		cerr << "Invalid argument provided" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -288,6 +290,7 @@ BlockchainSecConsole::cmd_is_device(vector<string>& cmds, BlockchainSecLib& bloc
 	{
 		cerr << "Invalid argument provided" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -328,6 +331,7 @@ BlockchainSecConsole::cmd_is_gateway(vector<string>& cmds, BlockchainSecLib& blo
 	{
 		cerr << "Invalid argument provided" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -369,6 +373,7 @@ BlockchainSecConsole::cmd_is_gateway_managed(vector<string>& cmds, BlockchainSec
 		cerr << "Invalid argument provided"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -395,6 +400,7 @@ BlockchainSecConsole::cmd_get_my_device_id(vector<string>& cmds, BlockchainSecLi
 			 << "\""
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -431,6 +437,7 @@ BlockchainSecConsole::cmd_get_data_receiver(vector<string>& cmds, BlockchainSecL
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -455,6 +462,7 @@ BlockchainSecConsole::cmd_get_default_data_receiver(vector<string>& cmds, Blockc
 		cerr << "Unable to retreive default data receiver"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -488,6 +496,7 @@ BlockchainSecConsole::cmd_get_key(vector<string>& cmds, BlockchainSecLib& blockc
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -521,6 +530,7 @@ BlockchainSecConsole::cmd_get_sign_key(vector<string>& cmds, BlockchainSecLib& b
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -571,6 +581,7 @@ BlockchainSecConsole::cmd_get_addr_type(vector<string>& cmds, BlockchainSecLib& 
 
 			default:
 				cerr << "Error retreiving address type";
+				return;
 				break;
 		}
 		cout << endl
@@ -583,6 +594,7 @@ BlockchainSecConsole::cmd_get_addr_type(vector<string>& cmds, BlockchainSecLib& 
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -616,6 +628,7 @@ BlockchainSecConsole::cmd_get_addr(vector<string>& cmds, BlockchainSecLib& block
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -649,6 +662,7 @@ BlockchainSecConsole::cmd_get_name(vector<string>& cmds, BlockchainSecLib& block
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -690,6 +704,7 @@ BlockchainSecConsole::cmd_get_data(vector<string>& cmds, BlockchainSecLib& block
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -725,6 +740,7 @@ BlockchainSecConsole::cmd_get_data_timestamp(vector<string>& cmds, BlockchainSec
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -760,6 +776,7 @@ BlockchainSecConsole::cmd_get_creation_timestamp(vector<string>& cmds, Blockchai
 			 << " does not exist"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -784,6 +801,7 @@ BlockchainSecConsole::cmd_get_num_admin(vector<string>& cmds, BlockchainSecLib& 
 		cerr << "Unable to retreive number of authorized administrators"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -808,6 +826,7 @@ BlockchainSecConsole::cmd_get_num_devices(vector<string>& cmds, BlockchainSecLib
 		cerr << "Unable to retreive number of authorized devices"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -832,6 +851,7 @@ BlockchainSecConsole::cmd_get_num_gateways(vector<string>& cmds, BlockchainSecLi
 		cerr << "Unable to retreive number of authorized gateways"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -862,6 +882,7 @@ BlockchainSecConsole::cmd_get_active_admins(vector<string>& cmds, BlockchainSecL
 		cerr << "Unable to retreive default data receiver"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -898,6 +919,7 @@ BlockchainSecConsole::cmd_get_authorized_devices(vector<string>& cmds, Blockchai
 		cerr << "Unable to retreive default data receiver"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -934,6 +956,7 @@ BlockchainSecConsole::cmd_get_authorized_gateways(vector<string>& cmds, Blockcha
 		cerr << "Unable to retreive default data receiver"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -982,6 +1005,7 @@ BlockchainSecConsole::cmd_add_device(vector<string>& cmds, BlockchainSecLib& blo
 	{
 		cerr << "Failed to add new device" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1015,6 +1039,7 @@ BlockchainSecConsole::cmd_add_gateway(vector<string>& cmds, BlockchainSecLib& bl
 	{
 		cerr << "Failed to add new gateway" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1052,6 +1077,7 @@ BlockchainSecConsole::cmd_remove_device(vector<string>& cmds, BlockchainSecLib& 
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1089,6 +1115,7 @@ BlockchainSecConsole::cmd_remove_gateway(vector<string>& cmds, BlockchainSecLib&
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1134,6 +1161,7 @@ BlockchainSecConsole::cmd_update_data_receiver(vector<string>& cmds, BlockchainS
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1172,6 +1200,7 @@ BlockchainSecConsole::cmd_set_default_data_receiver(vector<string>& cmds, Blockc
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1243,6 +1272,7 @@ BlockchainSecConsole::cmd_update_addr(vector<string>& cmds, BlockchainSecLib& bl
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1280,6 +1310,7 @@ BlockchainSecConsole::cmd_authorize_admin(vector<string>& cmds, BlockchainSecLib
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1317,6 +1348,7 @@ BlockchainSecConsole::cmd_deauthorize_admin(vector<string>& cmds, BlockchainSecL
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1351,6 +1383,7 @@ BlockchainSecConsole::cmd_encrypt_and_push_data(vector<string>& cmds, Blockchain
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1380,11 +1413,13 @@ BlockchainSecConsole::cmd_get_data_and_decrypt(vector<string>& cmds, BlockchainS
 		string d = blockchainSec.getDataAndDecrypt(strtoul(cmds[1].c_str(), nullptr, 10));
 		cout << "Data: \"" << d << "\"" << endl
 			 << endl;
+		return;
 	}
 	catch (EthException& e)
 	{
 		cerr << "Error completing command" << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1427,6 +1462,7 @@ BlockchainSecConsole::cmd_get_received_devices(vector<string>& cmds, BlockchainS
 		cerr << "Unable to retreive list of received devices"
 			 << endl
 			 << endl;
+		return;
 	}
 }
 
@@ -1455,6 +1491,7 @@ BlockchainSecConsole::cmd_update_local_keys(vector<string>& cmds, BlockchainSecL
 			cerr << "Failed to create new key pair!"
 				 << endl
 				 << endl;
+			return;
 		}
 	}
 	catch (EthException& e)
@@ -1514,6 +1551,7 @@ BlockchainSecConsole::cmd_update_public_key(vector<string>& cmds, BlockchainSecL
 				 << endl
 				 << endl;
 		}
+		return;
 	}
 	catch (EthException& e)
 	{
@@ -1573,6 +1611,7 @@ BlockchainSecConsole::cmd_update_sign_key(vector<string>& cmds, BlockchainSecLib
 				 << endl
 				 << endl;
 		}
+		return;
 	}
 	catch (EthException& e)
 	{

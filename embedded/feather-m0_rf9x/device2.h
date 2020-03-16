@@ -1,0 +1,15 @@
+#ifndef __DEVICE1_H
+#define __DEVICE1_H
+
+#define DATA_RECEIVER_PUBLIC_KEY     "2373b4ce20e158ce43811df6ce3a71028649ec21b3b9737a45f04b84985c3652"
+#define DATA_RECEIVER_SIGN_KEY       "e58ae89e63828740a57f1e9953145bc3cdbc6e4912c99a5ed97af65f6331e580"
+
+#define PUBLIC_KEY                   "260e11cb798ce0de682b3e7030a5da6ab2f34493ef0f5a6fe4107ac2c6a3de5c"
+#define PRIVATE_KEY                  "0ec5b15ddc6eb76cc23e333f1c47fabb7f4e99db09c55dc34b76b0ff4bdf0b54"
+
+#define SIGN_PUBLIC_KEY              "f5f5cd81ada2b5d5507f58556a6ca97a228f7594623cc24c905b91aa8d105211"
+#define SIGN_PRIVATE_KEY             "e7b50ea2484c8fdcfb465621d11a0f002cc2297787c1a1ec4666c7095e23d7c8f5f5cd81ada2b5d5507f58556a6ca97a228f7594623cc24c905b91aa8d105211"
+
+#define DEVICE_ID                    3
+
+#endif //__DEVICE1_H
