@@ -147,7 +147,7 @@ contract DeviceMgmt {
 	 * @dev
 	 */
 	modifier _authorizedDeviceOrGateway {
-		require(id_to_device[addr_to_id[msg.sender]].active || gateway_pool[msg.sender]);
+		require(id_to_device[addr_to_id[msg.sender]].active || gateway_pool[msg.sender] || admin_mapping[msg.sender].isAdmin);
 		_;
 	}
 
@@ -257,6 +257,7 @@ contract DeviceMgmt {
 	 * @return
 	 */
 	function get_my_device_id() external view returns(uint32) {
+		require(id_to_device[addr_to_id[msg.sender]].active);
 		return addr_to_id[msg.sender];
 	}
 
@@ -512,7 +513,7 @@ contract DeviceMgmt {
 	 * @param newPublicKey
 	 * @return
 	 */
-	function update_publickey(uint32 device_id, string calldata newPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
+	function update_publickey(uint32 device_id, string calldata newPublicKey) external _authorized _mutator(device_id) returns(bool) {
 		id_to_device[device_id].publicKey = newPublicKey;
 
 		emit Update_PublicKey(msg.sender, device_id, newPublicKey);
@@ -526,7 +527,7 @@ contract DeviceMgmt {
 	 * @param newSignPublicKey
 	 * @return
 	 */
-	function update_signkey(uint32 device_id, string calldata newSignPublicKey) external _authorizedDeviceOnly _mutator(device_id) returns(bool) {
+	function update_signkey(uint32 device_id, string calldata newSignPublicKey) external _authorized _mutator(device_id) returns(bool) {
 		id_to_device[device_id].signPublicKey = newSignPublicKey;
 
 		emit Update_SignKey(msg.sender, device_id, newSignPublicKey);
