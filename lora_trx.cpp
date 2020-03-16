@@ -292,7 +292,7 @@ LoraTrx::serverThread(queue<struct packet*>& rx_queue, queue<struct packet*>& tx
 
 
 void
-LoraTrx::asyncProcessPacket(struct packet *p)
+LoraTrx::asyncProcessPacket(LoraTrx& trx, struct packet *p)
 {
 	trx.processPacket(p);
 	delete p;
@@ -313,7 +313,7 @@ LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
 	while (!halt_server)
 	{
 		p = trx.readMessage();
-		async(this.asyncProcessPacket, p);
+		async(this.asyncProcessPacket, trx, p);
 	}
 }
 
