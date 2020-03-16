@@ -539,7 +539,7 @@ EthInterface::eth_createContract(string const& data)
 						 ",\"params\":[{"
 						 "\"from\":\"0x"
 		+ clientAddress + "\","
-						  //"\"gasPrice\":0,"
+						  "\"gasPrice\":\"0x0\","
 						  "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
 						  "\"data\":\"0x"
 		+ data + "\"}],"
