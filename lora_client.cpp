@@ -155,14 +155,19 @@ loadConfig(void)
 		cfgRoot->add("loraDeviceId", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("loraDeviceId", temp);
-	if (!isInt(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'loraDeviceId': Must be an unsigned integer!" << endl;
-		abort = true;
+		cfg.lookupValue("loraDeviceId", temp);
+		if (!isInt(temp))
+		{
+			cerr << "Configuration file contains an error for 'loraDeviceId': Must be an unsigned integer!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
+	{
 		loraDeviceId = strtoul(temp.c_str(), nullptr, 10);
+	}
 
 
 	if (!cfg.exists("publicKey"))
@@ -171,18 +176,21 @@ loadConfig(void)
 		cfgRoot->add("publicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("publicKey", temp);
-	if (!isHex(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'publicKey': Value is not valid hexidecimal!" << endl;
-		abort = true;
-	}
-	if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
-	{
-		cerr << "Configuration file contains an error for 'publicKey': Length must be "
-			<< crypto_kx_PUBLICKEYBYTES * 2
-			<< " characters and not include \"0x\" as a prefix!" << endl;
-		abort = true;
+		cfg.lookupValue("publicKey", temp);
+		if (!isHex(temp))
+		{
+			cerr << "Configuration file contains an error for 'publicKey': Value is not valid hexidecimal!" << endl;
+			abort = true;
+		}
+		if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
+		{
+			cerr << "Configuration file contains an error for 'publicKey': Length must be "
+				<< crypto_kx_PUBLICKEYBYTES * 2
+				<< " characters and not include \"0x\" as a prefix!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
 	{
@@ -197,18 +205,21 @@ loadConfig(void)
 		cfgRoot->add("privateKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("privateKey", temp);
-	if (!isHex(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'privateKey': Value is not valid hexidecimal!" << endl;
-		abort = true;
-	}
-	if (temp.length() != crypto_kx_SECRETKEYBYTES * 2)
-	{
-		cerr << "Configuration file contains an error for 'privateKey': Length must be "
-			<< crypto_kx_SECRETKEYBYTES * 2
-			<< " characters and not include \"0x\" as a prefix!" << endl;
-		abort = true;
+		cfg.lookupValue("privateKey", temp);
+		if (!isHex(temp))
+		{
+			cerr << "Configuration file contains an error for 'privateKey': Value is not valid hexidecimal!" << endl;
+			abort = true;
+		}
+		if (temp.length() != crypto_kx_SECRETKEYBYTES * 2)
+		{
+			cerr << "Configuration file contains an error for 'privateKey': Length must be "
+				<< crypto_kx_SECRETKEYBYTES * 2
+				<< " characters and not include \"0x\" as a prefix!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
 	{
@@ -223,18 +234,21 @@ loadConfig(void)
 		cfgRoot->add("signPublicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("signPublicKey", temp);
-	if (!isHex(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'signPublicKey': Value is not valid hexidecimal!" << endl;
-		abort = true;
-	}
-	if (temp.length() != crypto_sign_PUBLICKEYBYTES * 2)
-	{
-		cerr << "Configuration file contains an error for 'signPublicKey': Length must be "
-			<< crypto_sign_PUBLICKEYBYTES * 2
-			<< " characters and not include \"0x\" as a prefix!" << endl;
-		abort = true;
+		cfg.lookupValue("signPublicKey", temp);
+		if (!isHex(temp))
+		{
+			cerr << "Configuration file contains an error for 'signPublicKey': Value is not valid hexidecimal!" << endl;
+			abort = true;
+		}
+		if (temp.length() != crypto_sign_PUBLICKEYBYTES * 2)
+		{
+			cerr << "Configuration file contains an error for 'signPublicKey': Length must be "
+				<< crypto_sign_PUBLICKEYBYTES * 2
+				<< " characters and not include \"0x\" as a prefix!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
 	{
@@ -249,18 +263,21 @@ loadConfig(void)
 		cfgRoot->add("signPrivateKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("signPrivateKey", temp);
-	if (!isHex(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'signPrivateKey': Value is not valid hexidecimal!" << endl;
-		abort = true;
-	}
-	if (temp.length() != crypto_sign_SECRETKEYBYTES * 2)
-	{
-		cerr << "Configuration file contains an error for 'signPrivateKey': Length must be "
-			<< crypto_sign_SECRETKEYBYTES * 2
-			<< " characters and not include \"0x\" as a prefix!" << endl;
-		abort = true;
+		cfg.lookupValue("signPrivateKey", temp);
+		if (!isHex(temp))
+		{
+			cerr << "Configuration file contains an error for 'signPrivateKey': Value is not valid hexidecimal!" << endl;
+			abort = true;
+		}
+		if (temp.length() != crypto_sign_SECRETKEYBYTES * 2)
+		{
+			cerr << "Configuration file contains an error for 'signPrivateKey': Length must be "
+				<< crypto_sign_SECRETKEYBYTES * 2
+				<< " characters and not include \"0x\" as a prefix!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
 	{
@@ -275,18 +292,21 @@ loadConfig(void)
 		cfgRoot->add("dataReceiverPublicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
-	cfg.lookupValue("dataReceiverPublicKey", temp);
-	if (!isHex(temp))
+	else
 	{
-		cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Value is not valid hexidecimal!" << endl;
-		abort = true;
-	}
-	if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
-	{
-		cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Length must be "
-			<< crypto_kx_PUBLICKEYBYTES * 2
-			<< " characters and not include \"0x\" as a prefix!" << endl;
-		abort = true;
+		cfg.lookupValue("dataReceiverPublicKey", temp);
+		if (!isHex(temp))
+		{
+			cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Value is not valid hexidecimal!" << endl;
+			abort = true;
+		}
+		if (temp.length() != crypto_kx_PUBLICKEYBYTES * 2)
+		{
+			cerr << "Configuration file contains an error for 'dataReceiverPublicKey': Length must be "
+				<< crypto_kx_PUBLICKEYBYTES * 2
+				<< " characters and not include \"0x\" as a prefix!" << endl;
+			abort = true;
+		}
 	}
 	if (!abort)
 	{
