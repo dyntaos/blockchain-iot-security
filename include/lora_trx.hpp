@@ -53,6 +53,7 @@ class LoraTrx
 		bool& halt_server,
 		LoraTrx& trx);
 
+	void asyncProcessPacket(struct packet *p);
 	bool setup(void);
 
 	struct packet* readMessage(void);
