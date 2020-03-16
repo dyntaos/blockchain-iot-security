@@ -15,7 +15,7 @@
 #include <lora_client.hpp>
 
 
-//#define VERBOSE
+#define VERBOSE
 
 using namespace std;
 using namespace eth_interface;
@@ -401,7 +401,9 @@ sendSensorData(void)
 
 	for (;;)
 	{
+		cout << "Pre querySensor()" << endl;
 		data = querySensor();
+		cout << "Post querySensor()" << endl;
 		sendData(data.c_str(), data.length());
 
 		bcm2835_delay(DATA_SEND_INTERVAL);
@@ -484,8 +486,15 @@ transmitData(struct packet* p)
 	rf95.setHeaderFragment(p->fragment);
 
 	// rf95.send((uint8_t *) p->payload.bytes, 13 + p->len); // TODO: Magic numbers
-	rf95.send((uint8_t*)p->payload.bytes, p->len);
+	cout << "Pre rf95.send()" << endl;
+	if (!rf95.send((uint8_t*)p->payload.bytes, p->len))
+	{
+		cout << "CAD timeout occured" << endl;
+		return;
+	}
+	cout << "Post rf95.send()" << endl;
 	rf95.waitPacketSent();
+	cout << "Post rf95.waitPacketSent()" << endl;
 
 #ifdef VERBOSE
 	println("transmitData(): Packet Sent!");
@@ -561,6 +570,7 @@ sendData(const char* data, uint8_t dataLen)
 	randombytes_buf(p.payload.data.crypto_nonce, crypto_secretbox_NONCEBYTES);
 	encryptData(&p.payload.data, data, dataLen);
 	signPacket(&p);
+	cout << "Pre transmitData()" << endl;
 	transmitData(&p);
 
 	return true;
@@ -678,6 +688,7 @@ main(int argc, char *argv[])
 	{
 		for (;;)
 		{
+			cout << "calling sendSensorData()" << endl;
 			sendSensorData();
 		}
 	}

@@ -17,7 +17,7 @@
 
 #define DEVICE_ID                       2
 #define REPLY_TIMEOUT                   2000
-#define ACTIVITY_DETECTION_TIMEOUT_MS   3000
+#define ACTIVITY_DETECTION_TIMEOUT_MS   0
 #define DATA_SEND_INTERVAL              (5 * 1000)
 
 
