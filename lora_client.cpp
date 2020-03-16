@@ -15,6 +15,8 @@
 #include <lora_client.hpp>
 
 
+#define VERBOSE
+
 using namespace std;
 using namespace eth_interface;
 
@@ -87,7 +89,7 @@ setup(void)
 	}
 	else
 	{
-		rf95.setTxPower(14, false);
+		rf95.setTxPower(23, false);
 
 		// You can optionally require this module to wait until Channel Activity
 		// Detection shows no activity on the channel before transmitting by setting
@@ -95,8 +97,8 @@ setup(void)
 		//rf95.setCADTimeout(10000);
 
 		rf95.setFrequency(RF_FREQUENCY);
-		rf95.setPromiscuous(true);
-		rf95.setModeRx();
+		rf95.setPromiscuous(false);
+		rf95.setModeTx();
 
 		rf95.setThisAddress(loraDeviceId);
 		rf95.setHeaderFrom(loraDeviceId);
@@ -106,6 +108,22 @@ setup(void)
 	}
 
 	return false;
+}
+
+
+
+void
+print(const char *s)
+{
+	cout << s;
+}
+
+
+
+void
+println(const char *s)
+{
+	cout << s << endl;
 }
 
 
@@ -469,7 +487,7 @@ transmitData(struct packet* p)
 	rf95.waitPacketSent();
 
 #ifdef VERBOSE
-	Serial.println("transmitData(): Packet Sent!");
+	println("transmitData(): Packet Sent!");
 #endif
 
 	if (rf95.waitAvailableTimeout(REPLY_TIMEOUT))
@@ -478,7 +496,7 @@ transmitData(struct packet* p)
 		if (rf95.recv((uint8_t*)recvP.payload.bytes, &recvP.len))
 		{
 #ifdef VERBOSE
-			Serial.println("Received reply");
+			println("Received reply");
 #endif
 
 			recvP.from = rf95.headerFrom();
@@ -493,14 +511,14 @@ transmitData(struct packet* p)
 #ifdef VERBOSE
 		else
 		{
-			Serial.println("Receive failed");
+			println("Receive failed");
 		}
 #endif
 	}
 #ifdef VERBOSE
 	else
 	{
-		Serial.println("No reply received within timeout");
+		println("No reply received within timeout");
 	}
 #endif
 
@@ -514,7 +532,7 @@ processReply(struct packet* p)
 {
 	(void) p;
 #ifdef VERBOSE
-	Serial.println("processReply()");
+	println("processReply()");
 #endif
 	return;
 }
@@ -532,7 +550,7 @@ sendData(const char* data, uint8_t dataLen)
 
 
 	p.to = 0;
-	p.from = DEVICE_ID;
+	p.from = loraDeviceId;
 	p.flags = PACKET_TYPE_DATA_FIRST;
 	p.id = 0;
 	p.fragment = 0;
@@ -555,40 +573,41 @@ generateKeys(void)
 	if (crypto_kx_keypair(publicKey, privateKey) != 0)
 	{
 #ifdef VERBOSE
-		Serial.println("crypto_kx_keypair() Failed!");
+		println("crypto_kx_keypair() Failed!");
 #endif
 	}
 
 	if (crypto_sign_keypair(signPublicKey, signPrivateKey) != 0)
 	{
 #ifdef VERBOSE
-		Serial.println("crypto_sign_keypair() Failed!");
+		println("crypto_sign_keypair() Failed!");
 #endif
 	}
 
 	randombytes_buf(dataReceiverPublicKey, crypto_sign_PUBLICKEYBYTES);
-
+/*
 #ifdef VERBOSE
-	Serial.print("dataReceiver Key: ");
+	print("dataReceiver Key: ");
 	hexPrint(dataReceiverPublicKey, crypto_kx_PUBLICKEYBYTES);
-	Serial.println("");
+	println("");
 
-	Serial.print("      Public Key: ");
+	print("      Public Key: ");
 	hexPrint(publicKey, crypto_kx_PUBLICKEYBYTES);
-	Serial.println("");
+	println("");
 
-	Serial.print("     Private Key: ");
+	print("     Private Key: ");
 	hexPrint(privateKey, crypto_kx_SECRETKEYBYTES);
-	Serial.println("");
+	println("");
 
-	Serial.print(" Sign Public Key: ");
+	print(" Sign Public Key: ");
 	hexPrint(signPublicKey, crypto_sign_PUBLICKEYBYTES);
-	Serial.println("");
+	println("");
 
-	Serial.print("Sign Private Key: ");
+	print("Sign Private Key: ");
 	hexPrint(signPrivateKey, crypto_sign_SECRETKEYBYTES);
-	Serial.println("");
+	println("");
 #endif
+*/
 }
 
 
@@ -599,16 +618,18 @@ generateSharedKeys(void)
 	if (crypto_kx_client_session_keys(rxSharedKey, txSharedKey, publicKey, privateKey, dataReceiverPublicKey) != 0)
 	{
 #ifdef VERBOSE
-		Serial.println("generateSharedKeys() FAILED");
+		println("generateSharedKeys() FAILED");
 #endif
 		return false;
 	}
+/*
 #ifdef VERBOSE
-	Serial.print("txKey: ");
+	print("txKey: ");
 	hexPrint(txSharedKey, crypto_kx_SESSIONKEYBYTES);
-	Serial.print("\n\rrxKey: ");
+	print("\n\rrxKey: ");
 	hexPrint(rxSharedKey, crypto_kx_SESSIONKEYBYTES);
 #endif
+*/
 	return true;
 }
 
@@ -629,6 +650,19 @@ main(int argc, char *argv[])
 	{
 		cerr << "Unknown flag: " << argv[1]
 			 << endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (argc > 2)
+	{
+		cerr << "Usage: " << argv[0] << " [-s]"
+			<< endl
+			<< "If no flag is provided, input is read from STDIN"
+			<< endl
+			<< endl
+			<< "\t-s\tRead and submit sensor data until interrupted"
+			<< endl
+			<< endl;
+		exit(EXIT_FAILURE);
 	}
 
 	loadConfig();
@@ -638,7 +672,7 @@ main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (argc == 2 && strcmp("-s", argv[1]) != 0)
+	if (argc == 2 && strcmp("-s", argv[1]) == 0)
 	{
 		for (;;)
 		{
@@ -647,7 +681,7 @@ main(int argc, char *argv[])
 	}
 	else
 	{
-
+		// TODO
 	}
 
 	return EXIT_SUCCESS;
