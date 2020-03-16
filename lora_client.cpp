@@ -15,7 +15,7 @@
 #include <lora_client.hpp>
 
 
-#define VERBOSE
+//#define VERBOSE
 
 using namespace std;
 using namespace eth_interface;
@@ -94,7 +94,7 @@ setup(void)
 		// You can optionally require this module to wait until Channel Activity
 		// Detection shows no activity on the channel before transmitting by setting
 		// the CAD timeout to non-zero:
-		//rf95.setCADTimeout(10000);
+		rf95.setCADTimeout(ACTIVITY_DETECTION_TIMEOUT_MS);
 
 		rf95.setFrequency(RF_FREQUENCY);
 		rf95.setPromiscuous(false);
@@ -331,15 +331,16 @@ loadConfig(void)
 		byteVector = hexToBytes(temp);
 		memcpy(dataReceiverPublicKey, byteVector.data(), crypto_kx_PUBLICKEYBYTES);
 	}
-
-	if (abort)
+	else
 	{
 		cerr << "Config file did not contain all settings required..." << endl;
 		cfg.writeFile(BLOCKCHAINSEC_CONFIG_F);
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "Configuration file successfully loaded" << endl;
+	generateSharedKeys();
+	cout << "Configuration file successfully loaded"
+		<< endl << endl;
 }
 
 
@@ -622,14 +623,15 @@ generateSharedKeys(void)
 #endif
 		return false;
 	}
-/*
+
 #ifdef VERBOSE
-	print("txKey: ");
-	hexPrint(txSharedKey, crypto_kx_SESSIONKEYBYTES);
-	print("\n\rrxKey: ");
-	hexPrint(rxSharedKey, crypto_kx_SESSIONKEYBYTES);
+	cout << "publicKey: " << hexStr(publicKey, crypto_kx_SESSIONKEYBYTES) << endl;
+	cout << "privateKey: " << hexStr(privateKey, crypto_kx_SESSIONKEYBYTES) << endl;
+	cout << "dataReceiverPublicKey: " << hexStr(dataReceiverPublicKey, crypto_kx_SESSIONKEYBYTES) << endl;
+	cout << "txKey: " << hexStr(txSharedKey, crypto_kx_SESSIONKEYBYTES) << endl;
+	cout << "rxKey: " << hexStr(rxSharedKey, crypto_kx_SESSIONKEYBYTES) << endl;
 #endif
-*/
+
 	return true;
 }
 
