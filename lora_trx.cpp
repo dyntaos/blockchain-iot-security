@@ -313,7 +313,7 @@ LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
 	while (!halt_server)
 	{
 		p = trx.readMessage();
-		async(this.asyncProcessPacket, trx, p);
+		async(trx.asyncProcessPacket, trx, p);
 	}
 }
 
