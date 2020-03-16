@@ -157,7 +157,7 @@ $(LIB)/libblockchainsec.a:	$(LORA_TRX_OBJ) \
 							$(OBJ)/console.o \
 							$(OBJ)/ethabi.o \
 							$(OBJ)/misc.o \
-							$(OBJ)/base64.o \
+							$(OBJ)/base64.o
 	ar rcs $@ $(LORA_TRX_OBJ) $(RH_OBJ) $^
 
 
