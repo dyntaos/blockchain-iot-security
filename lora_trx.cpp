@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <future> // std::async
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -303,8 +304,10 @@ LoraTrx::forwarderThread(bool& halt_server, LoraTrx& trx)
 	while (!halt_server)
 	{
 		p = trx.readMessage();
-		trx.processPacket(p);
-		delete p;
+		async([&trx, p]{
+			trx.processPacket(p);
+			delete p;
+		});
 	}
 }
 

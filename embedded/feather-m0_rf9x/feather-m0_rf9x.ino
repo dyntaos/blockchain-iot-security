@@ -370,7 +370,13 @@ transmitData(struct packet* p)
 	rf95.setHeaderFragment(p->fragment);
 
 	// rf95.send((uint8_t *) p->payload.bytes, 13 + p->len); // TODO: Magic numbers
-	rf95.send((uint8_t*)p->payload.bytes, p->len);
+	if (!rf95.send((uint8_t*)p->payload.bytes, p->len))
+	{
+#ifdef SERIAL_ON
+		Serial.println("CAD timeout occured...");
+#endif
+		return;
+	}
 	rf95.waitPacketSent();
 
 #ifdef SERIAL_ON
