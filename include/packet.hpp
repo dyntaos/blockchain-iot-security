@@ -2,7 +2,6 @@
 #define __PACKET_HPP
 
 #include <cstdint>
-//#include <sodium.h>
 #include <RH_RF95.h>
 
 #define PACKET_TYPE_ACK 0
