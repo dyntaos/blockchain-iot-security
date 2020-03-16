@@ -180,7 +180,8 @@ setup(void)
 	// If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
 	// you can set transmitter powers from 5 to 23 dBm:
 	rf95.setTxPower(23, false);
-
+	rf95.setCADTimeout(ACTIVITY_DETECTION_TIMEOUT_MS);
+	rf95.setPromiscuous(false);
 	rf95.setThisAddress(DEVICE_ID);
 
 	randombytes_set_implementation(&randImplM0);
