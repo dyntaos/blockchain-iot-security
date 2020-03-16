@@ -152,7 +152,7 @@ loadConfig(void)
 	if (!cfg.exists("loraDeviceId"))
 	{
 		cerr << "Configuration file does not contain 'loraDeviceId'!" << endl;
-		cfgRoot->add("loraDeviceId", Setting::TypeString) = "";
+		cfgRoot->add("loraDeviceId", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("loraDeviceId", temp);
@@ -168,7 +168,7 @@ loadConfig(void)
 	if (!cfg.exists("publicKey"))
 	{
 		cerr << "Configuration file does not contain 'publicKey'!" << endl;
-		cfgRoot->add("publicKey", Setting::TypeString) = "";
+		cfgRoot->add("publicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("publicKey", temp);
@@ -194,7 +194,7 @@ loadConfig(void)
 	if (!cfg.exists("privateKey"))
 	{
 		cerr << "Configuration file does not contain 'privateKey'!" << endl;
-		cfgRoot->add("privateKey", Setting::TypeString) = "";
+		cfgRoot->add("privateKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("privateKey", temp);
@@ -220,7 +220,7 @@ loadConfig(void)
 	if (!cfg.exists("signPublicKey"))
 	{
 		cerr << "Configuration file does not contain 'signPublicKey'!" << endl;
-		cfgRoot->add("signPublicKey", Setting::TypeString) = "";
+		cfgRoot->add("signPublicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("signPublicKey", temp);
@@ -246,7 +246,7 @@ loadConfig(void)
 	if (!cfg.exists("signPrivateKey"))
 	{
 		cerr << "Configuration file does not contain 'signPrivateKey'!" << endl;
-		cfgRoot->add("signPrivateKey", Setting::TypeString) = "";
+		cfgRoot->add("signPrivateKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("signPrivateKey", temp);
@@ -272,7 +272,7 @@ loadConfig(void)
 	if (!cfg.exists("dataReceiverPublicKey"))
 	{
 		cerr << "Configuration file does not contain 'dataReceiverPublicKey'!" << endl;
-		cfgRoot->add("dataReceiverPublicKey", Setting::TypeString) = "";
+		cfgRoot->add("dataReceiverPublicKey", libconfig::Setting::TypeString) = "";
 		abort = true;
 	}
 	cfg.lookupValue("dataReceiverPublicKey", temp);
