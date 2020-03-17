@@ -196,7 +196,7 @@ contract DeviceMgmt {
 	  * @param clientAddr
 	  * @return
 	  */
-	function is_admin(address clientAddr) external view _authorized returns(bool) {
+	function is_admin(address clientAddr) external view returns(bool) {
 		return admin_mapping[clientAddr].isAdmin;
 	}
 
@@ -206,7 +206,7 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function is_authd(uint32 device_id) external view _authorized returns(bool) {
+	function is_authd(uint32 device_id) external view returns(bool) {
 		return id_to_device[device_id].active;
 	}
 
@@ -216,7 +216,7 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function is_device(uint32 device_id) external view _authorized returns(bool) {
+	function is_device(uint32 device_id) external view returns(bool) {
 		return id_to_device[device_id].active && !id_to_device[device_id].is_gateway;
 	}
 
@@ -226,7 +226,7 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function is_gateway(uint32 device_id) external view _authorized returns(bool) {
+	function is_gateway(uint32 device_id) external view returns(bool) {
 		return id_to_device[device_id].active && id_to_device[device_id].is_gateway;
 	}
 
