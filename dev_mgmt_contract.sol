@@ -401,6 +401,7 @@ contract DeviceMgmt {
 		} else {
 			// Device
 			authorized_devices.push(device_id);
+			addr_to_id[clientAddr] = device_id;
 			id_to_device[device_id].authorizedDevicesIndex = uint32(authorized_devices.length - 1);
 		}
 
