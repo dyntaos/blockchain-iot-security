@@ -105,7 +105,8 @@ BlockchainSecLib::BlockchainSecLib(bool compile)
 	cout << "Config contains contractAddress" << endl;
 	cfg.lookupValue("contractAddress", contractAddress); // TODO Check return value
 
-	initialize(ipcPath, clientAddress, contractAddress, contractEventSignatures());
+	if (!compile)
+		initialize(ipcPath, clientAddress, contractAddress, contractEventSignatures());
 
 	if (compile)
 	{

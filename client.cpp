@@ -260,15 +260,15 @@ main(int argc, char *argv[])
 	(void)argv;
 
 
+	sec = new BlockchainSecLib(compileFlag);
+
+
 	if (compileFlag)
 	{
 		cout << "Compiling smart contract..." << endl;
+		sec->joinThreads();
 	}
 
-
-	// #ifndef LORA_GATEWAY
-	sec = new BlockchainSecLib(compileFlag);
-	// #endif
 
 	if (gatewayFlag)
 	{
