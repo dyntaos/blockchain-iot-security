@@ -37,7 +37,8 @@ class EthInterface
 		std::string ipcPath,
 		std::string clientAddress,
 		std::string contractAddress,
-		std::vector<std::pair<std::string, std::string>> contractEventSignatures);
+		std::vector<std::pair<std::string, std::string>> contractEventSignatures,
+		bool createEventLogWaitManager);
 
 
 	std::string getIPCPath(void);

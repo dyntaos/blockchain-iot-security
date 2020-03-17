@@ -44,7 +44,8 @@ EthInterface::initialize(
 	string ipcPath,
 	string clientAddress,
 	string contractAddress,
-	vector<pair<string, string>> contractEventSignatures)
+	vector<pair<string, string>> contractEventSignatures,
+	bool createEventLogWaitManager)
 {
 	this->ipcPath = boost::trim_copy(ipcPath);
 
@@ -60,11 +61,14 @@ EthInterface::initialize(
 		this->contractAddress = this->contractAddress.substr(2);
 	}
 
-	eventLogWaitManager = new EventLogWaitManager(
-		this->clientAddress,
-		this->contractAddress,
-		ipcPath,
-		contractEventSignatures);
+	if (createEventLogWaitManager)
+	{
+		eventLogWaitManager = new EventLogWaitManager(
+			this->clientAddress,
+			this->contractAddress,
+			ipcPath,
+			contractEventSignatures);
+	}
 }
 
 
@@ -538,10 +542,10 @@ EthInterface::eth_createContract(string const& data)
 						 "\"method\":\"eth_sendTransaction\""
 						 ",\"params\":[{"
 						 "\"from\":\"0x"
-		+ clientAddress + "\","
-						  "\"gasPrice\":\"0x0\","
-						  "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
-						  "\"data\":\"0x"
+						 + clientAddress + "\","
+						 "\"gasPrice\":\"0x0\","
+						 "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
+						 "\"data\":\"0x"
 		+ data + "\"}],"
 				 "\"id\":1}";
 
