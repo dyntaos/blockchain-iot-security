@@ -289,19 +289,28 @@ EventLogWaitManager::ipc_subscription_listener_thread(void)
 	cout << "ipc_subscription_listener_thread()" << endl;
 #endif //_DEBUG
 
+begin:
 	ipc_subscription_listener_setup(socket, ep);
 
 	for (;;)
 	{
 		while (receiveParse.find_first_of('\n', 0) == string::npos)
 		{
-			receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			try
+			{
+				receiveLength = socket.receive(boost::asio::buffer(receiveBuffer, IPC_BUFFER_LENGTH - 1));
+			}
+			catch (...)
+			{
+				socket.close();
+				goto begin;
+			}
 
 			if (receiveLength == 0)
 			{
 				// Socket was closed by other end
-				socket.close(); // TODO: What happens if this socket is already closed?
-				ipc_subscription_listener_setup(socket, ep);
+				socket.close();
+				goto begin;
 			}
 			receiveBuffer[receiveLength] = 0;
 			receiveParse += receiveBuffer;
