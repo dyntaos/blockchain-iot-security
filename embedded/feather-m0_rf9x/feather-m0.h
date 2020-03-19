@@ -16,7 +16,7 @@
 
 #define REPLY_TIMEOUT                   2000
 #define ACTIVITY_DETECTION_TIMEOUT_MS   3000
-#define DATA_SEND_INTERVAL              (5 * 1000)
+#define DATA_SEND_INTERVAL              (60 * 1000)
 
 
 void encryptData(struct packet_data *pd, char* data, uint8_t dataLen);

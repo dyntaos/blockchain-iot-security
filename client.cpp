@@ -23,6 +23,7 @@ bool gatewayFlag = false;
 bool consoleFlag = false;
 bool receiverFlag = false;
 bool sensorFlag = false;
+bool latencyTestFlag = false;
 
 
 
@@ -54,7 +55,9 @@ parseFlags(int argc, char *argv[])
 				"Start this client as a data receiver.",
 				cxxopts::value<bool>(receiverFlag))("s,sensor",
 				"Start this client in sensor mode (collect and push sensor data to the blockchain).",
-				cxxopts::value<bool>(sensorFlag));
+				cxxopts::value<bool>(sensorFlag))("l,latencytest",
+				"Start this client in latency test mode (overrides other flags this conflicts with).",
+				cxxopts::value<bool>(latencyTestFlag));
 
 		auto result = options.parse(argc, argv);
 
@@ -242,6 +245,76 @@ sensor(BlockchainSecLib& blockchain)
 
 
 
+void
+latencyTestMode(BlockchainSecLib *blockchain)
+{
+	uint32_t deviceID;
+	try
+	{
+		deviceID = blockchain->get_my_device_id();
+		if (deviceID != blockchain->get_datareceiver(deviceID))
+		{
+			cerr << "This device must have itself assigned as its own data "
+					"receiver, but does not. Cannot proceed with latency tests."
+				 << endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	catch(DeviceNotAssignedException& e)
+	{
+		cerr << "This device does not have a device ID assigned and cannot proceed with latency tests"
+			 << endl;
+		exit(EXIT_FAILURE);
+	}
+
+
+	DataReceiverManager dataRecv(blockchain);
+	time_t startTime;
+	time_t endTime;
+	string data;
+
+	for (;;)
+	{
+		data = querySensor();
+		startTime = time(NULL);
+
+		if (!blockchain->encryptAndPushData(data))
+		{
+			cerr << "Failed to push data to the blockchain! Retrying in "
+				<< INVALID_DEVICE_TRY_INTERVAL
+				<< " seconds..."
+				<< endl;
+			sleep(INVALID_DEVICE_TRY_INTERVAL);
+			continue;
+		}
+
+		set<uint32_t> receivedUpdates = dataRecv.getReceivedChanges();
+
+		if (receivedUpdates.size() == 0)
+		{
+			continue;
+		}
+
+		for (auto it = receivedUpdates.begin(); it != receivedUpdates.end(); ++it)
+		{
+			if (*it == deviceID)
+			{
+				data = blockchain->getDataAndDecrypt(*it);
+				endTime = time(NULL);
+				cout << "Received message from blockchain with a RTT of "
+					 << endTime - startTime
+					 << " seconds"
+					 << endl;
+				break;
+			}
+		}
+		sleep(DATA_PUSH_INTERVAL);
+	}
+	dataRecv.joinThreads();
+}
+
+
+
 int
 main(int argc, char *argv[])
 {
@@ -256,9 +329,6 @@ main(int argc, char *argv[])
 	cout << ".:Blockchain Security Framework Client:." << endl;
 
 	auto flags = parseFlags(argc, argv);
-	(void)argc;
-	(void)argv;
-
 
 	sec = new BlockchainSecLib(compileFlag);
 
@@ -269,6 +339,11 @@ main(int argc, char *argv[])
 		sec->joinThreads();
 	}
 
+	if (latencyTestFlag)
+	{
+		latencyTestMode(sec);
+		exit(EXIT_SUCCESS);
+	}
 
 	if (gatewayFlag)
 	{
