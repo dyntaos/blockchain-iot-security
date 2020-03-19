@@ -312,7 +312,7 @@ latencyTestMode(BlockchainSecLib *blockchain)
 					tEnd.tv_nsec = 0;
 				}
 
-				cout << "Received message from blockchain with a RTT of "
+				cout << "Received message from blockchain with a latency of "
 					 << ((tEnd.tv_sec - tStart.tv_sec) * 1000) + round((tEnd.tv_nsec - tStart.tv_nsec) / 1.0e6)
 					 << "ms"
 					 << endl;
