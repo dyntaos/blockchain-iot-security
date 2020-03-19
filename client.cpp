@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -269,14 +270,18 @@ latencyTestMode(BlockchainSecLib *blockchain)
 
 
 	DataReceiverManager dataRecv(blockchain);
-	time_t startTime;
-	time_t endTime;
+	struct timespec tStart, tEnd;
 	string data;
 
 	for (;;)
 	{
 		data = querySensor();
-		startTime = time(NULL);
+
+		clock_gettime(CLOCK_REALTIME, &tStart);
+		if (round(tStart.tv_nsec / 1.0e6) > 999) {
+			tStart.tv_sec++;
+			tStart.tv_nsec = 0;
+		}
 
 		if (!blockchain->encryptAndPushData(data))
 		{
@@ -300,10 +305,16 @@ latencyTestMode(BlockchainSecLib *blockchain)
 			if (*it == deviceID)
 			{
 				data = blockchain->getDataAndDecrypt(*it);
-				endTime = time(NULL);
+
+				clock_gettime(CLOCK_REALTIME, &tEnd);
+				if (round(tEnd.tv_nsec / 1.0e6) > 999) {
+					tEnd.tv_sec++;
+					tEnd.tv_nsec = 0;
+				}
+
 				cout << "Received message from blockchain with a RTT of "
-					 << endTime - startTime
-					 << " seconds"
+					 << ((tEnd.tv_sec - tStart.tv_sec) * 1000) + round((tEnd.tv_nsec - tStart.tv_nsec) / 1.0e6)
+					 << "ms"
 					 << endl;
 				break;
 			}
