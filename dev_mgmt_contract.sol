@@ -60,7 +60,7 @@ contract DeviceMgmt {
 	uint32 next_device_id;
 	uint32[] free_device_id_stack;
 	mapping (address => uint32) addr_to_id;
-	mapping (uint32 => Device) id_to_device;    // device_id => Device
+	mapping (uint32 => Device) id_to_device;
 
 	mapping (address => bool) gateway_pool;
 
