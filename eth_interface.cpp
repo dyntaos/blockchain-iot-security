@@ -146,13 +146,22 @@ EthInterface::getFrom(string const& funcName, string const& ethabiEncodeArgs)
 uint64_t
 EthInterface::getIntFromContract(string const& funcName)
 {
-	stringstream ss;
-	uint64_t result;
+	return getIntFromContract(funcName, "");
+}
 
-	ss << getFrom(funcName, "");
-	ss >> result;
 
-	return result;
+
+// Throws ResourceRequestFailedException from ethabi()
+uint64_t
+EthInterface::getIntFromContract(string const& funcName, string const& params)
+{
+	string hex;
+	uint64_t dec;
+
+	hex = getFrom(funcName, params);
+	dec = strtoull(hex.c_str(), nullptr, 16);
+
+	return dec;
 }
 
 
@@ -495,11 +504,9 @@ EthInterface::eth_call(string const& abiData)
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 						 "\"method\":\"eth_call\","
 						 "\"params\":[{"
-						 //"\"from\":\"0x" + clientAddress + "\","
-						 "\"to\":\"0x"
-		+ contractAddress + "\","
-							"\"data\":\"0x"
-		+ abiData + "\"},\"latest\"],\"id\":1}";
+						 "\"from\":\"0x" + clientAddress + "\","
+						 "\"to\":\"0x" + contractAddress + "\","
+						 "\"data\":\"0x" + abiData + "\"},\"latest\"],\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_call()" << endl;
@@ -516,15 +523,12 @@ EthInterface::eth_sendTransaction(string const& abiData)
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 						 "\"method\":\"eth_sendTransaction\""
 						 ",\"params\":[{"
-						 "\"from\":\"0x"
-		+ clientAddress + "\","
-						  "\"to\":\"0x"
-		+ contractAddress + "\","
-							"\"gas\":\"" + ETH_DEFAULT_GAS + "\","
-							"\"gasPrice\":\"0x0\","
-							"\"data\":\"0x"
-		+ abiData + "\"}],"
-					"\"id\":1}";
+						 "\"from\":\"0x" + clientAddress + "\","
+						 "\"to\":\"0x" + contractAddress + "\","
+						 "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
+						 "\"gasPrice\":\"0x0\","
+						 "\"data\":\"0x" + abiData + "\"}],"
+						 "\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_sendTransaction()" << endl;
@@ -541,13 +545,11 @@ EthInterface::eth_createContract(string const& data)
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 						 "\"method\":\"eth_sendTransaction\""
 						 ",\"params\":[{"
-						 "\"from\":\"0x"
-						 + clientAddress + "\","
+						 "\"from\":\"0x" + clientAddress + "\","
 						 "\"gasPrice\":\"0x0\","
 						 "\"gas\":\"" + ETH_DEFAULT_GAS + "\","
-						 "\"data\":\"0x"
-		+ data + "\"}],"
-				 "\"id\":1}";
+						 "\"data\":\"0x" + data + "\"}],"
+						 "\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_createContract()" << endl;
@@ -564,9 +566,8 @@ EthInterface::eth_getTransactionReceipt(string const& transactionHash)
 	string jsonRequest = "{\"jsonrpc\":\"2.0\","
 						 "\"method\":\"eth_getTransactionReceipt\","
 						 "\"params\":["
-						 "\""
-		+ transactionHash + "\""
-							"],\"id\":1}";
+						 "\"" + transactionHash + "\""
+						 "],\"id\":1}";
 
 #ifdef _DEBUG
 	cout << "eth_getTransactionReceipt()" << endl;
