@@ -182,7 +182,17 @@ EthInterface::call_helper(string const& data)
 {
 	string callStr = eth_call(data);
 	Json callJson = Json::parse(callStr);
-	string callResult = callJson["result"];
+	string callResult;
+	try
+	{
+		callResult = callJson["result"];
+	}
+	catch (nlohmann::json::exception const& e)
+	{
+		// A JSON Parse error occured - Likely Geth returned an error, such as a timeout
+		throw CallFailedException("JSON Parse error; Geth may have returned an error or timed out!");
+	}
+
 	if (callResult.compare("0x") == 0)
 	{
 		// The contract failed to execute (a require statement failed)
