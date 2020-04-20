@@ -450,9 +450,10 @@ EthInterface::getTransactionReceipt(string const& transactionHash)
 string
 EthInterface::eth_ipc_request(string const& jsonRequest)
 {
-	int ipcFdFlags, ipcFd;
+	int ipcFd;
 	string json;
-	array<char, IPC_BUFFER_LENGTH> ipcBuffer;
+	char readBuffer[IPC_BUFFER_LENGTH];
+	ssize_t readLen = 0;
 
 #ifdef _DEBUG
 	cout << "eth_ipc_request(): " << jsonRequest << endl;
@@ -471,21 +472,23 @@ EthInterface::eth_ipc_request(string const& jsonRequest)
 
 	ipcFd = fileno(ipc);
 
-	if (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) == NULL)
+	if ((readLen = read(ipcFd, readBuffer, IPC_BUFFER_LENGTH - 1)) == 0)
 	{
 		throw ResourceRequestFailedException(
 			"eth_ipc_request(): Error: Failed to read from IPC!");
 	}
 
-	json += ipcBuffer.data();
+	readBuffer[readLen] = '\0';
+	json += readBuffer;
 
-	ipcFdFlags = fcntl(ipcFd, F_GETFL, 0);
-	ipcFdFlags |= O_NONBLOCK;
-	fcntl(ipcFd, F_SETFL, ipcFdFlags);
-
-	while (fgets(ipcBuffer.data(), IPC_BUFFER_LENGTH, ipc) != NULL)
+	while (json.find_first_of('\n') == string::npos && readLen != 0)
 	{
-		json += ipcBuffer.data();
+		readLen = read(ipcFd, readBuffer, IPC_BUFFER_LENGTH - 1);
+		readBuffer[readLen] = '\0';
+		if (readLen != 0)
+		{
+			json += readBuffer;
+		}
 	}
 
 #ifdef _DEBUG
