@@ -16,9 +16,9 @@
 
 
 #define DEVICE_ID                       2
-#define REPLY_TIMEOUT                   2000
+#define REPLY_TIMEOUT                   1
 #define ACTIVITY_DETECTION_TIMEOUT_MS   0
-#define DATA_SEND_INTERVAL              (5 * 1000)
+#define DATA_SEND_INTERVAL              (6 * 1000)
 
 
 #define DATA_RECEIVER_PUBLIC_KEY        "2373b4ce20e158ce43811df6ce3a71028649ec21b3b9737a45f04b84985c3652"
