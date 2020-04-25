@@ -49,7 +49,7 @@ parseFlags(int argc, char *argv[])
 				"Compile & upload the solidity contract to the blockchain, and save the "
 				"contract address, overwriting the old address in the config file",
 				cxxopts::value<bool>(compileFlag))("g,gateway",
-				"Start this client in gateway mode. TODO MORE",
+				"Start this client in gateway mode.",
 				cxxopts::value<bool>(gatewayFlag))("c,console",
 				"Start this client in with the administrator console enabled.",
 				cxxopts::value<bool>(consoleFlag))("r,receiver",
