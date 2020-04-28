@@ -30,10 +30,13 @@ Version 1.67 or greater.
 `sudo apt update && sudo apt install libboost-all-dev`
 
 ### Go Ethereum (Geth) Client
-```git clone https://github.com/ethereum/go-ethereum.git
+
+```
+git clone https://github.com/ethereum/go-ethereum.git
 cd go-ethereum
 git checkout v1.9.9
-make```
+make
+```
 
 ### Solidity Compiler (solc)
 
@@ -47,14 +50,18 @@ The Ubuntu based apt repository for Solidity is not compatible with Debian. Use 
 `sudo apt install -y snapd && sudo snap install solc`
 
 If the above command does not provide 0.6.0 or greater, then:
-```sudo snap remove solc
-sudo snap install solc --edge```
+```
+sudo snap remove solc
+sudo snap install solc --edge
+```
 
 #### MacOS:
 Install the homebrew package manager, then run:
 
-```brew tap ethereum/ethereum
-brew install solidity```
+```
+brew tap ethereum/ethereum
+brew install solidity
+```
 
 ### Others
 Some of the git submodules may need to be compiled and installed. Please do so as required.
@@ -63,4 +70,6 @@ Some of the git submodules may need to be compiled and installed. Please do so a
 
 ## C/C++ code is formatted with clang-format in VSCode using the setting:
 _**C_Cpp:Clang_format_fallback**_
-```{ BasedOnStyle: WebKit, UseTab: Always, IndentWidth: 4, BreakBeforeBraces: Allman, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: true, ColumnLimit: 0, TabWidth: 4, AlwaysBreakAfterDefinitionReturnType: All, MaxEmptyLinesToKeep: 3, NamespaceIndentation: None, AccessModifierOffset: 0 }```
+```
+{ BasedOnStyle: WebKit, UseTab: Always, IndentWidth: 4, BreakBeforeBraces: Allman, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: true, ColumnLimit: 0, TabWidth: 4, AlwaysBreakAfterDefinitionReturnType: All, MaxEmptyLinesToKeep: 3, NamespaceIndentation: None, AccessModifierOffset: 0 }
+```
