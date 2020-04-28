@@ -1,5 +1,6 @@
 # blockchain-iot-security
 
+This repository is a research project titled *Blockchain based security for heterogeneous IoT systems*. The paper is available here as a PDF document.
 
 ## Dependencies
 
