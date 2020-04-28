@@ -1,15 +1,5 @@
 pragma solidity >=0.6.0;
 
-//TODO: Can all functions be non-payable? How to handle ether? SOLUTION: On miners: "geth ... --gasprice 0 ..." https://stackoverflow.com/questions/49318479/how-to-make-sure-transactions-take-0-fee-in-a-private-ethereum-blockchain
-//TODO?: Implement log of events?
-//TODO?: May not be needed: 0 Cannot be a region ID -- If the region is not active, then just ignore this value, for if it is active it will surely be in activeMangementRegions
-//TODO: Link redgion indexes in devices to mgmt Regions
-//TODO: Link authorizedAdminUsersIndex to active_admin_users
-//TODO: Deactivate region/reactivate region & delete region (Consider implications of Device.mangementRegionIndexes)
-//TODO: Initial admin user
-//TODO: Function to change region of device
-//TODO: getters for Regions
-//TODO: getters for all structs
 
 
 /*
@@ -423,7 +413,7 @@ contract DeviceMgmt {
 	 * @param clientAddr
 	 * @return
 	 */
-	function remove_device(uint32 device_id) external _admin returns(bool) { // TODO URGENT: REMOVE device_id from authorized_devices[]!
+	function remove_device(uint32 device_id) external _admin returns(bool) {
 		require(id_to_device[device_id].active);
 
 		// TODO: Leave or remove these memory variables?
@@ -453,7 +443,7 @@ contract DeviceMgmt {
 	 * @param
 	 * @return
 	 */
-	function remove_gateway(uint32 device_id) external _admin returns(bool) { // TODO URGENT: REMOVE device_id from authorized_devices[]!
+	function remove_gateway(uint32 device_id) external _admin returns(bool) {
 		address gateway_addr = id_to_device[device_id].eth_addr;
 		require(gateway_pool[gateway_addr]);
 
